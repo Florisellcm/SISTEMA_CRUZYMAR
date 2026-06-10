@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>CRUZYMAR · Login</title>
+
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+
+<body>
+
+<div id="loginPage">
+  <div class="login-deco"></div>
+
+  <div class="login-card">
+
+    <div class="login-brand">
+      <div class="login-logo-circle">
+        <img src="../img/logo.png" style="width:60px;height:60px;object-fit:contain;border-radius:50%;">
+      </div>
+
+      <h1>CRUZYMAR</h1>
+      <p>Productos Lácteos</p>
+    </div>
+
+    <div class="login-divider">Acceso al Sistema</div>
+
+    <div class="form-group">
+      <label>Correo Electrónico</label>
+      <input type="email" id="loginEmail" value="admin@cruzymar.com">
+    </div>
+
+    <div class="form-group">
+      <label>Contraseña</label>
+      <input type="password" id="loginPass" value="admin123">
+    </div>
+
+    <button class="btn-login" onclick="login()">
+      Ingresar al Sistema →
+    </button>
+
+    <div id="loginErr" class="login-error"></div>
+
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+
+
+</body>
+</html>

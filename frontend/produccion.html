@@ -1,0 +1,472 @@
+<!-- ═══════════════════════════════════
+     CRUZYMAR · produccion.html
+     Estilo unificado con Acopio
+═══════════════════════════════════════ -->
+
+<div>
+
+  <!-- ── HEADER ── -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <div>
+      <h2 style="margin:0;font-size:20px;font-weight:800;color:#003C78">
+        <i class="ri-building-line" style="color:#0A4A8F"></i> Producción Láctea
+      </h2>
+      <p style="margin-top:4px;color:#64748B;font-size:13px">Registro y control de lotes, rendimientos, mermas y costos</p>
+    </div>
+    <button onclick="openNuevaProduccion()"
+      style="background:#003C78;color:#fff;padding:10px 20px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">
+      <i class="ri-add-line"></i> Nuevo Lote
+    </button>
+  </div>
+
+  <!-- ── TARJETAS RESUMEN ── -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px">
+
+    <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#EAF2FB;display:flex;align-items:center;justify-content:center">
+          <i class="ri-stack-line" style="color:#003C78;font-size:18px"></i>
+        </div>
+        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Lotes Hoy</span>
+      </div>
+      <div id="resumenTotalHoy" style="font-size:24px;font-weight:800;color:#003C78">0</div>
+      <div style="font-size:11px;color:#94A3B8;margin-top:4px">del día seleccionado</div>
+    </div>
+
+    <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#F0FDF4;display:flex;align-items:center;justify-content:center">
+          <i class="ri-drop-line" style="color:#16A34A;font-size:18px"></i>
+        </div>
+        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Leche Usada</span>
+      </div>
+      <div id="resumenLecheHoy" style="font-size:24px;font-weight:800;color:#16A34A">0 L</div>
+      <div style="font-size:11px;color:#94A3B8;margin-top:4px">litros procesados hoy</div>
+    </div>
+
+    <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#FFF7ED;display:flex;align-items:center;justify-content:center">
+          <i class="ri-percent-line" style="color:#EA580C;font-size:18px"></i>
+        </div>
+        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Rendimiento</span>
+      </div>
+      <div id="resumenRendimiento" style="font-size:24px;font-weight:800;color:#EA580C">0%</div>
+      <div style="font-size:11px;color:#94A3B8;margin-top:4px">promedio del día</div>
+    </div>
+
+    <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#FEF2F2;display:flex;align-items:center;justify-content:center">
+          <i class="ri-loader-line" style="color:#DC2626;font-size:18px"></i>
+        </div>
+        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">En Proceso</span>
+      </div>
+      <div id="resumenEnProceso" style="font-size:24px;font-weight:800;color:#DC2626">0</div>
+      <div style="font-size:11px;color:#94A3B8;margin-top:4px">lotes activos ahora</div>
+    </div>
+
+  </div>
+
+  <!-- ── GRÁFICA + FILTROS ── -->
+  <div style="display:grid;grid-template-columns:1fr 320px;gap:16px;margin-bottom:20px">
+
+    <!-- Gráfica rendimiento por producto -->
+    <div style="background:#fff;border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="font-size:13px;font-weight:700;color:#003C78;margin-bottom:14px">
+        <i class="ri-bar-chart-2-line"></i> Litros Procesados por Producto
+      </div>
+      <div style="height:180px">
+        <canvas id="graficaProduccion"></canvas>
+      </div>
+    </div>
+
+    <!-- Panel filtros -->
+    <div style="background:#fff;border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="font-size:13px;font-weight:700;color:#003C78;margin-bottom:14px">
+        <i class="ri-filter-3-line"></i> Filtrar Registros
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div>
+          <label style="display:block;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:5px">Fecha</label>
+          <input id="filtroFechaProd" type="date"
+            style="width:100%;padding:9px 12px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:5px">Estado</label>
+          <select id="filtroEstadoProd"
+            style="width:100%;padding:9px 12px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+            <option value="">Todos los estados</option>
+            <option value="En proceso">En proceso</option>
+            <option value="Completada">Completada</option>
+            <option value="Pendiente">Pendiente</option>
+            <option value="Cancelada">Cancelada</option>
+          </select>
+        </div>
+        <button onclick="filtrarProduccion()"
+          style="width:100%;padding:10px;background:#003C78;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+          <i class="ri-search-line"></i> Aplicar Filtro
+        </button>
+        <button onclick="el('filtroFechaProd').value='';el('filtroEstadoProd').value='';filtrarProduccion()"
+          style="width:100%;padding:10px;background:#F4F7FA;color:#64748B;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
+          <i class="ri-refresh-line"></i> Ver Todo
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── TABLA LOTES ── -->
+  <div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2;overflow:auto">
+    <div style="padding:16px 20px;border-bottom:1px solid #E0E9F2;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:13px;font-weight:700;color:#003C78">
+        <i class="ri-list-check-2"></i> Lotes Registrados
+      </span>
+      <input id="buscarProd" type="text" placeholder="🔍 Buscar lote o producto..."
+        oninput="filtrarProduccion()"
+        style="padding:8px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;width:230px">
+    </div>
+    <table style="width:100%;border-collapse:collapse;min-width:1050px">
+      <thead>
+        <tr style="background:#F4F7FA">
+          <th style="padding:11px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">N° Lote</th>
+          <th style="padding:11px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Producto</th>
+          <th style="padding:11px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Leche (L)</th>
+          <th style="padding:11px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Obtenido</th>
+          <th style="padding:11px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Unidad</th>
+          <th style="padding:11px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Rendimiento</th>
+          <th style="padding:11px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Merma (L)</th>
+          <th style="padding:11px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Costo Prod.</th>
+          <th style="padding:11px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Operario</th>
+          <th style="padding:11px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Fecha</th>
+          <th style="padding:11px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Turno</th>
+          <th style="padding:11px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Estado</th>
+          <th style="padding:11px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="produccionTableBody">
+        <tr><td colspan="13" style="text-align:center;padding:40px;color:#64748B">Cargando lotes...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL NUEVO / EDITAR LOTE
+══════════════════════════════════════════ -->
+<div id="modalProduccion" style="display:none;position:fixed;inset:0;background:rgba(15,35,73,.55);align-items:center;justify-content:center;z-index:1000;padding:20px">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:620px;box-shadow:0 32px 80px rgba(0,0,0,.25);max-height:90vh;overflow-y:auto">
+
+    <!-- Header modal -->
+    <div style="padding:20px 24px;border-bottom:1px solid #E0E9F2;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;z-index:1;border-radius:16px 16px 0 0">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:10px;background:#EAF2FB;display:flex;align-items:center;justify-content:center">
+          <i class="ri-building-line" style="color:#003C78;font-size:18px"></i>
+        </div>
+        <h3 id="modalProdTitulo" style="font-size:16px;font-weight:700;color:#003C78;margin:0">Nuevo Lote de Producción</h3>
+      </div>
+      <button onclick="closeModalProd()" style="width:30px;height:30px;border-radius:8px;border:none;background:#F4F7FA;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:#64748B">
+        <i class="ri-close-line"></i>
+      </button>
+    </div>
+
+    <!-- Body modal -->
+    <div style="padding:24px">
+      <form id="formProduccion">
+
+        <!-- SECCIÓN 1: Identificación -->
+        <div style="font-size:11px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #F0F4F8">
+          <i class="ri-fingerprint-line"></i> Identificación del Lote
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+
+          <!-- N° Lote auto -->
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">
+              <i class="ri-hashtag"></i> N° Lote (auto)
+            </label>
+            <input id="prodLote" type="text" readonly placeholder="Generado al guardar"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;background:#F8FBFF;color:#003C78;font-weight:700;box-sizing:border-box">
+          </div>
+
+          <!-- Producto -->
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">
+              <i class="ri-box-3-line"></i> Producto *
+            </label>
+            <input id="prodProductoNombre" type="text" placeholder="Ej: Queso Fresco, Mantequilla, Yogurt..."
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+
+          <!-- Categoría producto -->
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">
+              <i class="ri-price-tag-3-line"></i> Categoría
+            </label>
+            <select id="prodCategoria"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+              <option value="Queso">🧀 Queso</option>
+              <option value="Mantequilla">🧈 Mantequilla</option>
+              <option value="Yogurt">🥛 Yogurt</option>
+              <option value="Crema">🍦 Crema</option>
+              <option value="Leche Pasteurizada">🥛 Leche Pasteurizada</option>
+              <option value="Otro">📦 Otro</option>
+            </select>
+          </div>
+
+          <!-- Receta / Fórmula 
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">
+              <i class="ri-file-text-line"></i> Receta / Fórmula
+            </label>
+            <input id="prodReceta" type="text" placeholder="Ej: REC-001, Estándar..."
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+
+        </div>-->
+
+        <!-- SECCIÓN 2: Materia Prima -->
+        <div style="font-size:11px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #F0F4F8">
+          <i class="ri-drop-line"></i> Materia Prima
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:8px">
+
+          <!-- Leche usada -->
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">
+              <i class="ri-drop-line"></i> Leche Usada (Litros) *
+            </label>
+            <input id="prodLecheUsada" type="number" min="0" step="0.1" placeholder="0.0"
+              oninput="actualizarRendimientoPreview()"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+
+          <!-- Precio costo leche -->
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">
+              <i class="ri-money-dollar-circle-line"></i> Costo Leche (L./litro)
+            </label>
+            <input id="prodCostoLeche" type="number" min="0" step="0.01" placeholder="8.50"
+              oninput="actualizarRendimientoPreview()"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+
+          <!-- Insumos adicionales -->
+          <div style="grid-column:span 2">
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">
+              <i class="ri-flask-line"></i> Insumos Adicionales
+            </label>
+            <input id="prodInsumos" type="text" placeholder="Ej: Sal 2kg (L.15), Cuajo 50ml (L.8), Cultivo 10g (L.5)..."
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+            <div style="font-size:10px;color:#94A3B8;margin-top:3px">Descripción e insumos con costo aproximado</div>
+          </div>
+
+          <!-- Costo insumos adicionales -->
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">
+              <i class="ri-coin-line"></i> Costo Insumos (L.)
+            </label>
+            <input id="prodCostoInsumos" type="number" min="0" step="0.01" placeholder="0.00"
+              oninput="actualizarRendimientoPreview()"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+
+          <!-- Costo mano de obra -->
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">
+              <i class="ri-user-settings-line"></i> Costo M.O. (L.)
+            </label>
+            <input id="prodCostoMO" type="number" min="0" step="0.01" placeholder="0.00"
+              oninput="actualizarRendimientoPreview()"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+
+        </div>
+
+        <!-- SECCIÓN 3: Producción Obtenida -->
+        <div style="font-size:11px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #F0F4F8;margin-top:16px">
+          <i class="ri-archive-line"></i> Producción Obtenida
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:8px">
+
+          <!-- Cantidad obtenida -->
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">
+              <i class="ri-scales-line"></i> Cantidad Obtenida *
+            </label>
+            <input id="prodCantidadObtenida" type="number" min="0" step="0.01" placeholder="0.0"
+              oninput="actualizarRendimientoPreview()"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+
+          <!-- Unidad de medida -->
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">
+              <i class="ri-ruler-line"></i> Unidad de Medida
+            </label>
+            <select id="prodUnidad"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+              <option value="kg">Kilogramos (kg)</option>
+              <option value="lbs">Libras (lbs)</option>
+              <option value="unidades">Unidades</option>
+              <option value="litros">Litros</option>
+              <option value="botes">Botes</option>
+              <option value="bolsas">Bolsas</option>
+            </select>
+          </div>
+
+          <!-- Precio de venta sugerido -->
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">
+              <i class="ri-price-tag-2-line"></i> Precio Venta (L./unidad)
+            </label>
+            <input id="prodPrecioVenta" type="number" min="0" step="0.01" placeholder="0.00"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+            <div style="font-size:10px;color:#94A3B8;margin-top:3px">Precio sugerido para ventas</div>
+          </div>
+
+          <!-- Fecha vencimiento -->
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">
+              <i class="ri-calendar-check-line"></i> Fecha Vencimiento
+            </label>
+            <input id="prodFechaVencimiento" type="date"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+
+        </div>
+
+        <!-- Preview costos y rendimiento -->
+        <div id="rendimientoPreview" style="margin-top:4px;margin-bottom:16px;padding:14px 18px;background:linear-gradient(135deg,#EAF2FB,#F0F4FF);border-radius:10px;border:1px solid #C3D9F0">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center">
+            <div>
+              <div style="font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:4px">Rendimiento</div>
+              <div id="previewRendimiento" style="font-size:18px;font-weight:800;color:#003C78">— %</div>
+            </div>
+            <div>
+              <div style="font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:4px">Merma</div>
+              <div id="previewMerma" style="font-size:18px;font-weight:800;color:#EA580C">— L</div>
+            </div>
+            <div>
+              <div style="font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:4px">Costo Total</div>
+              <div id="previewCosto" style="font-size:18px;font-weight:800;color:#16A34A">L. —</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECCIÓN 4: Logística -->
+        <div style="font-size:11px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #F0F4F8">
+          <i class="ri-user-line"></i> Logística y Control
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+
+          <!-- Fecha producción -->
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">
+              <i class="ri-calendar-line"></i> Fecha de Producción *
+            </label>
+            <input id="prodFecha" type="date" onchange="generarLoteAutomatico()"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+
+          <!-- Turno -->
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">
+              <i class="ri-time-line"></i> Turno
+            </label>
+            <select id="prodTurno" onchange="generarLoteAutomatico()"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+              <option value="Mañana">🌅 Mañana</option>
+              <option value="Tarde">🌆 Tarde</option>
+            </select>
+          </div>
+
+          <!-- Operario responsable -->
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">
+              <i class="ri-user-star-line"></i> Operario Responsable
+            </label>
+            <input id="prodOperario" type="text" placeholder="Nombre del operario"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+
+          <!-- Estado -->
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">
+              <i class="ri-flag-line"></i> Estado del Lote
+            </label>
+            <select id="prodEstado"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+              <option value="En proceso"> En proceso</option>
+              <option value="Completada"> Completada</option>
+              <option value="Pendiente"> Pendiente</option>
+              <option value="Cancelada"> Cancelada</option>
+            </select>
+          </div>
+
+          <!-- Destino del lote -->
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">
+              <i class="ri-store-2-line"></i> Destino
+            </label>
+            <select id="prodDestino"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+              <option value="Inventario"> Inventario</option>
+              <option value="Venta directa"> Venta Directa</option>
+              <option value="Pedido específico"> Pedido Específico</option>
+            </select>
+          </div>
+
+          <!-- Almacén / Refrigerador -->
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">
+              <i class="ri-temp-cold-line"></i> Almacenamiento
+            </label>
+            <input id="prodAlmacenamiento" type="text" placeholder="Ej: Cuarto Frío 1, Bodega A..."
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+
+        </div>
+
+        <!-- Observaciones -->
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">
+            <i class="ri-chat-3-line"></i> Observaciones / Notas de Calidad
+          </label>
+          <textarea id="prodObservaciones" rows="2" placeholder="Ej: Color y textura normales, sin anomalías. Temperatura de proceso: 65°C..."
+            style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;resize:vertical;box-sizing:border-box;font-family:inherit"></textarea>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Footer modal -->
+    <div style="padding:16px 24px;border-top:1px solid #E0E9F2;display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:#fff;border-radius:0 0 16px 16px">
+      <button onclick="closeModalProd()"
+        style="padding:10px 20px;border:2px solid #E0E9F2;background:#fff;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;color:#64748B;display:flex;align-items:center;gap:6px">
+        <i class="ri-close-line"></i> Cancelar
+      </button>
+      <button onclick="saveProduccion()"
+        style="padding:10px 24px;background:#003C78;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">
+        <i class="ri-save-line"></i> Guardar Lote
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<style>
+  .btn-accion { width:28px;height:28px;border-radius:6px;border:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;justify-content:center;transition:all .2s; }
+  .btn-accion.verde { background:#EAF4E3;color:#2D6B18; }
+  .btn-accion.azul  { background:#EAF2FB;color:#0A4A8F; }
+  .btn-accion.rojo  { background:#FEF2F2;color:#991B1B; }
+  .btn-accion:hover { opacity:.75;transform:scale(1.1); }
+  #produccionTableBody tr { border-bottom:1px solid #F0F4F8; }
+  #produccionTableBody tr:hover { background:#F8FBFF; }
+  #produccionTableBody td { padding:12px 14px;font-size:13px; }
+</style>

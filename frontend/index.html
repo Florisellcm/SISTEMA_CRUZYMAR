@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>CRUZYMAR</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<div id="appPage" style="display:none">
+<!-- ═══════════════════════════════════════════
+SIDEBAR
+═══════════════════════════════════════════ -->
+
+<aside class="sidebar open" id="sidebar">
+
+  <!-- Logo -->
+  <div class="sb-logo-top">
+    <img src="img/logo.png" alt="CRUZYMAR">
+    <div class="sb-brand-txt">
+      <span class="sb-brand-nombre">CRUZYMAR</span>
+      <span class="sb-brand-sub">Productos Lácteos</span>
+    </div>
+  </div>
+
+  <!-- Usuario activo -->
+  <div class="sb-user-card">
+    <div class="sb-user-avatar" id="sbUserAvatar">A</div>
+    <div class="sb-user-data">
+      <div class="sb-user-nombre" id="sbUserName">Administrador</div>
+      <div class="sb-user-email" id="sbUserEmail">admin@cruzymar.com</div>
+    </div>
+  </div>
+
+  <!-- Nav con grupos -->
+  <nav class="sb-nav">
+
+    <!-- INICIO -->
+    <div class="sb-group-label">Principal</div>
+    <div class="sb-item active" data-page="dashboard" title="Dashboard">
+      <i class="ri-dashboard-line sb-icon"></i>
+      <span class="sb-label">Dashboard</span>
+    </div>
+
+    <!-- LÁCTEOS -->
+    <div class="sb-group-label">Lácteos</div>
+    <div class="sb-item" data-page="acopio" title="Recepcion de Leche">
+      <i class="ri-drop-line sb-icon"></i>
+      <span class="sb-label">Recepcion de Leche</span>
+    </div>
+    <div class="sb-item" data-page="produccion" title="Producción">
+      <i class="ri-building-line sb-icon"></i>
+      <span class="sb-label">Producción</span>
+    </div>
+    <div class="sb-item" data-page="inventario" title="Inventario">
+      <i class="ri-archive-line sb-icon"></i>
+      <span class="sb-label">Inventario</span>
+    </div>
+
+    <!-- COMERCIAL -->
+    <div class="sb-group-label">Comercial</div>
+    <div class="sb-item" data-page="ventas" title="Ventas">
+      <i class="ri-shopping-cart-line sb-icon"></i>
+      <span class="sb-label">Ventas</span>
+    </div>
+    <div class="sb-item" data-page="clientes" title="Clientes">
+      <i class="ri-group-line sb-icon"></i>
+      <span class="sb-label">Clientes</span>
+    </div>
+    <div class="sb-item proximamente" title="Facturación — Próximamente">
+      <i class="ri-file-list-3-line sb-icon"></i>
+      <span class="sb-label">Facturación</span>
+      <span class="sb-badge">Pronto</span>
+    </div>
+
+    <!-- COMPRAS -->
+    <div class="sb-group-label">Compras</div>
+    <div class="sb-item" data-page="proveedores" title="Proveedores">
+      <i class="ri-truck-line sb-icon"></i>
+      <span class="sb-label">Proveedores</span>
+    </div>
+    <div class="sb-item" data-page="gastos" title="Gastos">
+      <i class="ri-bank-card-line sb-icon"></i>
+      <span class="sb-label">Gastos</span>
+    </div>
+
+    <!-- REPORTES -->
+    <div class="sb-group-label">Análisis</div>
+    <div class="sb-item proximamente" title="Reportes — Próximamente">
+      <i class="ri-bar-chart-2-line sb-icon"></i>
+      <span class="sb-label">Reportes</span>
+      <span class="sb-badge">Pronto</span>
+    </div>
+
+    <!-- CONFIG -->
+    <div class="sb-group-label">Sistema</div>
+   <div class="sb-item" data-page="configuracion" title="Configuración">
+      <i class="ri-settings-3-line sb-icon"></i>
+      <span class="sb-label">Configuración</span>
+    </div>
+
+  </nav>
+
+  <!-- Logout -->
+  <div class="sb-logout" onclick="logout()" title="Cerrar Sesión">
+    <i class="ri-logout-box-r-line sb-icon"></i>
+    <span class="sb-label">Cerrar Sesión</span>
+  </div>
+
+  <!-- Botón colapsar -->
+  <div class="sb-collapse-btn" onclick="toggleSidebar()" title="Contraer menú">
+    <i class="ri-arrow-left-s-line" id="collapseIcon"></i>
+  </div>
+
+</aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+
+  <div class="topbar-left">
+    <h2 id="viewTitle">Panel Principal</h2>
+    <p id="viewSubtitle">Bienvenido al sistema</p>
+</div>
+
+  <div class="topbar-right">
+    <span id="lastUpdate"></span>
+    <button class="topbar-refresh" onclick="refreshCurrentPage()">
+      ↻
+    </button>
+  </div>
+
+</header>
+
+    <main class="content" id="dynamicContent">
+      <div id="vistaDashboard" class="seccion-dinamica">
+
+       <div class="kpi-grid">
+
+  <!-- Ventas -->
+  <div class="kpi-card ventas">
+
+    <div class="kpi-header">
+
+      <div class="kpi-icon ventas-icon">
+      <i data-lucide="shopping-cart"></i>
+      </div>
+
+      <span class="kpi-badge">
+        <i class="ri-calendar-line"></i>
+        Hoy
+      </span>
+
+    </div>
+
+    <div class="kpi-value" id="kpiVentasHoy">
+      L. 1500.00
+    </div>
+
+    <div class="kpi-title">
+      Ventas del Día
+    </div>
+
+    <div class="kpi-growth success">
+      ↑ 12.5% vs. mes anterior
+    </div>
+
+  </div>
+
+  <!-- Leche Recibida -->
+  <div class="kpi-card recibida">
+
+    <div class="kpi-header">
+
+      <div class="kpi-icon recibida-icon">
+        <i data-lucide="truck"></i>
+      </div>
+
+      <span class="kpi-badge" id="kpiProveedoresHoy">
+        0 Provs.
+      </span>
+
+    </div>
+
+    <div class="kpi-value" id="kpiLecheRecibida">
+      0 L
+    </div>
+
+    <div class="kpi-title">
+      Leche Recibida Hoy
+    </div>
+
+    <div class="kpi-growth success">
+      ↑ 8.3% vs. ayer
+    </div>
+
+  </div>
+
+  <!-- Producción -->
+  <div class="kpi-card produccion">
+
+    <div class="kpi-header">
+
+      <div class="kpi-icon produccion-icon">
+        <i data-lucide="factory"></i>
+      </div>
+
+      <span class="kpi-badge" id="kpiRendimientoGlobal">
+        0% Rend
+      </span>
+
+    </div>
+
+    <div class="kpi-value" id="kpiLecheProcesada">
+      0 L
+    </div>
+
+    <div class="kpi-title">
+      Leche Procesada Hoy
+    </div>
+
+    <div class="kpi-growth success">
+      ↑ 5.7% eficiencia
+    </div>
+
+  </div>
+
+  <!-- Reserva -->
+  <div class="kpi-card reserva">
+
+    <div class="kpi-header">
+
+      <div class="kpi-icon reserva-icon">
+      <i data-lucide="warehouse"></i>
+      </div>
+
+      <span class="kpi-badge">
+        Reserva
+      </span>
+
+    </div>
+
+    <div class="kpi-value" id="kpiLecheReserva">
+      0 L
+    </div>
+
+    <div class="kpi-title">
+      Leche en Tanque
+    </div>
+
+    <div class="kpi-growth warning">
+      → Stock disponible
+    </div>
+
+  </div>
+
+</div>
+
+        <!-- ── GRÁFICAS ──────────────────── -->
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-bottom:24px">
+
+          <!-- Gráfica de líneas: Leche Recibida vs Procesada -->
+          <div style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.07)">
+            <h3 style="margin:0 0 4px;font-size:16px;color:#003C78;font-weight:700">Balance de Materia Prima</h3>
+            <p style="margin:0 0 20px;font-size:13px;color:#64748B">Leche Recibida vs Leche Procesada — Últimos 7 días</p>
+            <div style="position:relative;height:220px">
+              <canvas id="graficoBalance"></canvas>
+            </div>
+          </div>
+
+          <!-- Gráfica dona: Top productos -->
+          <div style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.07);display:flex;flex-direction:column;justify-content:space-between">
+            <div>
+              <h3 style="margin:0 0 4px;font-size:16px;color:#003C78;font-weight:700">Top Productos</h3>
+              <p style="margin:0 0 16px;font-size:13px;color:#64748B">Distribución de ventas</p>
+              <div style="position:relative;height:160px">
+                <canvas id="graficoDona"></canvas>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ── TABLA LOTES RECIENTES ──────── -->
+        <div style="background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.07);overflow:hidden">
+          <div style="padding:18px 22px;border-bottom:1px solid #F0F4F8;display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <h3 style="margin:0;font-size:15px;font-weight:700;color:#003C78">Lotes de Producción Recientes</h3>
+              <p style="margin:0;font-size:12px;color:#64748B;margin-top:2px">Últimos registros del día</p>
+            </div>
+            <button onclick="navigateTo('produccion')" style="background:#EAF2FB;color:#003C78;border:none;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">
+              Ver todos →
+            </button>
+          </div>
+          <div id="tablaLotesRecientes">
+            <div style="padding:30px;text-align:center;color:#64748B;font-size:13px">Cargando lotes...</div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="toasts" id="toastContainer"></div>
+<script src="js/app.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/produccion.js"></script>
+<script src="js/clientes.js"></script>
+<script src="js/proveedores.js"></script>
+<script src="js/acopio.js"></script>
+<script src="js/configuracion.js"></script>
+<script>
+  lucide.createIcons();
+</script>
+
+</body>
+</html>

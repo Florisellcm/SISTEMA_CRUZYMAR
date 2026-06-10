@@ -1,0 +1,676 @@
+<!-- ═══════════════════════════════════
+     CRUZYMAR · configuracion.html
+     Módulo: Empresa · Usuarios · Roles · Sistema
+═══════════════════════════════════════ -->
+
+<div>
+
+  <!-- ── HEADER ── -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <div>
+      <h2 style="margin:0;font-size:20px;font-weight:800;color:#003C78">
+        <i class="ri-settings-3-line" style="color:#0A4A8F"></i> Configuración del Sistema
+      </h2>
+      <p style="margin-top:4px;color:#64748B;font-size:13px">Empresa, usuarios, roles, permisos y preferencias generales</p>
+    </div>
+  </div>
+
+  <!-- ── TABS de Navegación ── -->
+  <div style="display:flex;gap:4px;margin-bottom:20px;background:#F4F7FA;border-radius:10px;padding:4px;width:fit-content">
+    <button class="cfg-tab active" data-tab="empresa" onclick="switchTab('empresa')"
+      style="padding:8px 18px;border-radius:7px;border:none;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:#003C78;box-shadow:0 1px 4px rgba(0,0,0,.08)">
+      <i class="ri-building-4-line"></i> Empresa
+    </button>
+    <button class="cfg-tab" data-tab="usuarios" onclick="switchTab('usuarios')"
+      style="padding:8px 18px;border-radius:7px;border:none;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:#64748B">
+      <i class="ri-user-line"></i> Usuarios
+    </button>
+    <button class="cfg-tab" data-tab="roles" onclick="switchTab('roles')"
+      style="padding:8px 18px;border-radius:7px;border:none;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:#64748B">
+      <i class="ri-shield-user-line"></i> Roles y Permisos
+    </button>
+    <button class="cfg-tab" data-tab="productos" onclick="switchTab('productos')"
+      style="padding:8px 18px;border-radius:7px;border:none;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:#64748B">
+      <i class="ri-box-3-line"></i> Productos
+    </button>
+    <button class="cfg-tab" data-tab="sistema" onclick="switchTab('sistema')"
+      style="padding:8px 18px;border-radius:7px;border:none;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:#64748B">
+      <i class="ri-tools-line"></i> Sistema
+    </button>
+  </div>
+
+  <!-- ══════════════════════════════
+       TAB 1 — EMPRESA
+  ══════════════════════════════════ -->
+  <div id="tab-empresa" class="cfg-panel">
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+
+      <!-- Datos generales empresa -->
+      <div style="background:#fff;border-radius:14px;padding:24px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+        <div style="font-size:14px;font-weight:700;color:#003C78;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+          <i class="ri-building-4-line"></i> Datos de la Empresa
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:5px">Nombre de la Empresa *</label>
+            <input id="empNombre" type="text" placeholder="Ej: CRUZYMAR S.A." value="CRUZYMAR"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+          <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:5px">Razón Social</label>
+            <input id="empRazonSocial" type="text" placeholder="Razón social completa"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+          <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:5px">RTN (Registro Tributario Nacional)</label>
+            <input id="empRTN" type="text" placeholder="0000-0000-000000"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+          <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:5px">CAI (para facturación)</label>
+            <input id="empCAI" type="text" placeholder="CAI de facturación SAR Honduras"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+          <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:5px">Giro del Negocio</label>
+            <input id="empGiro" type="text" placeholder="Ej: Producción y Venta de Productos Lácteos" value="Productos Lácteos"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+        </div>
+      </div>
+
+      <!-- Contacto y ubicación -->
+      <div style="display:flex;flex-direction:column;gap:20px">
+
+        <div style="background:#fff;border-radius:14px;padding:24px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+          <div style="font-size:14px;font-weight:700;color:#003C78;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+            <i class="ri-map-pin-line"></i> Contacto y Ubicación
+          </div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div>
+              <label style="display:block;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:5px">Dirección</label>
+              <input id="empDireccion" type="text" placeholder="Dirección completa"
+                style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div>
+                <label style="display:block;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:5px">Ciudad / Municipio</label>
+                <input id="empCiudad" type="text" placeholder="Ej: Choloma"
+                  style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+              </div>
+              <div>
+                <label style="display:block;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:5px">Departamento</label>
+                <input id="empDepartamento" type="text" placeholder="Ej: Cortés"
+                  style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div>
+                <label style="display:block;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:5px">Teléfono</label>
+                <input id="empTelefono" type="text" placeholder="0000-0000"
+                  style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+              </div>
+              <div>
+                <label style="display:block;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:5px">Correo Electrónico</label>
+                <input id="empEmail" type="email" placeholder="info@empresa.com"
+                  style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Preferencias de moneda / impuestos -->
+        <div style="background:#fff;border-radius:14px;padding:24px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+          <div style="font-size:14px;font-weight:700;color:#003C78;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+            <i class="ri-money-dollar-circle-line"></i> Moneda e Impuestos
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div>
+              <label style="display:block;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:5px">Moneda</label>
+              <select id="empMoneda" style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+                <option value="HNL" selected>HNL — Lempira (L.)</option>
+                <option value="USD">USD — Dólar ($)</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:5px">ISV (%)</label>
+              <input id="empISV" type="number" value="15" placeholder="15"
+                style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;margin-top:16px">
+      <button onclick="saveEmpresa()"
+        style="padding:10px 24px;background:#003C78;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">
+        <i class="ri-save-line"></i> Guardar Datos de Empresa
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════
+       TAB 2 — USUARIOS
+  ══════════════════════════════════ -->
+  <div id="tab-usuarios" class="cfg-panel" style="display:none">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:#003C78">Gestión de Usuarios</div>
+        <div style="font-size:12px;color:#64748B;margin-top:2px">Administra los usuarios que acceden al sistema</div>
+      </div>
+      <button onclick="openNuevoUsuario()"
+        style="background:#003C78;color:#fff;padding:10px 18px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">
+        <i class="ri-user-add-line"></i> Nuevo Usuario
+      </button>
+    </div>
+
+    <!-- Tabla usuarios -->
+    <div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2;overflow:auto">
+      <table style="width:100%;border-collapse:collapse;min-width:700px">
+        <thead>
+          <tr style="background:#F4F7FA">
+            <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Usuario</th>
+            <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Nombre</th>
+            <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Correo</th>
+            <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Rol</th>
+            <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Estado</th>
+            <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Último Acceso</th>
+            <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="usuariosTableBody">
+          <tr><td colspan="7" style="text-align:center;padding:40px;color:#64748B">Cargando usuarios...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════
+       TAB 3 — ROLES Y PERMISOS
+  ══════════════════════════════════ -->
+  <div id="tab-roles" class="cfg-panel" style="display:none">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:#003C78">Roles y Permisos</div>
+        <div style="font-size:12px;color:#64748B;margin-top:2px">Define qué puede hacer cada rol en el sistema</div>
+      </div>
+      <button onclick="openNuevoRol()"
+        style="background:#003C78;color:#fff;padding:10px 18px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">
+        <i class="ri-shield-user-line"></i> Nuevo Rol
+      </button>
+    </div>
+
+    <!-- Grid roles predefinidos -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px" id="rolesGrid">
+
+      <!-- Administrador -->
+      <div style="background:#fff;border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:2px solid #003C78">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:36px;height:36px;border-radius:10px;background:#EAF2FB;display:flex;align-items:center;justify-content:center">
+              <i class="ri-shield-star-line" style="color:#003C78;font-size:18px"></i>
+            </div>
+            <div>
+              <div style="font-size:14px;font-weight:700;color:#003C78">Administrador</div>
+              <div style="font-size:11px;color:#64748B">Acceso total al sistema</div>
+            </div>
+          </div>
+          <span style="background:#EAF2FB;color:#003C78;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px">SISTEMA</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div class="perm-item active"><i class="ri-check-line"></i> Dashboard y Reportes</div>
+          <div class="perm-item active"><i class="ri-check-line"></i> Acopio de Leche</div>
+          <div class="perm-item active"><i class="ri-check-line"></i> Producción</div>
+          <div class="perm-item active"><i class="ri-check-line"></i> Inventario</div>
+          <div class="perm-item active"><i class="ri-check-line"></i> Ventas y Facturación</div>
+          <div class="perm-item active"><i class="ri-check-line"></i> Clientes y Proveedores</div>
+          <div class="perm-item active"><i class="ri-check-line"></i> Gastos y Compras</div>
+          <div class="perm-item active"><i class="ri-check-line"></i> Configuración del Sistema</div>
+        </div>
+      </div>
+
+      <!-- Producción -->
+      <div style="background:#fff;border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:36px;height:36px;border-radius:10px;background:#FFF7ED;display:flex;align-items:center;justify-content:center">
+              <i class="ri-building-line" style="color:#EA580C;font-size:18px"></i>
+            </div>
+            <div>
+              <div style="font-size:14px;font-weight:700;color:#1e2d42">Producción</div>
+              <div style="font-size:11px;color:#64748B">Operario de planta</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn-accion azul" onclick="editarRol('produccion')"><i class="ri-edit-line"></i></button>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div class="perm-item active"><i class="ri-check-line"></i> Dashboard (solo lectura)</div>
+          <div class="perm-item active"><i class="ri-check-line"></i> Acopio de Leche</div>
+          <div class="perm-item active"><i class="ri-check-line"></i> Producción</div>
+          <div class="perm-item active"><i class="ri-check-line"></i> Inventario (lectura)</div>
+          <div class="perm-item"><i class="ri-close-line"></i> Ventas y Facturación</div>
+          <div class="perm-item"><i class="ri-close-line"></i> Clientes y Proveedores</div>
+          <div class="perm-item"><i class="ri-close-line"></i> Gastos y Compras</div>
+          <div class="perm-item"><i class="ri-close-line"></i> Configuración</div>
+        </div>
+      </div>
+
+      <!-- Ventas -->
+      <div style="background:#fff;border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:36px;height:36px;border-radius:10px;background:#F0FDF4;display:flex;align-items:center;justify-content:center">
+              <i class="ri-shopping-cart-line" style="color:#16A34A;font-size:18px"></i>
+            </div>
+            <div>
+              <div style="font-size:14px;font-weight:700;color:#1e2d42">Vendedor</div>
+              <div style="font-size:11px;color:#64748B">Gestión comercial</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn-accion azul" onclick="editarRol('ventas')"><i class="ri-edit-line"></i></button>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div class="perm-item active"><i class="ri-check-line"></i> Dashboard (solo lectura)</div>
+          <div class="perm-item"><i class="ri-close-line"></i> Acopio de Leche</div>
+          <div class="perm-item"><i class="ri-close-line"></i> Producción</div>
+          <div class="perm-item active"><i class="ri-check-line"></i> Inventario (lectura)</div>
+          <div class="perm-item active"><i class="ri-check-line"></i> Ventas y Facturación</div>
+          <div class="perm-item active"><i class="ri-check-line"></i> Clientes</div>
+          <div class="perm-item"><i class="ri-close-line"></i> Gastos y Compras</div>
+          <div class="perm-item"><i class="ri-close-line"></i> Configuración</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div id="rolesPersonalizados"></div>
+
+  </div>
+
+  <!-- ══════════════════════════════
+       TAB 4 — PRODUCTOS (catálogo)
+  ══════════════════════════════════ -->
+  <div id="tab-productos" class="cfg-panel" style="display:none">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:#003C78">Catálogo de Productos</div>
+        <div style="font-size:12px;color:#64748B;margin-top:2px">Productos que se fabrican y venden en CRUZYMAR</div>
+      </div>
+      <button onclick="openNuevoProductoCatalogo()"
+        style="background:#003C78;color:#fff;padding:10px 18px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">
+        <i class="ri-add-line"></i> Nuevo Producto
+      </button>
+    </div>
+
+    <div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2;overflow:auto">
+      <table style="width:100%;border-collapse:collapse;min-width:800px">
+        <thead>
+          <tr style="background:#F4F7FA">
+            <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Código</th>
+            <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Nombre</th>
+            <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Categoría</th>
+            <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Unidad</th>
+            <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Precio Costo</th>
+            <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Precio Venta</th>
+            <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">ISV</th>
+            <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="productosTableBody">
+          <tr><td colspan="8" style="text-align:center;padding:40px;color:#64748B">Cargando catálogo...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════
+       TAB 5 — SISTEMA
+  ══════════════════════════════════ -->
+  <div id="tab-sistema" class="cfg-panel" style="display:none">
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+
+      <!-- Configuración general -->
+      <div style="background:#fff;border-radius:14px;padding:24px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+        <div style="font-size:14px;font-weight:700;color:#003C78;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+          <i class="ri-settings-3-line"></i> Preferencias Generales
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:5px">Formato de Fecha</label>
+            <select id="sysFormatoFecha" style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+              <option value="DD/MM/YYYY" selected>DD/MM/YYYY (Honduras)</option>
+              <option value="MM/DD/YYYY">MM/DD/YYYY (EE.UU.)</option>
+              <option value="YYYY-MM-DD">YYYY-MM-DD (ISO)</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:5px">Zona Horaria</label>
+            <select id="sysZonaHoraria" style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+              <option value="America/Tegucigalpa" selected>America/Tegucigalpa (UTC-6)</option>
+              <option value="America/Guatemala">America/Guatemala (UTC-6)</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:5px">Décimales en precios</label>
+            <select id="sysDecimales" style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+              <option value="2" selected>2 decimales (L. 0.00)</option>
+              <option value="0">Sin decimales (L. 0)</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:5px">Alertas de stock mínimo</label>
+            <div style="display:flex;align-items:center;gap:10px">
+              <input type="checkbox" id="sysAlertaStock" checked style="width:16px;height:16px;accent-color:#003C78">
+              <label for="sysAlertaStock" style="font-size:13px;color:#1e2d42;cursor:pointer">Activar alertas de inventario bajo</label>
+            </div>
+          </div>
+          <div>
+            <label style="display:block;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:5px">Backup automático</label>
+            <select id="sysBackup" style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+              <option value="diario" selected>Diario</option>
+              <option value="semanal">Semanal</option>
+              <option value="manual">Solo manual</option>
+            </select>
+          </div>
+        </div>
+        <button onclick="saveSistema()" style="margin-top:16px;width:100%;padding:10px;background:#003C78;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">
+          <i class="ri-save-line"></i> Guardar Preferencias
+        </button>
+      </div>
+
+      <!-- Seguridad -->
+      <div style="display:flex;flex-direction:column;gap:20px">
+
+        <div style="background:#fff;border-radius:14px;padding:24px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+          <div style="font-size:14px;font-weight:700;color:#003C78;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+            <i class="ri-lock-line"></i> Seguridad
+          </div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div>
+              <label style="display:block;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:5px">Tiempo de Sesión (minutos)</label>
+              <input id="sysSesion" type="number" value="60" min="15" max="480"
+                style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+            </div>
+            <div>
+              <label style="display:block;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:5px">Intentos de login antes de bloqueo</label>
+              <input id="sysMaxIntentos" type="number" value="5" min="3" max="10"
+                style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+            </div>
+            <div>
+              <label style="display:block;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:5px">Contraseña mínima (caracteres)</label>
+              <input id="sysMinPass" type="number" value="8" min="6" max="32"
+                style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+            </div>
+          </div>
+        </div>
+
+        <!-- Info del sistema -->
+        <div style="background:linear-gradient(135deg,#003C78,#0A4A8F);border-radius:14px;padding:24px;color:#fff">
+          <div style="font-size:14px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+            <i class="ri-information-line"></i> Información del Sistema
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:13px">
+            <div style="display:flex;justify-content:space-between">
+              <span style="color:rgba(255,255,255,.7)">Versión</span>
+              <span style="font-weight:700">CRUZYMAR ERP v1.0</span>
+            </div>
+            <div style="display:flex;justify-content:space-between">
+              <span style="color:rgba(255,255,255,.7)">Base de Datos</span>
+              <span style="font-weight:700">MySQL / SQLite</span>
+            </div>
+            <div style="display:flex;justify-content:space-between">
+              <span style="color:rgba(255,255,255,.7)">Backend</span>
+              <span style="font-weight:700">Node.js + Express</span>
+            </div>
+            <div style="display:flex;justify-content:space-between">
+              <span style="color:rgba(255,255,255,.7)">Última actualización</span>
+              <span id="sysUltimaActu" style="font-weight:700">—</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL NUEVO USUARIO
+══════════════════════════════════════════ -->
+<div id="modalUsuario" style="display:none;position:fixed;inset:0;background:rgba(15,35,73,.55);align-items:center;justify-content:center;z-index:1000;padding:20px">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:500px;box-shadow:0 32px 80px rgba(0,0,0,.25);max-height:90vh;overflow-y:auto">
+
+    <div style="padding:20px 24px;border-bottom:1px solid #E0E9F2;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;z-index:1;border-radius:16px 16px 0 0">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:10px;background:#EAF2FB;display:flex;align-items:center;justify-content:center">
+          <i class="ri-user-line" style="color:#003C78;font-size:18px"></i>
+        </div>
+        <h3 id="modalUsuarioTitulo" style="font-size:16px;font-weight:700;color:#003C78;margin:0">Nuevo Usuario</h3>
+      </div>
+      <button onclick="closeModalUsuario()" style="width:30px;height:30px;border-radius:8px;border:none;background:#F4F7FA;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:#64748B">
+        <i class="ri-close-line"></i>
+      </button>
+    </div>
+
+    <div style="padding:24px">
+      <form id="formUsuario">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">Nombre *</label>
+            <input id="usrNombre" type="text" placeholder="Nombre completo"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">Usuario (login) *</label>
+            <input id="usrUsername" type="text" placeholder="Ej: jperez"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+
+          <div style="grid-column:span 2">
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">Correo Electrónico *</label>
+            <input id="usrEmail" type="email" placeholder="correo@empresa.com"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">Contraseña *</label>
+            <input id="usrPassword" type="password" placeholder="Mínimo 8 caracteres"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">Confirmar Contraseña *</label>
+            <input id="usrPasswordConf" type="password" placeholder="Repite la contraseña"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">Rol *</label>
+            <select id="usrRol" style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+              <option value="administrador">Administrador</option>
+              <option value="produccion">Producción</option>
+              <option value="ventas">Vendedor</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">Estado</label>
+            <select id="usrEstado" style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+              <option value="activo">✅ Activo</option>
+              <option value="inactivo">❌ Inactivo</option>
+            </select>
+          </div>
+
+          <div style="grid-column:span 2">
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">Teléfono / Extensión</label>
+            <input id="usrTelefono" type="text" placeholder="0000-0000"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+
+        </div>
+      </form>
+    </div>
+
+    <div style="padding:16px 24px;border-top:1px solid #E0E9F2;display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:#fff;border-radius:0 0 16px 16px">
+      <button onclick="closeModalUsuario()"
+        style="padding:10px 20px;border:2px solid #E0E9F2;background:#fff;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;color:#64748B">
+        <i class="ri-close-line"></i> Cancelar
+      </button>
+      <button onclick="saveUsuario()"
+        style="padding:10px 24px;background:#003C78;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">
+        <i class="ri-save-line"></i> Guardar Usuario
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL NUEVO PRODUCTO CATÁLOGO
+══════════════════════════════════════════ -->
+<div id="modalProductoCatalogo" style="display:none;position:fixed;inset:0;background:rgba(15,35,73,.55);align-items:center;justify-content:center;z-index:1000;padding:20px">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:540px;box-shadow:0 32px 80px rgba(0,0,0,.25);max-height:90vh;overflow-y:auto">
+
+    <div style="padding:20px 24px;border-bottom:1px solid #E0E9F2;display:flex;justify-content:space-between;align-items:center;border-radius:16px 16px 0 0;position:sticky;top:0;background:#fff;z-index:1">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:10px;background:#EAF2FB;display:flex;align-items:center;justify-content:center">
+          <i class="ri-box-3-line" style="color:#003C78;font-size:18px"></i>
+        </div>
+        <h3 id="modalProdCatTitulo" style="font-size:16px;font-weight:700;color:#003C78;margin:0">Nuevo Producto</h3>
+      </div>
+      <button onclick="closeModalProductoCatalogo()" style="width:30px;height:30px;border-radius:8px;border:none;background:#F4F7FA;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:#64748B">
+        <i class="ri-close-line"></i>
+      </button>
+    </div>
+
+    <div style="padding:24px">
+      <form id="formProductoCatalogo">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">Código *</label>
+            <input id="catCodigo" type="text" placeholder="Ej: QF-001"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">Nombre *</label>
+            <input id="catNombre" type="text" placeholder="Ej: Queso Fresco"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">Categoría</label>
+            <select id="catCategoria" style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+              <option value="Queso">🧀 Queso</option>
+              <option value="Mantequilla">🧈 Mantequilla</option>
+              <option value="Yogurt">🥛 Yogurt</option>
+              <option value="Crema">🍦 Crema</option>
+              <option value="Leche Pasteurizada">🥛 Leche Pasteurizada</option>
+              <option value="Otro">📦 Otro</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">Unidad de Medida</label>
+            <select id="catUnidad" style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+              <option value="kg">Kilogramos (kg)</option>
+              <option value="lbs">Libras (lbs)</option>
+              <option value="unidades">Unidades</option>
+              <option value="litros">Litros</option>
+              <option value="botes">Botes</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">Precio de Costo (L.)</label>
+            <input id="catPrecioCosto" type="number" min="0" step="0.01" placeholder="0.00"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">Precio de Venta (L.)</label>
+            <input id="catPrecioVenta" type="number" min="0" step="0.01" placeholder="0.00"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">¿Aplica ISV?</label>
+            <select id="catISV" style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+              <option value="no">No (exento)</option>
+              <option value="15">Sí — 15%</option>
+              <option value="18">Sí — 18%</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">Stock Mínimo</label>
+            <input id="catStockMin" type="number" min="0" step="1" placeholder="0"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+
+          <div style="grid-column:span 2">
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">Descripción</label>
+            <textarea id="catDescripcion" rows="2" placeholder="Descripción del producto..."
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;resize:vertical;box-sizing:border-box;font-family:inherit"></textarea>
+          </div>
+
+        </div>
+      </form>
+    </div>
+
+    <div style="padding:16px 24px;border-top:1px solid #E0E9F2;display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:#fff;border-radius:0 0 16px 16px">
+      <button onclick="closeModalProductoCatalogo()"
+        style="padding:10px 20px;border:2px solid #E0E9F2;background:#fff;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;color:#64748B">
+        <i class="ri-close-line"></i> Cancelar
+      </button>
+      <button onclick="saveProductoCatalogo()"
+        style="padding:10px 24px;background:#003C78;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">
+        <i class="ri-save-line"></i> Guardar Producto
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<style>
+  .cfg-tab { transition: all .2s; }
+  .cfg-tab.active { background:#fff !important; color:#003C78 !important; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+
+  .perm-item {
+    display:flex; align-items:center; gap:8px;
+    font-size:12px; color:#64748B; padding:5px 0;
+    border-bottom: 1px solid #F0F4F8;
+  }
+  .perm-item.active { color:#1e2d42; }
+  .perm-item.active i { color:#16A34A; }
+  .perm-item i { color:#DC2626; font-size:14px; }
+
+  .btn-accion { width:28px;height:28px;border-radius:6px;border:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;justify-content:center;transition:all .2s; }
+  .btn-accion.azul { background:#EAF2FB;color:#0A4A8F; }
+  .btn-accion.rojo { background:#FEF2F2;color:#991B1B; }
+  .btn-accion:hover { opacity:.75;transform:scale(1.1); }
+  #usuariosTableBody tr, #productosTableBody tr { border-bottom:1px solid #F0F4F8; }
+  #usuariosTableBody tr:hover, #productosTableBody tr:hover { background:#F8FBFF; }
+  #usuariosTableBody td, #productosTableBody td { padding:12px 16px;font-size:13px; }
+</style>
+
+<script>

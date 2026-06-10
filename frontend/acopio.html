@@ -1,0 +1,262 @@
+<div>
+
+  <!-- ── HEADER ── -->
+<div style="display:flex;justify-content:flex-end;margin-bottom:20px">
+  <button onclick="openNuevoAcopio()"
+    style="background:#003C78;color:#fff;padding:10px 20px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">
+    <i class="ri-add-line"></i> Registrar Entrega
+  </button>
+</div>
+
+  <!-- ── TARJETAS RESUMEN ── -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px">
+
+    <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#EAF2FB;display:flex;align-items:center;justify-content:center">
+          <i class="ri-drop-fill" style="color:#003C78;font-size:18px"></i>
+        </div>
+        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Total Litros</span>
+      </div>
+      <div id="acopioTotalLitros" style="font-size:24px;font-weight:800;color:#003C78">0 L</div>
+      <div style="font-size:11px;color:#94A3B8;margin-top:4px">del día seleccionado</div>
+    </div>
+
+    <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#F0FDF4;display:flex;align-items:center;justify-content:center">
+          <i class="ri-money-dollar-circle-line" style="color:#16A34A;font-size:18px"></i>
+        </div>
+        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Total a Pagar</span>
+      </div>
+      <div id="acopioTotalPagar" style="font-size:24px;font-weight:800;color:#16A34A">L. 0.00</div>
+      <div style="font-size:11px;color:#94A3B8;margin-top:4px">a proveedores</div>
+    </div>
+
+    <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#FFF7ED;display:flex;align-items:center;justify-content:center">
+          <i class="ri-truck-line" style="color:#EA580C;font-size:18px"></i>
+        </div>
+        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Proveedores</span>
+      </div>
+      <div id="acopioCantProveedores" style="font-size:24px;font-weight:800;color:#EA580C">0</div>
+      <div style="font-size:11px;color:#94A3B8;margin-top:4px">entregaron hoy</div>
+    </div>
+
+    <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#F5F3FF;display:flex;align-items:center;justify-content:center">
+          <i class="ri-file-list-3-line" style="color:#7C3AED;font-size:18px"></i>
+        </div>
+        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Registros</span>
+      </div>
+      <div id="acopioRegistros" style="font-size:24px;font-weight:800;color:#7C3AED">0</div>
+      <div style="font-size:11px;color:#94A3B8;margin-top:4px">entregas registradas</div>
+    </div>
+
+  </div>
+
+  <!-- ── GRÁFICA + FILTROS ── -->
+  <div style="display:grid;grid-template-columns:1fr 320px;gap:16px;margin-bottom:20px">
+
+    <!-- Gráfica -->
+    <div style="background:#fff;border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="font-size:13px;font-weight:700;color:#003C78;margin-bottom:14px">
+        <i class="ri-bar-chart-2-line"></i> Litros por Proveedor
+      </div>
+      <div style="height:180px">
+        <canvas id="graficaAcopio"></canvas>
+      </div>
+    </div>
+
+    <!-- Panel filtros -->
+    <div style="background:#fff;border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="font-size:13px;font-weight:700;color:#003C78;margin-bottom:14px">
+        <i class="ri-filter-3-line"></i> Filtrar Registros
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div>
+          <label style="display:block;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:5px">Fecha</label>
+          <input id="filtroFechaAcopio" type="date"
+            style="width:100%;padding:9px 12px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+        </div>
+        <button onclick="filtrarAcopio()"
+          style="width:100%;padding:10px;background:#003C78;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+          <i class="ri-search-line"></i> Aplicar Filtro
+        </button>
+        <button onclick="el('filtroFechaAcopio').value='';filtrarAcopio()"
+          style="width:100%;padding:10px;background:#F4F7FA;color:#64748B;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
+          <i class="ri-refresh-line"></i> Ver Todo
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── TABLA REGISTROS ── -->
+  <div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2;overflow:auto">
+    <div style="padding:16px 20px;border-bottom:1px solid #E0E9F2;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:13px;font-weight:700;color:#003C78">
+        <i class="ri-list-check-2"></i> Entregas Registradas
+      </span>
+    </div>
+    <table style="width:100%;border-collapse:collapse;min-width:900px">
+      <thead>
+        <tr style="background:#F4F7FA">
+          <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Proveedor</th>
+          <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Litros</th>
+          <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Temp.</th>
+          <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Precio/L</th>
+          <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Total a Pagar</th>
+          <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Turno</th>
+          <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Fecha</th>
+          <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Observaciones</th>
+          <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="acopioTableBody">
+        <tr><td colspan="9" style="text-align:center;padding:40px;color:#64748B">Cargando...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL REGISTRAR ENTREGA
+══════════════════════════════════════════ -->
+<div id="modalAcopio" style="display:none;position:fixed;inset:0;background:rgba(15,35,73,.55);align-items:center;justify-content:center;z-index:1000;padding:20px">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:520px;box-shadow:0 32px 80px rgba(0,0,0,.25);max-height:90vh;overflow-y:auto">
+
+    <!-- Header -->
+    <div style="padding:20px 24px;border-bottom:1px solid #E0E9F2;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;z-index:1;border-radius:16px 16px 0 0">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:10px;background:#EAF2FB;display:flex;align-items:center;justify-content:center">
+          <i class="ri-drop-fill" style="color:#003C78;font-size:18px"></i>
+        </div>
+        <h3 id="modalAcopioTitulo" style="font-size:16px;font-weight:700;color:#003C78;margin:0">Registrar Entrega</h3>
+      </div>
+      <button onclick="closeModalAcopio()" style="width:30px;height:30px;border-radius:8px;border:none;background:#F4F7FA;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:#64748B">
+        <i class="ri-close-line"></i>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div style="padding:24px">
+      <form id="formAcopio">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+
+          <!-- Proveedor -->
+          <div style="grid-column:span 2">
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">
+              <i class="ri-truck-line"></i> Proveedor *
+            </label>
+            <select id="acopioProveedorId"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+              <option value="">— Seleccionar proveedor —</option>
+            </select>
+          </div>
+
+          <!-- Litros -->
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">
+              <i class="ri-drop-line"></i> Litros Entregados *
+            </label>
+            <input id="acopioLitros" type="number" min="0" step="0.1" placeholder="0.0"
+              oninput="calcularTotalAcopio()"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+
+          <!-- Temperatura -->
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">
+              <i class="ri-temp-cold-line"></i> Temperatura (°C)
+            </label>
+            <input id="acopioTemperatura" type="number" min="0" step="0.1" placeholder="4.0"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+            <div style="font-size:10px;color:#94A3B8;margin-top:3px">
+              <span style="color:#16A34A">●</span> ≤6°C óptimo &nbsp;
+              <span style="color:#D97706">●</span> 7-10°C &nbsp;
+              <span style="color:#DC2626">●</span> >10°C alerta
+            </div>
+          </div>
+
+          <!-- Precio por litro -->
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">
+              <i class="ri-price-tag-3-line"></i> Precio por Litro (L.) *
+            </label>
+            <input id="acopioPrecio" type="number" min="0" step="0.01" placeholder="8.50"
+              oninput="calcularTotalAcopio()"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+
+          <!-- Turno -->
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">
+              <i class="ri-time-line"></i> Turno
+            </label>
+            <select id="acopioTurno"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+              <option value="Mañana">🌅 Mañana</option>
+              <option value="Tarde">🌆 Tarde</option>
+              <option value="Noche">🌙 Noche</option>
+            </select>
+          </div>
+
+          <!-- Fecha -->
+          <div style="grid-column:span 2">
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">
+              <i class="ri-calendar-line"></i> Fecha de Entrega
+            </label>
+            <input id="acopioFecha" type="date"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+
+          <!-- Observaciones -->
+          <div style="grid-column:span 2">
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">
+              <i class="ri-chat-3-line"></i> Observaciones
+            </label>
+            <textarea id="acopioObservaciones" rows="2" placeholder="Ej: Leche en buen estado, sin anomalías..."
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;resize:vertical;box-sizing:border-box;font-family:inherit"></textarea>
+          </div>
+
+        </div>
+
+        <!-- Preview total -->
+        <div style="margin-top:16px;padding:14px 18px;background:linear-gradient(135deg,#EAF2FB,#F0F4FF);border-radius:10px;border:1px solid #C3D9F0;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:13px;font-weight:600;color:#003C78">
+            <i class="ri-calculator-line"></i> Total a Pagar
+          </span>
+          <span id="acopioTotalPreview" style="font-size:20px;font-weight:800;color:#003C78">L. 0.00</span>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Footer -->
+    <div style="padding:16px 24px;border-top:1px solid #E0E9F2;display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:#fff;border-radius:0 0 16px 16px">
+      <button onclick="closeModalAcopio()"
+        style="padding:10px 20px;border:2px solid #E0E9F2;background:#fff;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;color:#64748B;display:flex;align-items:center;gap:6px">
+        <i class="ri-close-line"></i> Cancelar
+      </button>
+      <button onclick="saveAcopio()"
+        style="padding:10px 24px;background:#003C78;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">
+        <i class="ri-save-line"></i> Guardar Entrega
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<style>
+  .btn-accion { width:28px;height:28px;border-radius:6px;border:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;justify-content:center;transition:all .2s; }
+  .btn-accion.azul { background:#EAF2FB;color:#0A4A8F; }
+  .btn-accion.rojo { background:#FEF2F2;color:#991B1B; }
+  .btn-accion:hover { opacity:.75;transform:scale(1.1); }
+  #acopioTableBody tr { border-bottom:1px solid #F0F4F8; }
+  #acopioTableBody tr:hover { background:#F8FBFF; }
+  #acopioTableBody td { padding:12px 16px;font-size:13px; }
+</style>
