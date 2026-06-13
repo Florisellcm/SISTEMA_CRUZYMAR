@@ -33,7 +33,7 @@ exports.create = ({ nombre, categoria, stock, stockMinimo, unidad, precio }) => 
     categoria: categoria || 'General',
     stock: parseFloat(stock) || 0,
     stockMinimo: parseFloat(stockMinimo) || 0,
-    unidad: unidad || 'Unidades',
+    unidad: unidad || 'litros',
     precio: parseFloat(precio) || 0,
     activo: true, creadoEn: new Date().toISOString()
   };

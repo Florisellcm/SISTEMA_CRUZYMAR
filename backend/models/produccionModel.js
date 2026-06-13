@@ -56,7 +56,7 @@ exports.create = (data) => {
     productoNombre,
     lecheUsada:       leche,
     cantidadObtenida: cantidad,
-    unidad:           unidad || 'kg',
+    unidad:           unidad || 'libras',
     rendimiento:      parseFloat(rendimiento),
     merma:            parseFloat(merma),
     fechaProduccion,

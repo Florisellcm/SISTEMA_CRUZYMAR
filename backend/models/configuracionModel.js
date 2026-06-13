@@ -255,7 +255,7 @@ exports.productos = {
       codigo:       codigo.toUpperCase().trim(),
       nombre:       nombre.trim(),
       categoria:    categoria    || 'Otro',
-      unidad:       unidad       || 'unidades',
+      unidad:       unidad       || 'litros',
       precio_costo: parseFloat(precio_costo) || 0,
       precio_venta: parseFloat(precio_venta) || 0,
       isv:          isv          || 'no',

@@ -20,10 +20,11 @@ app.use('/api/clientes',   require('./routes/clientes'));
 app.use('/api/proveedores', require('./routes/proveedores'));  
 app.use('/api/acopio', require('./routes/acopio')); // ← 
 app.use('/api/config', require('./routes/configuracion'));
-//app.use('/api/inventario', require('./routes/inventario'));  // 
-//app.use('/api/ventas',     require('./routes/ventas'));      // 
-//app.use('/api/gastos',     require('./routes/gastos'));      // 
-
+app.use('/api/inventario', require('./routes/inventario'));
+app.use('/api/ventas',     require('./routes/ventas'));
+app.use('/api/gastos',     require('./routes/gastos'));
+app.use('/api/facturacion', require('./routes/facturacion'));
+app.use('/api/reportes',   require('./routes/reportes'));
 app.get('*', (req, res) =>
   res.sendFile(path.join(__dirname, '..', 'frontend', 'index.html'))
 );

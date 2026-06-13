@@ -1,0 +1,179 @@
+<div>
+  <!-- ── HEADER ── -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <div>
+      <h2 style="margin:0;font-size:20px;font-weight:800;color:#003C78">
+        <i class="ri-shopping-cart-line" style="color:#0A4A8F"></i> Registro de Ventas
+      </h2>
+      <p style="margin-top:4px;color:#64748B;font-size:13px">Gestión de ventas y facturación a clientes</p>
+    </div>
+    <button onclick="openNuevaVenta()"
+      style="background:#003C78;color:#fff;padding:10px 20px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">
+      <i class="ri-add-line"></i> Nueva Venta
+    </button>
+  </div>
+
+  <!-- ── TARJETAS RESUMEN ── -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px">
+    <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#EAF2FB;display:flex;align-items:center;justify-content:center">
+          <i class="ri-shopping-bag-line" style="color:#003C78;font-size:18px"></i>
+        </div>
+        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Ventas Hoy</span>
+      </div>
+      <div id="venTotalVentas" style="font-size:24px;font-weight:800;color:#003C78">0</div>
+      <div style="font-size:11px;color:#94A3B8;margin-top:4px">tickets emitidos hoy</div>
+    </div>
+
+    <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#F0FDF4;display:flex;align-items:center;justify-content:center">
+          <i class="ri-money-dollar-circle-line" style="color:#16A34A;font-size:18px"></i>
+        </div>
+        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Ingresos Hoy</span>
+      </div>
+      <div id="venIngresosHoy" style="font-size:24px;font-weight:800;color:#16A34A">L. 0.00</div>
+      <div style="font-size:11px;color:#94A3B8;margin-top:4px">total facturado</div>
+    </div>
+
+    <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#FFF7ED;display:flex;align-items:center;justify-content:center">
+          <i class="ri-group-line" style="color:#EA580C;font-size:18px"></i>
+        </div>
+        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Clientes</span>
+      </div>
+      <div id="venClientesAtendidos" style="font-size:24px;font-weight:800;color:#EA580C">0</div>
+      <div style="font-size:11px;color:#94A3B8;margin-top:4px">atendidos hoy</div>
+    </div>
+
+    <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#FEF2F2;display:flex;align-items:center;justify-content:center">
+          <i class="ri-close-circle-line" style="color:#DC2626;font-size:18px"></i>
+        </div>
+        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Canceladas</span>
+      </div>
+      <div id="venCanceladas" style="font-size:24px;font-weight:800;color:#DC2626">0</div>
+      <div style="font-size:11px;color:#94A3B8;margin-top:4px">ventas anuladas</div>
+    </div>
+  </div>
+
+  <!-- ── FILTROS ── -->
+  <div style="display:flex;gap:12px;margin-bottom:16px;justify-content:space-between">
+    <div style="display:flex;gap:12px">
+      <select id="filtroVenEstado" onchange="filtrarVentas()"
+        style="padding:9px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;cursor:pointer">
+        <option value="">Todos los estados</option>
+        <option value="Pagada">Pagada</option>
+        <option value="Cancelada">Cancelada</option>
+      </select>
+    </div>
+    <input id="buscarVen" type="text" placeholder="🔍 Buscar cliente o ticket..."
+      oninput="filtrarVentas()"
+      style="padding:9px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;width:250px">
+  </div>
+
+  <!-- ── TABLA REGISTROS ── -->
+  <div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2;overflow:auto">
+    <div style="padding:16px 20px;border-bottom:1px solid #E0E9F2;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:13px;font-weight:700;color:#003C78">
+        <i class="ri-list-check-2"></i> Historial de Ventas
+      </span>
+    </div>
+    <table style="width:100%;border-collapse:collapse;min-width:900px">
+      <thead>
+        <tr style="background:#F4F7FA">
+          <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Ticket</th>
+          <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Fecha</th>
+          <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Cliente</th>
+          <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Total (L.)</th>
+          <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Pago</th>
+          <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Estado</th>
+          <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="ventasTableBody">
+        <tr><td colspan="7" style="text-align:center;padding:40px;color:#64748B">Cargando...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL NUEVA VENTA
+══════════════════════════════════════════ -->
+<div id="modalVenta" style="display:none;position:fixed;inset:0;background:rgba(15,35,73,.55);align-items:center;justify-content:center;z-index:1000;padding:20px">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:600px;box-shadow:0 32px 80px rgba(0,0,0,.25);max-height:90vh;overflow-y:auto">
+    <div style="padding:20px 24px;border-bottom:1px solid #E0E9F2;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;z-index:1;border-radius:16px 16px 0 0">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:10px;background:#EAF2FB;display:flex;align-items:center;justify-content:center">
+          <i class="ri-shopping-cart-line" style="color:#003C78;font-size:18px"></i>
+        </div>
+        <h3 style="font-size:16px;font-weight:700;color:#003C78;margin:0">Nueva Venta</h3>
+      </div>
+      <button onclick="closeModalVenta()" style="width:30px;height:30px;border-radius:8px;border:none;background:#F4F7FA;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:#64748B">
+        <i class="ri-close-line"></i>
+      </button>
+    </div>
+    <div style="padding:24px">
+      <form id="formVenta">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase"><i class="ri-user-line"></i> Cliente</label>
+            <input id="venClienteNombre" type="text" placeholder="Consumidor Final" value="Consumidor Final"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase"><i class="ri-wallet-3-line"></i> Método de Pago</label>
+            <select id="venMetodoPago" style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+              <option value="Efectivo">Efectivo</option>
+              <option value="Transferencia">Transferencia</option>
+              <option value="Tarjeta">Tarjeta</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="font-size:11px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid #F0F4F8">
+          <i class="ri-shopping-basket-line"></i> Productos
+        </div>
+
+        <!-- ITEMS -->
+        <div id="ventaItemsContainer" style="display:flex;flex-direction:column;gap:10px;margin-bottom:10px">
+          <div class="venta-item" style="display:flex;gap:10px;align-items:center">
+            <input type="text" class="ven-item-desc" placeholder="Producto" style="flex:2;padding:8px;border:1px solid #E0E9F2;border-radius:6px;font-size:13px">
+            <input type="number" class="ven-item-cant" placeholder="Cant." value="1" min="1" style="flex:1;padding:8px;border:1px solid #E0E9F2;border-radius:6px;font-size:13px" oninput="calcularTotalVenta()">
+            <input type="number" class="ven-item-precio" placeholder="Precio" value="0.00" min="0" step="0.01" style="flex:1;padding:8px;border:1px solid #E0E9F2;border-radius:6px;font-size:13px" oninput="calcularTotalVenta()">
+          </div>
+        </div>
+        
+        <button type="button" onclick="addVentaItem()" style="background:#F4F7FA;color:#003C78;border:none;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">
+          + Añadir Producto
+        </button>
+
+        <div style="margin-top:20px;padding:14px 18px;background:linear-gradient(135deg,#EAF2FB,#F0F4FF);border-radius:10px;border:1px solid #C3D9F0;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:13px;font-weight:600;color:#003C78"><i class="ri-calculator-line"></i> Total Venta</span>
+          <span id="venTotalPreview" style="font-size:20px;font-weight:800;color:#003C78">L. 0.00</span>
+        </div>
+      </form>
+    </div>
+    <div style="padding:16px 24px;border-top:1px solid #E0E9F2;display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:#fff;border-radius:0 0 16px 16px">
+      <button onclick="closeModalVenta()" style="padding:10px 20px;border:2px solid #E0E9F2;background:#fff;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;color:#64748B;display:flex;align-items:center;gap:6px">
+        <i class="ri-close-line"></i> Cancelar
+      </button>
+      <button onclick="saveVenta()" style="padding:10px 24px;background:#003C78;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">
+        <i class="ri-check-line"></i> Cobrar y Finalizar
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .btn-accion { width:28px;height:28px;border-radius:6px;border:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;justify-content:center;transition:all .2s; }
+  .btn-accion.rojo { background:#FEF2F2;color:#991B1B; }
+  .btn-accion:hover { opacity:.75;transform:scale(1.1); }
+  #ventasTableBody tr { border-bottom:1px solid #F0F4F8; }
+  #ventasTableBody tr:hover { background:#F8FBFF; }
+  #ventasTableBody td { padding:12px 16px;font-size:13px; }
+</style>

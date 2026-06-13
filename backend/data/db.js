@@ -9,6 +9,22 @@ const db = {
       password: bcrypt.hashSync('admin123', 10),
       rol: 'admin',
       activo: true
+    },
+    {
+      id: '2',
+      nombre: 'Operario de Planta',
+      email: 'planta@cruzymar.com',
+      password: bcrypt.hashSync('planta123', 10),
+      rol: 'produccion',
+      activo: true
+    },
+    {
+      id: '3',
+      nombre: 'Ejecutivo de Ventas',
+      email: 'ventas@cruzymar.com',
+      password: bcrypt.hashSync('ventas123', 10),
+      rol: 'ventas',
+      activo: true
     }
   ],
 

@@ -1,0 +1,184 @@
+<div>
+  <!-- ── HEADER ── -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <div>
+      <h2 style="margin:0;font-size:20px;font-weight:800;color:#003C78">
+        <i class="ri-archive-line" style="color:#0A4A8F"></i> Inventario
+      </h2>
+      <p style="margin-top:4px;color:#64748B;font-size:13px">Control de productos, insumos y existencias</p>
+    </div>
+    <button onclick="openNuevoInventario()"
+      style="background:#003C78;color:#fff;padding:10px 20px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">
+      <i class="ri-add-line"></i> Nuevo Producto
+    </button>
+  </div>
+
+  <!-- ── TARJETAS RESUMEN ── -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px">
+    <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#EAF2FB;display:flex;align-items:center;justify-content:center">
+          <i class="ri-box-3-line" style="color:#003C78;font-size:18px"></i>
+        </div>
+        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Total Productos</span>
+      </div>
+      <div id="invTotalProductos" style="font-size:24px;font-weight:800;color:#003C78">0</div>
+      <div style="font-size:11px;color:#94A3B8;margin-top:4px">registrados activos</div>
+    </div>
+
+    <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#FEF2F2;display:flex;align-items:center;justify-content:center">
+          <i class="ri-alert-line" style="color:#DC2626;font-size:18px"></i>
+        </div>
+        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Stock Bajo</span>
+      </div>
+      <div id="invStockBajo" style="font-size:24px;font-weight:800;color:#DC2626">0</div>
+      <div style="font-size:11px;color:#94A3B8;margin-top:4px">productos por reponer</div>
+    </div>
+
+    <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#F0FDF4;display:flex;align-items:center;justify-content:center">
+          <i class="ri-money-dollar-circle-line" style="color:#16A34A;font-size:18px"></i>
+        </div>
+        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Valor Est.</span>
+      </div>
+      <div id="invValorTotal" style="font-size:24px;font-weight:800;color:#16A34A">L. 0.00</div>
+      <div style="font-size:11px;color:#94A3B8;margin-top:4px">valor de inventario</div>
+    </div>
+
+    <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#FFF7ED;display:flex;align-items:center;justify-content:center">
+          <i class="ri-price-tag-3-line" style="color:#EA580C;font-size:18px"></i>
+        </div>
+        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Categorías</span>
+      </div>
+      <div id="invCategorias" style="font-size:24px;font-weight:800;color:#EA580C">0</div>
+      <div style="font-size:11px;color:#94A3B8;margin-top:4px">grupos de productos</div>
+    </div>
+  </div>
+
+  <!-- ── FILTROS Y BÚSQUEDA ── -->
+  <div style="display:flex;gap:12px;margin-bottom:16px;justify-content:space-between">
+    <div style="display:flex;gap:12px">
+      <select id="filtroInvCat" onchange="filtrarInventario()"
+        style="padding:9px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;cursor:pointer">
+        <option value="">Todas las categorías</option>
+        <option value="Queso">Queso</option>
+        <option value="Mantequilla">Mantequilla</option>
+        <option value="Leche">Leche</option>
+        <option value="Insumo">Insumos</option>
+      </select>
+    </div>
+    <input id="buscarInv" type="text" placeholder="🔍 Buscar producto..."
+      oninput="filtrarInventario()"
+      style="padding:9px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;width:250px">
+  </div>
+
+  <!-- ── TABLA REGISTROS ── -->
+  <div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2;overflow:auto">
+    <div style="padding:16px 20px;border-bottom:1px solid #E0E9F2;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:13px;font-weight:700;color:#003C78">
+        <i class="ri-list-check-2"></i> Productos en Inventario
+      </span>
+    </div>
+    <table style="width:100%;border-collapse:collapse;min-width:900px">
+      <thead>
+        <tr style="background:#F4F7FA">
+          <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Producto</th>
+          <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Categoría</th>
+          <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Stock Actual</th>
+          <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Unidad</th>
+          <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Precio (L.)</th>
+          <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Estado</th>
+          <th style="padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="inventarioTableBody">
+        <tr><td colspan="7" style="text-align:center;padding:40px;color:#64748B">Cargando...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL NUEVO PRODUCTO
+══════════════════════════════════════════ -->
+<div id="modalInventario" style="display:none;position:fixed;inset:0;background:rgba(15,35,73,.55);align-items:center;justify-content:center;z-index:1000;padding:20px">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:520px;box-shadow:0 32px 80px rgba(0,0,0,.25);max-height:90vh;overflow-y:auto">
+    <div style="padding:20px 24px;border-bottom:1px solid #E0E9F2;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;z-index:1;border-radius:16px 16px 0 0">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:10px;background:#EAF2FB;display:flex;align-items:center;justify-content:center">
+          <i class="ri-box-3-line" style="color:#003C78;font-size:18px"></i>
+        </div>
+        <h3 id="modalInvTitulo" style="font-size:16px;font-weight:700;color:#003C78;margin:0">Nuevo Producto</h3>
+      </div>
+      <button onclick="closeModalInventario()" style="width:30px;height:30px;border-radius:8px;border:none;background:#F4F7FA;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:#64748B">
+        <i class="ri-close-line"></i>
+      </button>
+    </div>
+    <div style="padding:24px">
+      <form id="formInventario">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div style="grid-column:span 2">
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase"><i class="ri-price-tag-3-line"></i> Nombre Producto *</label>
+            <input id="invNombre" type="text" placeholder="Ej: Queso Fresco 500g"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase"><i class="ri-list-check"></i> Categoría</label>
+            <select id="invCategoria" style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+              <option value="Queso">Queso</option>
+              <option value="Mantequilla">Mantequilla</option>
+              <option value="Leche">Leche</option>
+              <option value="Insumo">Insumo</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase"><i class="ri-scales-3-line"></i> Unidad</label>
+            <select id="invUnidad" style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+              <option value="litros">Litros (L)</option>
+              <option value="libras">Libras (lb)</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase"><i class="ri-stack-line"></i> Stock Actual</label>
+            <input id="invStock" type="number" min="0" step="0.1" placeholder="0"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+            <div style="font-size:10px;color:#94A3B8;margin-top:4px">Use decimales (Ej: 0.5)</div>
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase"><i class="ri-alert-line"></i> Stock Mínimo</label>
+            <input id="invStockMinimo" type="number" min="0" step="0.1" placeholder="10"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase"><i class="ri-money-dollar-circle-line"></i> Precio (L.)</label>
+            <input id="invPrecio" type="number" min="0" step="0.01" placeholder="0.00"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+        </div>
+      </form>
+    </div>
+    <div style="padding:16px 24px;border-top:1px solid #E0E9F2;display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:#fff;border-radius:0 0 16px 16px">
+      <button onclick="closeModalInventario()" style="padding:10px 20px;border:2px solid #E0E9F2;background:#fff;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;color:#64748B;display:flex;align-items:center;gap:6px">
+        <i class="ri-close-line"></i> Cancelar
+      </button>
+      <button onclick="saveInventario()" style="padding:10px 24px;background:#003C78;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">
+        <i class="ri-save-line"></i> Guardar Producto
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .btn-accion { width:28px;height:28px;border-radius:6px;border:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;justify-content:center;transition:all .2s; }
+  .btn-accion.azul { background:#EAF2FB;color:#0A4A8F; }
+  .btn-accion.rojo { background:#FEF2F2;color:#991B1B; }
+  .btn-accion:hover { opacity:.75;transform:scale(1.1); }
+  #inventarioTableBody tr { border-bottom:1px solid #F0F4F8; }
+  #inventarioTableBody tr:hover { background:#F8FBFF; }
+  #inventarioTableBody td { padding:12px 16px;font-size:13px; }
+</style>

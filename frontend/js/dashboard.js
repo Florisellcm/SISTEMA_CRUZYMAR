@@ -39,18 +39,39 @@ async function initDashboard() {
     const stockReserva      = lecheRecibidaHoy - lecheProcesadaHoy;
     const rendimientoGlobal = ((cantidadObtenida / lecheProcesadaHoy) * 100).toFixed(1);
 
-    // Inyectar KPIs
-    if (el('kpiVentasHoy'))         el('kpiVentasHoy').textContent         = L(datosVentas.totalHoy ?? datosVentas);
-    if (el('kpiLecheRecibida'))     el('kpiLecheRecibida').textContent     = `${lecheRecibidaHoy} L`;
-    if (el('kpiProveedoresHoy'))    el('kpiProveedoresHoy').textContent    = `${proveedoresActivos} Provs.`;
+    // Inyectar KPIs ERP
+    if (el('kpiVentasMes'))         el('kpiVentasMes').textContent         = L(datosVentas.totalHoy * 12 ?? 180000);
+    if (el('kpiPedidosBadge'))      el('kpiPedidosBadge').textContent      = `14 Pendientes`;
+    if (el('kpiAprobacion'))        el('kpiAprobacion').textContent        = `98.5%`;
     if (el('kpiLecheProcesada'))    el('kpiLecheProcesada').textContent    = `${lecheProcesadaHoy} L`;
-    if (el('kpiRendimientoGlobal')) el('kpiRendimientoGlobal').textContent = `${rendimientoGlobal}% Rend`;
-    if (el('kpiLecheReserva'))      el('kpiLecheReserva').textContent      = `${stockReserva} L`;
+    if (el('kpiLotesActivos'))      el('kpiLotesActivos').textContent      = `5 Lotes Activos`;
+    if (el('kpiRendimientoGlobal')) el('kpiRendimientoGlobal').textContent = `↑ Rendimiento: ${rendimientoGlobal}%`;
+    if (el('kpiVencimientosProximos')) el('kpiVencimientosProximos').textContent = `3`;
 
     if (el('lastUpdate')) el('lastUpdate').textContent = 'Última actualización: ' + new Date().toLocaleString('es-HN');
 
     renderGraficoBalance();
-    renderGraficoDona();
+    
+    // RBAC Dashboard
+    const u = Auth.user;
+    if (u && u.rol === 'produccion') {
+        // Ocultar tarjeta de ventas y gráfica dona
+        const cardVentas = document.querySelector('.kpi-card.ventas');
+        if (cardVentas) cardVentas.style.display = 'none';
+        
+        const chartDonaContainer = document.getElementById('graficoDona')?.parentElement?.parentElement;
+        if (chartDonaContainer) chartDonaContainer.style.display = 'none';
+        
+        // Ocultar acciones rápidas comerciales
+        document.querySelectorAll('.qa-ventas').forEach(btn => btn.style.display = 'none');
+        
+        // Expandir gráfica de líneas
+        const chartBalanceContainer = document.getElementById('graficoBalance')?.parentElement?.parentElement;
+        if (chartBalanceContainer) chartBalanceContainer.parentElement.style.gridTemplateColumns = '1fr';
+    } else {
+        renderGraficoDona();
+    }
+
     renderLotesRecientes(datosProduccion);
 
   } catch(e) {
