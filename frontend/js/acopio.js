@@ -1,274 +1,171 @@
 /* ══════════════════════════════════════════════
-   CRUZYMAR · acopio.js
-   Módulo frontend de Acopio de Leche
+   CRUZYMAR · acopio.js (Unificado Recepción + Calidad)
+   Módulo frontend de Acopio y Calidad de Leche
 ══════════════════════════════════════════════ */
 
-let acopioData     = [];
+let acopioData = [];
+let calidadData = [];
 let proveedoresList = [];
-let acopioEditId   = null;
-let acopioChartObj = null;
 
-// ── CARGAR MÓDULO ─────────────────────────────
 async function loadAcopio() {
   try {
     proveedoresList = await req('GET', '/proveedores');
-    await cargarResumenAcopio();
-    await cargarRegistrosAcopio();
-    renderGraficaAcopio();
+    await loadRecepciones();
   } catch(e) {
-    toast('Error cargando acopio: ' + e.message, 'err');
+    toast('Error cargando datos: ' + e.message, 'err');
   }
 }
 
-// ── RESUMEN DEL DÍA ───────────────────────────
-async function cargarResumenAcopio() {
+async function loadRecepciones() {
   try {
-    const fecha = el('filtroFechaAcopio')?.value || new Date().toISOString().slice(0, 10);
-    const r = await req('GET', '/acopio/resumen?fecha=' + fecha);
-    if (el('acopioTotalLitros'))    el('acopioTotalLitros').textContent    = N(r.total_litros)  + ' L';
-    if (el('acopioTotalPagar'))     el('acopioTotalPagar').textContent     = L(r.total_pagar);
-    if (el('acopioCantProveedores')) el('acopioCantProveedores').textContent = r.cant_proveedores;
-    if (el('acopioRegistros'))      el('acopioRegistros').textContent      = r.registros;
-  } catch(e) { /* silencioso */ }
+    const fecha = el('filtroFechaRec')?.value || '';
+    const urlAcopio = fecha ? `/acopio?fecha=${fecha}` : '/acopio';
+    const urlCalidad = fecha ? `/calidad?fecha=${fecha}` : '/calidad';
+    
+    [acopioData, calidadData] = await Promise.all([
+      req('GET', urlAcopio),
+      req('GET', urlCalidad)
+    ]);
+    
+    actualizarTarjetas();
+    renderTablaUnificada();
+  } catch(e) {
+    toast('Error cargando recepciones: ' + e.message, 'err');
+  }
 }
 
-// ── CARGAR REGISTROS ──────────────────────────
-async function cargarRegistrosAcopio() {
+function actualizarTarjetas() {
+  // Solo contamos lo de la fecha actual mostrada o la data filtrada
+  let totalLitros = 0, aprobados = 0, rechazados = 0, entregas = acopioData.length;
+  
+  acopioData.forEach(a => {
+    totalLitros += (a.litros || 0);
+    // Buscar la calidad asociada
+    const cal = calidadData.find(c => c.acopio_id === a.id);
+    if (cal) {
+      if (cal.resultado === 'Aprobado') aprobados += a.litros;
+      if (cal.resultado === 'Rechazado') rechazados += a.litros;
+    } else {
+      // Si no tiene prueba, se asume aprobado para litros básicos o pendiente
+      aprobados += a.litros;
+    }
+  });
+
+  if (el('recTotal')) el('recTotal').textContent = N(totalLitros) + ' L';
+  if (el('recAprobados')) el('recAprobados').textContent = N(aprobados) + ' L';
+  if (el('recRechazados')) el('recRechazados').textContent = N(rechazados) + ' L';
+  if (el('recEntregas')) el('recEntregas').textContent = entregas;
+}
+
+function renderTablaUnificada() {
+  const tbody = el('recepcionesTableBody');
+  if (!tbody) return;
+
+  if (acopioData.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:#64748B">Sin registros en esta fecha</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = acopioData.map(a => {
+    const cal = calidadData.find(c => c.acopio_id === a.id) || {};
+    
+    const isOk = cal.resultado !== 'Rechazado';
+    const estadoColor = isOk ? 'b-ok' : 'b-err';
+    const estadoTexto = cal.resultado || 'Aprobado (Sin prueba)';
+    
+    return `
+    <tr>
+      <td>${formatFecha(a.fecha)}</td>
+      <td><strong>${a.proveedor_nombre}</strong></td>
+      <td><span style="font-size:14px;font-weight:700;color:#003C78">${N(a.litros)} L</span></td>
+      <td>${cal.temperatura || a.temperatura || '—'} °C</td>
+      <td>${cal.prueba_alcohol || '—'}</td>
+      <td>${cal.acidez || '—'}</td>
+      <td><span class="badge ${estadoColor}">${estadoTexto}</span></td>
+      <td>
+        <button class="btn-accion rojo" onclick="deleteRecepcion('${a.id}')" title="Eliminar"><i class="ri-delete-bin-line"></i></button>
+      </td>
+    </tr>
+    `;
+  }).join('');
+}
+
+function openModalRecepcion() {
+  el('formRecepcion').reset();
+  
+  const sel = el('recProveedor');
+  if (sel) {
+    sel.innerHTML = '<option value="">— Seleccionar proveedor —</option>' + 
+                    proveedoresList.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+  }
+  
+  el('modalRecepcion').style.display = 'flex';
+}
+
+function closeModalRecepcion() {
+  el('modalRecepcion').style.display = 'none';
+}
+
+async function saveRecepcionUnificada() {
+  const proveedor_id = el('recProveedor').value;
+  const litros = parseFloat(el('recLitros').value);
+  
+  if (!proveedor_id || !litros) {
+    return toast('El proveedor y los litros son obligatorios', 'err');
+  }
+
+  // 1. Crear el acopio
+  const bodyAcopio = {
+    proveedor_id,
+    litros,
+    precio_litro: parseFloat(el('recPrecio')?.value) || 12,
+    temperatura: parseFloat(el('recTemp').value) || null,
+    turno: el('recTurno')?.value || 'Mañana',
+    fecha: el('recFecha')?.value || new Date().toISOString().slice(0, 10),
+    observaciones: el('recObs').value
+  };
+
   try {
-    const fecha = el('filtroFechaAcopio')?.value || '';
-    const url   = fecha ? `/acopio?fecha=${fecha}` : '/acopio';
-    acopioData  = await req('GET', url);
-    renderAcopioTabla(acopioData);
+    const nuevoAcopio = await req('POST', '/acopio', bodyAcopio);
+    
+    // 2. Crear el registro de calidad
+    const bodyCalidad = {
+      acopio_id: nuevoAcopio.id,
+      densidad: el('recDensidad').value ? parseFloat(el('recDensidad').value) : null,
+      acidez: el('recAcidez').value ? parseFloat(el('recAcidez').value) : null,
+      temperatura: bodyAcopio.temperatura,
+      olor:    el('recOrgano')?.value === 'Normal' ? 'Normal' : 'Anormal',
+      color:   el('recOrgano')?.value === 'Normal' ? 'Normal' : 'Anormal',
+      aspecto: el('recOrgano')?.value === 'Normal' ? 'Normal' : 'Anormal',
+      prueba_alcohol: el('recAlcohol')?.value || 'Negativa',
+      resultado: el('recEstado')?.value || 'Aprobado',
+      observaciones: el('recObs').value,
+      fecha: bodyAcopio.fecha
+    };
+    
+    // En el prototipo el modelo de calidad actual no tiene campo 'acidez', pero si lo enviamos no romperá.
+    await req('POST', '/calidad', bodyCalidad);
+    
+    toast('Recepción registrada con éxito ✅');
+    closeModalRecepcion();
+    loadRecepciones(); // recargar
+    
   } catch(e) {
     toast('Error: ' + e.message, 'err');
   }
 }
 
-// ── RENDERIZAR TABLA ──────────────────────────
-function renderAcopioTabla(lista) {
-  const tbody = el('acopioTableBody');
-  if (!tbody) return;
-
-  if (!lista || lista.length === 0) {
-    tbody.innerHTML = `
-      <tr><td colspan="9" style="text-align:center;padding:50px;color:#64748B">
-        <div style="font-size:36px;margin-bottom:10px">🥛</div>
-        <div style="font-weight:600">Sin registros de acopio</div>
-        <div style="font-size:12px;margin-top:4px">Registra la primera entrega del día</div>
-      </td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = lista.map(r => {
-    const tempColor = r.temperatura !== null
-      ? (r.temperatura <= 6 ? '#16A34A' : r.temperatura <= 10 ? '#D97706' : '#DC2626')
-      : '#64748B';
-    const tempBg = r.temperatura !== null
-      ? (r.temperatura <= 6 ? '#F0FDF4' : r.temperatura <= 10 ? '#FFFBEB' : '#FEF2F2')
-      : '#F4F7FA';
-
-    return `
-    <tr>
-      <td><strong>${r.proveedor_nombre || '—'}</strong></td>
-      <td>
-        <span style="font-size:15px;font-weight:700;color:#003C78">${N(r.litros)}</span>
-        <span style="font-size:11px;color:#64748B"> L</span>
-      </td>
-      <td>
-        ${r.temperatura !== null
-          ? `<span style="padding:3px 9px;border-radius:20px;font-size:12px;font-weight:700;background:${tempBg};color:${tempColor}">${r.temperatura}°C</span>`
-          : '<span style="color:#94A3B8">—</span>'}
-      </td>
-      <td>${L(r.precio_litro)}</td>
-      <td><strong style="color:#003C78">${L(r.total_pagar)}</strong></td>
-      <td>
-        <span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;
-          background:${r.turno==='Mañana'?'#EAF2FB':'#F5F3FF'};
-          color:${r.turno==='Mañana'?'#0A4A8F':'#6D28D9'}">
-          <i class="ri-${r.turno==='Mañana'?'sun':'moon'}-line"></i> ${r.turno}
-        </span>
-      </td>
-      <td style="font-size:12px;color:#64748B">${formatFecha(r.fecha)}</td>
-      <td style="font-size:12px;color:#94A3B8;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
-          title="${r.observaciones || ''}">${r.observaciones || '—'}</td>
-      <td>
-        <div style="display:flex;gap:5px">
-          <button class="btn-accion azul" onclick="editAcopio('${r.id}')" title="Editar">
-            <i class="ri-pencil-line"></i>
-          </button>
-          <button class="btn-accion rojo" onclick="deleteAcopio('${r.id}')" title="Eliminar">
-            <i class="ri-delete-bin-line"></i>
-          </button>
-        </div>
-      </td>
-    </tr>`;
-  }).join('');
-}
-
-// ── GRÁFICA DE BARRAS ─────────────────────────
-function renderGraficaAcopio() {
-  const canvas = el('graficaAcopio');
-  if (!canvas || typeof Chart === 'undefined') return;
-
-  // Agrupar litros por proveedor
-  const agrupado = {};
-  acopioData.forEach(r => {
-    agrupado[r.proveedor_nombre] = (agrupado[r.proveedor_nombre] || 0) + r.litros;
-  });
-
-  const labels = Object.keys(agrupado);
-  const data   = Object.values(agrupado);
-
-  if (acopioChartObj) acopioChartObj.destroy();
-
-  acopioChartObj = new Chart(canvas, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        label: 'Litros',
-        data,
-        backgroundColor: labels.map((_, i) => `hsl(${210 + i * 25}, 70%, ${55 + i * 5}%)`),
-        borderRadius: 8,
-        borderSkipped: false
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: ctx => ` ${N(ctx.raw)} litros`
-          }
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          grid: { color: '#F0F4F8' },
-          ticks: { callback: v => N(v) + ' L', font: { size: 11 } }
-        },
-        x: {
-          grid: { display: false },
-          ticks: { font: { size: 11 } }
-        }
-      }
-    }
-  });
-}
-
-// ── ABRIR MODAL NUEVO ─────────────────────────
-function openNuevoAcopio() {
-  acopioEditId = null;
-  el('modalAcopioTitulo').textContent = 'Registrar Entrega';
-  el('formAcopio').reset();
-  // Fecha por defecto: hoy
-  el('acopioFecha').value = new Date().toISOString().slice(0, 10);
-  // Poblar select proveedores
-  poblarSelectProveedor();
-  // Calcular total al inicio
-  calcularTotalAcopio();
-  el('modalAcopio').style.display = 'flex';
-}
-
-// ── POBLAR SELECT PROVEEDORES ─────────────────
-function poblarSelectProveedor() {
-  const sel = el('acopioProveedorId');
-  if (!sel) return;
-  sel.innerHTML = '<option value="">— Seleccionar proveedor —</option>' +
-    proveedoresList.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
-}
-
-// ── CALCULAR TOTAL ────────────────────────────
-function calcularTotalAcopio() {
-  const litros = parseFloat(el('acopioLitros')?.value) || 0;
-  const precio = parseFloat(el('acopioPrecio')?.value) || 0;
-  const total  = litros * precio;
-  if (el('acopioTotalPreview')) {
-    el('acopioTotalPreview').textContent = L(total);
-  }
-}
-
-// ── CERRAR MODAL ──────────────────────────────
-function closeModalAcopio() {
-  el('modalAcopio').style.display = 'none';
-}
-
-// ── EDITAR ────────────────────────────────────
-function editAcopio(id) {
-  const r = acopioData.find(x => x.id === id);
-  if (!r) return;
-  acopioEditId = id;
-  poblarSelectProveedor();
-  el('modalAcopioTitulo').textContent     = 'Editar Entrega';
-  el('acopioProveedorId').value           = r.proveedor_id;
-  el('acopioLitros').value                = r.litros;
-  el('acopioTemperatura').value           = r.temperatura ?? '';
-  el('acopioPrecio').value                = r.precio_litro;
-  el('acopioTurno').value                 = r.turno;
-  el('acopioFecha').value                 = r.fecha;
-  el('acopioObservaciones').value         = r.observaciones || '';
-  calcularTotalAcopio();
-  el('modalAcopio').style.display = 'flex';
-}
-
-// ── GUARDAR ───────────────────────────────────
-async function saveAcopio() {
-  const body = {
-    proveedor_id:  el('acopioProveedorId').value,
-    litros:        parseFloat(el('acopioLitros').value),
-    temperatura:   el('acopioTemperatura').value ? parseFloat(el('acopioTemperatura').value) : null,
-    precio_litro:  parseFloat(el('acopioPrecio').value),
-    turno:         el('acopioTurno').value,
-    fecha:         el('acopioFecha').value,
-    observaciones: el('acopioObservaciones').value.trim()
-  };
-
-  if (!body.proveedor_id)        return toast('Selecciona un proveedor', 'err');
-  if (!body.litros || body.litros <= 0) return toast('Los litros deben ser mayores a 0', 'err');
-  if (!body.precio_litro || body.precio_litro <= 0) return toast('El precio por litro es obligatorio', 'err');
-
-  try {
-    if (acopioEditId) {
-      await req('PUT', `/acopio/${acopioEditId}`, body);
-      toast('Entrega actualizada ✅');
-    } else {
-      await req('POST', '/acopio', body);
-      toast('Entrega registrada ✅');
-    }
-    closeModalAcopio();
-    await cargarResumenAcopio();
-    await cargarRegistrosAcopio();
-    renderGraficaAcopio();
-  } catch(e) {
-    toast(e.message, 'err');
-  }
-}
-
-// ── ELIMINAR ──────────────────────────────────
-async function deleteAcopio(id) {
-  if (!confirm('¿Eliminar este registro de acopio?')) return;
+async function deleteRecepcion(id) {
+  if (!confirm('¿Eliminar este registro completo?')) return;
   try {
     await req('DELETE', `/acopio/${id}`);
     toast('Registro eliminado');
-    await cargarResumenAcopio();
-    await cargarRegistrosAcopio();
-    renderGraficaAcopio();
+    loadRecepciones();
   } catch(e) {
-    toast(e.message, 'err');
+    toast('Error: ' + e.message, 'err');
   }
 }
 
-// ── FILTRAR POR FECHA ─────────────────────────
-async function filtrarAcopio() {
-  await cargarResumenAcopio();
-  await cargarRegistrosAcopio();
-  renderGraficaAcopio();
-}
-
-// ── HELPERS ───────────────────────────────────
 function formatFecha(str) {
   if (!str) return '—';
   const [y, m, d] = str.split('-');

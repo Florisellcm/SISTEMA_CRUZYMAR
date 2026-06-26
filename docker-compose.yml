@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+
+  mysql:
+    image: mysql:8
+    container_name: cruzymar_mysql
+
+    environment:
+      MYSQL_ROOT_PASSWORD: 12345
+      MYSQL_DATABASE: cruzymar
+
+    ports:
+      - "3306:3306"
+
+    volumes:
+      - cruzymar_db:/var/lib/mysql
+      - ./backend/sql:/docker-entrypoint-initdb.d
+
+
+
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p12345"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  cruzymar_db:

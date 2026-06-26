@@ -35,120 +35,95 @@ SIDEBAR
     </div>
   </div>
 
-  <!-- Nav con grupos ERP -->
+  <!-- Nav con grupos ERP consolidado -->
   <nav class="sb-nav">
 
     <!-- PRINCIPAL -->
-    <div class="sb-group-label">Principal</div>
-    <div class="sb-item active" data-page="dashboard" title="Dashboard">
-      <i class="ri-dashboard-line sb-icon"></i>
-      <span class="sb-label">Dashboard</span>
+    <div class="sb-group">
+      <div class="sb-group-label sb-group-label--single">Principal</div>
+      <div class="sb-group-items sb-group-items--single">
+        <div class="sb-item active" data-page="dashboard" title="Dashboard">
+          <i class="ri-dashboard-line sb-icon"></i>
+          <span class="sb-label">Dashboard</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECEPCIÓN -->
+    <div class="sb-group">
+      <div class="sb-group-label sb-group-label--single">Recepción</div>
+      <div class="sb-group-items sb-group-items--single">
+        <div class="sb-item" data-page="recepcion" title="Recepción de Leche">
+          <i class="ri-drop-line sb-icon"></i>
+          <span class="sb-label">Recepción y Calidad</span>
+        </div>
+      </div>
     </div>
 
     <!-- PRODUCCIÓN -->
-    <div class="sb-group-label">Producción</div>
-    <div class="sb-item" data-page="acopio" title="Recepción de Leche">
-      <i class="ri-drop-line sb-icon"></i>
-      <span class="sb-label">Recepción de Leche</span>
-    </div>
-    <div class="sb-item" data-page="calidad" title="Control de Calidad">
-      <i class="ri-test-tube-line sb-icon"></i>
-      <span class="sb-label">Control de Calidad</span>
-    </div>
-    <div class="sb-item" data-page="produccion" title="Producción">
-      <i class="ri-building-line sb-icon"></i>
-      <span class="sb-label">Producción</span>
-    </div>
-    <div class="sb-item" data-page="lotes" title="Gestión de Lotes">
-      <i class="ri-price-tag-3-line sb-icon"></i>
-      <span class="sb-label">Lotes</span>
-    </div>
-    <div class="sb-item" data-page="recetas" title="Recetas">
-      <i class="ri-flask-line sb-icon"></i>
-      <span class="sb-label">Recetas</span>
+    <div class="sb-group">
+      <div class="sb-group-label sb-group-label--single">Producción</div>
+      <div class="sb-group-items sb-group-items--single">
+        <div class="sb-item" data-page="produccion" title="Producción">
+          <i class="ri-building-line sb-icon"></i>
+          <span class="sb-label">Lotes y Recetas</span>
+        </div>
+      </div>
     </div>
 
     <!-- INVENTARIO -->
-    <div class="sb-group-label">Inventario</div>
-    <div class="sb-item" data-page="inventario-mp" title="Materia Prima">
-      <i class="ri-drop-fill sb-icon"></i>
-      <span class="sb-label">Materia Prima</span>
-    </div>
-    <div class="sb-item" data-page="inventario-pt" title="Productos Terminados">
-      <i class="ri-box-3-line sb-icon"></i>
-      <span class="sb-label">Productos Terminados</span>
-    </div>
-    <div class="sb-item" data-page="inventario-mov" title="Movimientos">
-      <i class="ri-arrow-left-right-line sb-icon"></i>
-      <span class="sb-label">Movimientos</span>
-    </div>
-    <div class="sb-item" data-page="inventario-ven" title="Vencimientos">
-      <i class="ri-calendar-event-line sb-icon"></i>
-      <span class="sb-label">Vencimientos</span>
+    <div class="sb-group">
+      <div class="sb-group-label sb-group-label--single">Inventario</div>
+      <div class="sb-group-items sb-group-items--single">
+        <div class="sb-item" data-page="inventario" title="Inventario General">
+          <i class="ri-archive-line sb-icon"></i>
+          <span class="sb-label">Gestión de Inventario</span>
+        </div>
+      </div>
     </div>
 
     <!-- COMERCIAL -->
-    <div class="sb-group-label">Comercial</div>
-    <div class="sb-item" data-page="ventas" title="Ventas">
-      <i class="ri-shopping-cart-line sb-icon"></i>
-      <span class="sb-label">Ventas</span>
-    </div>
-    <div class="sb-item" data-page="clientes" title="Clientes">
-      <i class="ri-group-line sb-icon"></i>
-      <span class="sb-label">Clientes</span>
-    </div>
-    <div class="sb-item" data-page="facturacion" title="Facturación">
-      <i class="ri-file-list-3-line sb-icon"></i>
-      <span class="sb-label">Facturación</span>
-    </div>
-    <div class="sb-item" data-page="pedidos" title="Pedidos">
-      <i class="ri-truck-line sb-icon"></i>
-      <span class="sb-label">Pedidos</span>
+    <div class="sb-group">
+      <div class="sb-group-label sb-group-label--single">Comercial</div>
+      <div class="sb-group-items sb-group-items--single">
+        <div class="sb-item" data-page="comercial" title="Ventas y Clientes">
+          <i class="ri-shopping-cart-line sb-icon"></i>
+          <span class="sb-label">Ventas y Facturación</span>
+        </div>
+      </div>
     </div>
 
     <!-- COMPRAS -->
-    <div class="sb-group-label">Compras</div>
-    <div class="sb-item" data-page="proveedores" title="Proveedores">
-      <i class="ri-store-2-line sb-icon"></i>
-      <span class="sb-label">Proveedores</span>
-    </div>
-    <div class="sb-item" data-page="compras" title="Compras">
-      <i class="ri-shopping-bag-line sb-icon"></i>
-      <span class="sb-label">Compras</span>
-    </div>
-    <div class="sb-item" data-page="gastos" title="Gastos">
-      <i class="ri-bank-card-line sb-icon"></i>
-      <span class="sb-label">Gastos</span>
+    <div class="sb-group">
+      <div class="sb-group-label sb-group-label--single">Compras</div>
+      <div class="sb-group-items sb-group-items--single">
+        <div class="sb-item" data-page="compras" title="Compras y Gastos">
+          <i class="ri-store-2-line sb-icon"></i>
+          <span class="sb-label">Proveedores y Gastos</span>
+        </div>
+      </div>
     </div>
 
     <!-- REPORTES -->
-    <div class="sb-group-label">Reportes</div>
-    <div class="sb-item" data-page="reportes-ven" title="Reportes de Ventas">
-      <i class="ri-line-chart-line sb-icon"></i>
-      <span class="sb-label">Ventas</span>
-    </div>
-    <div class="sb-item" data-page="reportes-prod" title="Reportes de Producción">
-      <i class="ri-bar-chart-box-line sb-icon"></i>
-      <span class="sb-label">Producción</span>
-    </div>
-    <div class="sb-item" data-page="reportes-cal" title="Reportes de Calidad">
-      <i class="ri-shield-check-line sb-icon"></i>
-      <span class="sb-label">Calidad</span>
-    </div>
-    <div class="sb-item" data-page="reportes-inv" title="Reportes de Inventario">
-      <i class="ri-pie-chart-2-line sb-icon"></i>
-      <span class="sb-label">Inventario</span>
-    </div>
-    <div class="sb-item" data-page="reportes-rent" title="Reportes de Rentabilidad">
-      <i class="ri-money-dollar-circle-line sb-icon"></i>
-      <span class="sb-label">Rentabilidad</span>
+    <div class="sb-group">
+      <div class="sb-group-label sb-group-label--single">Analítica</div>
+      <div class="sb-group-items sb-group-items--single">
+        <div class="sb-item" data-page="reportes" title="Reportes">
+          <i class="ri-bar-chart-box-line sb-icon"></i>
+          <span class="sb-label">Reportes Consolidados</span>
+        </div>
+      </div>
     </div>
 
     <!-- CONFIGURACIÓN -->
-    <div class="sb-group-label">Sistema</div>
-    <div class="sb-item" data-page="configuracion" title="Configuración">
-      <i class="ri-settings-3-line sb-icon"></i>
-      <span class="sb-label">Configuración</span>
+    <div class="sb-group">
+      <div class="sb-group-label sb-group-label--single">Sistema</div>
+      <div class="sb-group-items sb-group-items--single">
+        <div class="sb-item" data-page="configuracion" title="Configuración">
+          <i class="ri-settings-3-line sb-icon"></i>
+          <span class="sb-label">Configuración</span>
+        </div>
+      </div>
     </div>
 
   </nav>
@@ -237,7 +212,7 @@ SIDEBAR
 
         <!-- ── ACCIONES RÁPIDAS ──────────────────── -->
         <div style="display:flex; gap:16px; margin-bottom:24px" id="quickActionsPanel">
-            <button onclick="navigateTo('calidad')" style="flex:1; background:#fff; padding:16px; border-radius:12px; border:none; box-shadow:0 1px 4px rgba(0,0,0,.07); cursor:pointer; display:flex; align-items:center; gap:12px; color:#4F46E5; font-weight:700; font-size:14px; transition:all .2s">
+            <button onclick="navigateTo('recepcion')" style="flex:1; background:#fff; padding:16px; border-radius:12px; border:none; box-shadow:0 1px 4px rgba(0,0,0,.07); cursor:pointer; display:flex; align-items:center; gap:12px; color:#4F46E5; font-weight:700; font-size:14px; transition:all .2s">
                 <div style="width:40px;height:40px;border-radius:10px;background:#EEF2FF;display:flex;align-items:center;justify-content:center"><i class="ri-test-tube-line" style="font-size:20px"></i></div>
                 Control Calidad
             </button>
@@ -245,7 +220,7 @@ SIDEBAR
                 <div style="width:40px;height:40px;border-radius:10px;background:#FFF7ED;display:flex;align-items:center;justify-content:center"><i class="ri-building-line" style="font-size:20px"></i></div>
                 Reg. Producción
             </button>
-            <button onclick="navigateTo('pedidos')" class="qa-ventas" style="flex:1; background:#fff; padding:16px; border-radius:12px; border:none; box-shadow:0 1px 4px rgba(0,0,0,.07); cursor:pointer; display:flex; align-items:center; gap:12px; color:#16A34A; font-weight:700; font-size:14px; transition:all .2s">
+            <button onclick="navigateTo('comercial')" class="qa-ventas" style="flex:1; background:#fff; padding:16px; border-radius:12px; border:none; box-shadow:0 1px 4px rgba(0,0,0,.07); cursor:pointer; display:flex; align-items:center; gap:12px; color:#16A34A; font-weight:700; font-size:14px; transition:all .2s">
                 <div style="width:40px;height:40px;border-radius:10px;background:#F0FDF4;display:flex;align-items:center;justify-content:center"><i class="ri-truck-line" style="font-size:20px"></i></div>
                 Nuevo Pedido
             </button>
@@ -276,7 +251,7 @@ SIDEBAR
                 <canvas id="graficoDona"></canvas>
               </div>
             </div>
-            
+
             <div id="alertasStockContainer" style="margin-top:20px; border-top:1px solid #F0F4F8; padding-top:16px;">
               <h4 style="margin:0 0 12px; font-size:13px; color:#E03535; font-weight:700; display:flex; align-items:center; gap:6px;">
                 <i class="ri-error-warning-line"></i> Alertas de Inventario
@@ -320,14 +295,11 @@ SIDEBAR
 <script src="js/app.js"></script>
 <script src="js/dashboard.js"></script>
 <script src="js/produccion.js"></script>
-<script src="js/clientes.js"></script>
-<script src="js/proveedores.js"></script>
 <script src="js/acopio.js"></script>
 <script src="js/configuracion.js"></script>
 <script src="js/inventario.js"></script>
 <script src="js/ventas.js"></script>
 <script src="js/gastos.js"></script>
-<script src="js/facturacion.js"></script>
 <script src="js/reportes.js"></script>
 <script>
   lucide.createIcons();

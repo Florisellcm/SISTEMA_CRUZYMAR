@@ -1,15 +1,22 @@
 /* ═══════════════════════════════════════
    CRUZYMAR · models/authModel.js
-   Acceso a datos de autenticación
+   Autenticación — MySQL
 ═══════════════════════════════════════ */
 
-const db = require('../data/db');
+const pool = require('../database');
 
-/**
- * Buscar un usuario activo por email
- * @param {string} email
- * @returns {object|undefined}
- */
-exports.findByEmail = (email) => {
-  return db.usuarios.find(u => u.email === email && u.activo);
+exports.findByEmail = async (email) => {
+  const [rows] = await pool.query(
+    'SELECT * FROM usuarios WHERE email = ? AND activo = 1 LIMIT 1',
+    [email]
+  );
+  return rows[0] || null;
+};
+
+exports.findById = async (id) => {
+  const [rows] = await pool.query(
+    'SELECT id, nombre, email, rol, activo FROM usuarios WHERE id = ? LIMIT 1',
+    [id]
+  );
+  return rows[0] || null;
 };

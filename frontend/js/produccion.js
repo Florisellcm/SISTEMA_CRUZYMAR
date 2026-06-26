@@ -1,213 +1,196 @@
-/* ═══════════════════════════════════════
+/* ══════════════════════════════════════════════
    CRUZYMAR · produccion.js
-   Módulo frontend de Producción Láctea
-═══════════════════════════════════════ */
+   Módulo frontend de Producción y Lotes
+══════════════════════════════════════════════ */
 
-let produccionData   = [];
-let produccionEditId = null;
+let produccionData = [];
+let recetasList = [];
 
-// ── CARGAR ────────────────────────────
 async function loadProduccion() {
   try {
-    produccionData = await req('GET', '/produccion');
-    renderProduccion(produccionData);
+    [produccionData, recetasList] = await Promise.all([
+      req('GET', '/produccion'),
+      req('GET', '/recetas')
+    ]);
+    actualizarTarjetasProduccion();
+    renderTablaProduccion();
+    poblarSelectRecetas();
   } catch(e) {
     toast('Error cargando producción: ' + e.message, 'err');
   }
 }
 
-// ── RENDERIZAR TABLA ──────────────────
-function renderProduccion(lista) {
+async function loadProduccionList() {
+  try {
+    const estado = el('filtroEstadoProd')?.value || '';
+    const url = estado ? `/produccion?estado=${encodeURIComponent(estado)}` : '/produccion';
+    produccionData = await req('GET', url);
+    actualizarTarjetasProduccion();
+    renderTablaProduccion();
+  } catch(e) {
+    toast('Error cargando producción: ' + e.message, 'err');
+  }
+}
+
+function poblarSelectRecetas() {
+  const sel = el('prodReceta');
+  if (!sel) return;
+  // Opción manual (sin receta fija)
+  const opcManuales = [
+    'Queso Crema','Queso Semi-Seco','Mantequilla Crema','Mantequilla Rala','Requesón'
+  ];
+  const recetasOps = recetasList.length
+    ? recetasList.map(r => `<option value="${r.id}" data-litros="${r.litros_por_unidad||0}" data-rend="${r.rendimiento_esperado||0}">${r.producto}</option>`).join('')
+    : opcManuales.map(n => `<option value="${n}">${n}</option>`).join('');
+  sel.innerHTML = '<option value="">— Seleccionar producto —</option>' + recetasOps;
+}
+
+function actualizarTarjetasProduccion() {
+  const hoy = new Date().toISOString().slice(0, 10);
+  let lotesHoy = 0, lecheHoy = 0, prodHoy = 0;
+
+  produccionData.forEach(p => {
+    const fechaProd = (p.fecha_produccion || '').slice(0, 10);
+    if (fechaProd === hoy) {
+      lotesHoy++;
+      lecheHoy += parseFloat(p.leche_usada || 0);
+      prodHoy  += parseFloat(p.cantidad_obtenida || 0);
+    }
+  });
+
+  const rend = lecheHoy > 0 ? ((prodHoy / lecheHoy) * 100).toFixed(1) : 0;
+  if (el('prodLotesHoy'))    el('prodLotesHoy').textContent    = lotesHoy;
+  if (el('prodLecheHoy'))    el('prodLecheHoy').textContent    = N(lecheHoy) + ' L';
+  if (el('prodQuesoHoy'))    el('prodQuesoHoy').textContent    = N(prodHoy) + ' Lbs';
+  if (el('prodRendimiento')) el('prodRendimiento').textContent = rend + '%';
+}
+
+function renderTablaProduccion() {
   const tbody = el('produccionTableBody');
   if (!tbody) return;
 
-  if (lista.length === 0) {
-    tbody.innerHTML = `
-      <tr><td colspan="10" style="text-align:center;padding:50px;color:#64748B">
-        <div style="font-size:40px;margin-bottom:12px">🏭</div>
-        <div style="font-weight:600">No hay lotes registrados</div>
-        <div style="font-size:12px;margin-top:4px">Crea un nuevo lote de producción</div>
-      </td></tr>`;
+  if (!produccionData.length) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:#64748B">Sin registros de producción</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = lista.map(p => `
+  tbody.innerHTML = produccionData.map(p => {
+    const estado = p.estado || 'En proceso';
+    const isComp = estado === 'Completada';
+    const badgeClass = isComp ? 'b-comp' : estado === 'Cancelada' ? 'b-err' : 'b-proc';
+    const leche = parseFloat(p.leche_usada || 0);
+    const obt   = parseFloat(p.cantidad_obtenida || 0);
+    const rend  = isComp && leche > 0 ? ((obt / leche) * 100).toFixed(1) + '%' : '—';
+    const fecha = (p.fecha_produccion || '').slice(0, 10);
+
+    return `
     <tr>
-      <td><span style="font-family:monospace;font-size:11px;font-weight:700;background:#EAF2FB;color:#003C78;padding:3px 8px;border-radius:6px">${p.numeroLote}</span></td>
-      <td><strong>${p.productoNombre}</strong></td>
-      <td style="color:#0369A1;font-weight:600">${p.lecheUsada} L</td>
-      <td style="color:#468C28;font-weight:600">${p.cantidadObtenida} ${p.unidad}</td>
-      <td>${rendimientoBadge(p.rendimiento)}</td>
-      <td style="color:#E03535;font-size:12px">${p.merma} ${p.unidad}</td>
-      <td>${formatFecha(p.fechaProduccion)}</td>
-      <td>${p.turno}</td>
-      <td>${badgeProd(p.estado)}</td>
+      <td><strong style="color:#003C78">${p.numero_lote || '—'}</strong></td>
+      <td>${p.producto_nombre || '—'}</td>
+      <td>${N(leche)} L</td>
+      <td>${isComp ? N(obt) + ' Lbs' : '—'}</td>
+      <td>${rend}</td>
+      <td><span class="badge ${badgeClass}">${estado}</span></td>
+      <td style="font-size:12px;color:#64748B">${formatFecha(fecha)}</td>
       <td>
-        <div style="display:flex;gap:5px">
-          ${p.estado !== 'Completada' ? `
-            <button class="btn-accion verde" onclick="completarLote('${p.id}')" title="Completar">✓</button>
-          ` : ''}
-          <button class="btn-accion azul" onclick="editProduccion('${p.id}')" title="Editar">✏️</button>
-          <button class="btn-accion rojo"  onclick="deleteProduccion('${p.id}')" title="Eliminar">🗑️</button>
-        </div>
+        <button class="btn-accion verde" onclick="marcarCompletado('${p.id}')" title="Marcar Completada"
+          ${isComp || estado === 'Cancelada' ? 'disabled style="opacity:.3;cursor:not-allowed"' : ''}>
+          <i class="ri-check-line"></i>
+        </button>
+        <button class="btn-accion rojo" onclick="deleteProduccion('${p.id}')" title="Eliminar">
+          <i class="ri-delete-bin-line"></i>
+        </button>
       </td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
 }
 
-// ── ABRIR MODAL NUEVO ─────────────────
-function openNuevaProduccion() {
-  produccionEditId = null;
-  el('modalProdTitulo').textContent = '🏭 Nuevo Lote de Producción';
+function openModalProduccion() {
   el('formProduccion').reset();
-  el('prodFecha').value   = hoy();
-  el('prodTurno').value   = 'Mañana';
-  el('prodEstado').value  = 'En proceso';
-  if (Auth?.user) el('prodOperario').value = Auth.user.nombre || '';
-  generarLoteAutomatico();
-  openModalProd();
+  poblarSelectRecetas();
+  // Fecha de hoy por defecto
+  const fi = el('prodFecha');
+  if (fi) fi.value = new Date().toISOString().slice(0, 10);
+  el('modalProduccion').style.display = 'flex';
 }
 
-// ── ABRIR MODAL EDITAR ────────────────
-function editProduccion(id) {
-  const p = produccionData.find(x => x.id === id);
-  if (!p) return;
-  produccionEditId = id;
-  el('modalProdTitulo').textContent  = '✏️ Editar Lote';
-  el('prodProductoNombre').value     = p.productoNombre;
-  el('prodLecheUsada').value         = p.lecheUsada;
-  el('prodCantidadObtenida').value   = p.cantidadObtenida;
-  el('prodUnidad').value             = p.unidad;
-  el('prodFecha').value              = p.fechaProduccion;
-  el('prodTurno').value              = p.turno;
-  el('prodEstado').value             = p.estado;
-  el('prodOperario').value           = p.operario || '';
-  el('prodLote').value               = p.numeroLote;
-  el('prodInsumos').value            = p.insumos || '';
-  el('prodObservaciones').value      = p.observaciones || '';
-  actualizarRendimientoPreview();
-  openModalProd();
+function closeModalProduccion() {
+  el('modalProduccion').style.display = 'none';
 }
 
-// ── GUARDAR ───────────────────────────
-async function saveProduccion() {
+async function saveProduccionUnificada() {
+  const recetaVal = el('prodReceta')?.value;
+  const lecheUsada = parseFloat(el('prodLeche')?.value);
+  const estado = el('prodEstado')?.value || 'En proceso';
+  const cantidadObtenida = parseFloat(el('prodObtenido')?.value) || 0;
+  const turno = el('prodTurno')?.value || 'Mañana';
+  const fechaProduccion = el('prodFecha')?.value || new Date().toISOString().slice(0, 10);
+  const observaciones = el('prodObs')?.value || '';
+
+  if (!recetaVal) return toast('Seleccione el producto a elaborar', 'err');
+  if (!lecheUsada || lecheUsada <= 0) return toast('Ingrese la cantidad de leche utilizada', 'err');
+  if (estado === 'Completada' && cantidadObtenida <= 0)
+    return toast('Si el lote está completado, ingrese el producto obtenido', 'err');
+
+  // Determinar si recetaVal es UUID (receta de BD) o nombre manual
+  const esUUID = /^[0-9a-f-]{36}$/i.test(recetaVal);
+  // Buscar nombre del producto
+  const receta = recetasList.find(r => r.id === recetaVal);
+  const productoNombre = receta ? receta.producto : recetaVal;
+
   const body = {
-    productoNombre:   el('prodProductoNombre').value.trim(),
-    lecheUsada:       el('prodLecheUsada').value,
-    cantidadObtenida: el('prodCantidadObtenida').value,
-    unidad:           el('prodUnidad').value,
-    fechaProduccion:  el('prodFecha').value,
-    turno:            el('prodTurno').value,
-    operario:         el('prodOperario').value,
-    insumos:          el('prodInsumos').value,
-    observaciones:    el('prodObservaciones').value,
-    estado:           el('prodEstado').value,
+    productoNombre,
+    receta_id:         esUUID ? recetaVal : null,
+    lecheUsada,
+    cantidadObtenida,
+    unidad:            'libras',
+    turno,
+    fechaProduccion,
+    observaciones,
+    estado,
+    operario:          'Operario'
   };
 
-  if (!body.productoNombre)  return toast('Ingrese el nombre del producto', 'err');
-  if (!body.lecheUsada)      return toast('Ingrese los litros de leche usados', 'err');
-  if (!body.fechaProduccion) return toast('Ingrese la fecha', 'err');
-
   try {
-    if (produccionEditId) {
-      await req('PUT', `/produccion/${produccionEditId}`, body);
-      toast('Lote actualizado ✅');
-    } else {
-      await req('POST', '/produccion', body);
-      toast('Lote registrado ✅');
-    }
-    closeModalProd();
-    loadProduccion();
+    await req('POST', '/produccion', body);
+    toast('Lote de producción registrado ✅');
+    closeModalProduccion();
+    loadProduccionList();
   } catch(e) {
-    toast(e.message, 'err');
+    toast('Error: ' + e.message, 'err');
   }
 }
 
-// ── COMPLETAR LOTE ────────────────────
-async function completarLote(id) {
-  if (!confirm('¿Marcar este lote como Completado?')) return;
+async function marcarCompletado(id) {
+  const obtenido = prompt('¿Cuántas libras se obtuvieron en este lote?');
+  if (obtenido === null) return;
+  const cant = parseFloat(obtenido);
+  if (isNaN(cant) || cant <= 0) return toast('Ingrese una cantidad válida', 'err');
   try {
-    await req('PUT', `/produccion/${id}`, { estado: 'Completada' });
-    toast('Lote completado ✅');
-    loadProduccion();
+    await req('PUT', `/produccion/${id}`, {
+      cantidadObtenida: cant,
+      estado: 'Completada'
+    });
+    toast('Lote marcado como completado ✅');
+    loadProduccionList();
   } catch(e) {
-    toast(e.message, 'err');
+    toast('Error: ' + e.message, 'err');
   }
 }
 
-// ── ELIMINAR ──────────────────────────
 async function deleteProduccion(id) {
   if (!confirm('¿Eliminar este lote de producción?')) return;
   try {
     await req('DELETE', `/produccion/${id}`);
     toast('Lote eliminado');
-    loadProduccion();
+    loadProduccionList();
   } catch(e) {
-    toast(e.message, 'err');
+    toast('Error: ' + e.message, 'err');
   }
 }
 
-// ── FILTRAR ───────────────────────────
-function filtrarProduccion() {
-  const estado = el('filtroEstadoProd')?.value || '';
-  const buscar = el('buscarProd')?.value.toLowerCase() || '';
-  renderProduccion(produccionData.filter(p => {
-    const matchEstado = !estado || p.estado === estado;
-    const matchBuscar = !buscar || p.productoNombre.toLowerCase().includes(buscar);
-    return matchEstado && matchBuscar;
-  }));
+function formatFecha(str) {
+  if (!str) return '—';
+  const [y, m, d] = str.slice(0, 10).split('-');
+  return `${d}/${m}/${y}`;
 }
-
-// ── PREVIEW RENDIMIENTO ───────────────
-function actualizarRendimientoPreview() {
-  const leche    = parseFloat(el('prodLecheUsada')?.value)         || 0;
-  const cantidad = parseFloat(el('prodCantidadObtenida')?.value)   || 0;
-  const prev     = el('rendimientoPreview');
-  if (!prev) return;
-  if (leche > 0 && cantidad > 0) {
-    const rend  = ((cantidad / leche) * 100).toFixed(1);
-    const merma = (leche - cantidad).toFixed(2);
-    prev.innerHTML = `
-      <span style="color:#468C28;font-weight:700">Rendimiento: ${rend}%</span>
-      &nbsp;·&nbsp;
-      <span style="color:#E03535;font-weight:600">Merma: ${merma} L</span>`;
-  } else {
-    prev.innerHTML = '<span style="color:#94A3B8">Ingrese leche y cantidad para ver rendimiento</span>';
-  }
-}
-
-// ── LOTE AUTOMÁTICO ───────────────────
-function generarLoteAutomatico() {
-  if (produccionEditId) return;
-  const fecha   = (el('prodFecha')?.value  || hoy()).replace(/-/g, '');
-  const inicial = (el('prodTurno')?.value || 'M').charAt(0).toUpperCase();
-  el('prodLote').value = `${fecha}-${inicial}`;
-}
-
-// ── MODAL ─────────────────────────────
-function openModalProd()  { el('modalProduccion').style.display = 'flex'; }
-function closeModalProd() { el('modalProduccion').style.display = 'none'; }
-
-// ── HELPERS ───────────────────────────
-function badgeProd(estado) {
-  const map = {
-    'Completada': 'background:#EAF4E3;color:#2D6B18',
-    'En proceso': 'background:#EAF2FB;color:#0A4A8F',
-    'Pendiente':  'background:#FEF3C7;color:#9A6100',
-    'Cancelada':  'background:#FEF2F2;color:#991B1B',
-  };
-  const s = map[estado] || 'background:#F1F5F9;color:#64748B';
-  return `<span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;${s}">${estado}</span>`;
-}
-
-function rendimientoBadge(rend) {
-  const color = rend >= 18 ? '#468C28' : rend >= 12 ? '#D97706' : '#E03535';
-  return `<span style="font-weight:700;color:${color}">${rend}%</span>`;
-}
-
-function formatFecha(f) {
-  if (!f) return '—';
-  return new Date(f + 'T12:00:00').toLocaleDateString('es-HN', { day:'2-digit', month:'2-digit', year:'numeric' });
-}
-
-function hoy() { return new Date().toISOString().split('T')[0]; }

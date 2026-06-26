@@ -1,59 +1,46 @@
 /* ═══════════════════════════════════════
    CRUZYMAR · models/gastosModel.js
-   Acceso a datos de gastos
+   Acceso a datos de gastos — MySQL
 ═══════════════════════════════════════ */
 
-const db = require('../data/db');
+const pool = require('../database');
 const { v4: uuidv4 } = require('uuid');
 
-if (!db.gastos) db.gastos = [
-  { id: uuidv4(), concepto: 'Compra leche cruda — Ganadería Los Pinos', categoria: 'Materia Prima', monto: 8500, fecha: new Date().toISOString().split('T')[0], proveedor: 'Ganadería Los Pinos', creadoEn: new Date().toISOString() },
-  { id: uuidv4(), concepto: 'Pago energía eléctrica ENEE',              categoria: 'Servicios',     monto: 1200, fecha: new Date().toISOString().split('T')[0], proveedor: 'ENEE',                creadoEn: new Date().toISOString() },
-];
-
-/**
- * Listar gastos con filtro opcional por categoría
- */
-exports.findAll = (categoria) => {
-  let lista = [...db.gastos];
-  if (categoria) lista = lista.filter(g => g.categoria === categoria);
-  lista.sort((a, b) => new Date(b.creadoEn) - new Date(a.creadoEn));
-  return lista;
+exports.findAll = async (categoria) => {
+  let sql = 'SELECT g.*, u.nombre AS usuario_nombre FROM gastos g LEFT JOIN usuarios u ON u.id = g.usuario_id WHERE 1=1';
+  const params = [];
+  if (categoria) { sql += ' AND g.categoria = ?'; params.push(categoria); }
+  sql += ' ORDER BY g.fecha DESC, g.creado_en DESC';
+  const [rows] = await pool.query(sql, params);
+  return rows;
 };
 
-/**
- * Crear nuevo gasto
- */
-exports.create = ({ concepto, categoria, monto, fecha, proveedor, comprobante }) => {
-  const nuevo = {
-    id: uuidv4(), concepto,
-    categoria: categoria || 'Otros',
-    monto: parseFloat(monto),
-    fecha: fecha || new Date().toISOString().split('T')[0],
-    proveedor: proveedor || '',
-    comprobante: comprobante || '',
-    creadoEn: new Date().toISOString()
-  };
-  db.gastos.push(nuevo);
-  return nuevo;
+exports.findById = async (id) => {
+  const [rows] = await pool.query('SELECT * FROM gastos WHERE id = ?', [id]);
+  return rows[0] || null;
 };
 
-/**
- * Actualizar gasto existente
- */
-exports.update = (id, data) => {
-  const idx = db.gastos.findIndex(g => g.id === id);
-  if (idx === -1) return null;
-  db.gastos[idx] = { ...db.gastos[idx], ...data, actualizadoEn: new Date().toISOString() };
-  return db.gastos[idx];
+exports.create = async ({ concepto, categoria, monto, fecha, proveedor, comprobante, usuario_id }) => {
+  const id = uuidv4();
+  await pool.query(
+    'INSERT INTO gastos (id, concepto, categoria, monto, fecha, proveedor, comprobante, usuario_id) VALUES (?,?,?,?,?,?,?,?)',
+    [id, concepto, categoria||'Otros', parseFloat(monto),
+     fecha || new Date().toISOString().slice(0,10),
+     proveedor||'', comprobante||'', usuario_id||null]
+  );
+  return exports.findById(id);
 };
 
-/**
- * Eliminar gasto (borrado físico)
- */
-exports.remove = (id) => {
-  const idx = db.gastos.findIndex(g => g.id === id);
-  if (idx === -1) return false;
-  db.gastos.splice(idx, 1);
-  return true;
+exports.update = async (id, data) => {
+  const campos = ['concepto','categoria','monto','fecha','proveedor','comprobante'];
+  const sets   = campos.filter(c => data[c] !== undefined).map(c => `${c} = ?`);
+  const vals   = campos.filter(c => data[c] !== undefined).map(c => data[c]);
+  if (!sets.length) return null;
+  await pool.query(`UPDATE gastos SET ${sets.join(', ')} WHERE id = ?`, [...vals, id]);
+  return exports.findById(id);
+};
+
+exports.remove = async (id) => {
+  const [res] = await pool.query('DELETE FROM gastos WHERE id = ?', [id]);
+  return res.affectedRows > 0;
 };

@@ -1,4 +1,4 @@
-# 🥛 CRUZYMAR — Sistema de Gestión Lácteos
+# CRUZYMAR — Sistema de Gestión Lácteos
 ### Prototipo · Dashboard
 
 ---
@@ -24,7 +24,7 @@ cruzymar-proto/
     │   └── styles.css      ← Estilos con colores corporativos CRUZYMAR
     ├── js/
     │   └── app.js          ← Lógica del dashboard
-    └── index.html          ← Página principal (login + dashboard)
+    └── index.html          ← Página principal (  dashboard)
 ```
 
 ---

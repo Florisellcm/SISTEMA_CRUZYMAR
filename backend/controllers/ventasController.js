@@ -4,27 +4,47 @@
 
 const VentasModel = require('../models/ventasModel');
 
-exports.getAll = (req, res) => {
-  const { estado } = req.query;
-  const lista = VentasModel.findAll(estado);
-  res.json(lista);
+exports.getAll = async (req, res) => {
+  try {
+    const { estado } = req.query;
+    const lista = await VentasModel.findAll(estado);
+    res.json(lista);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 };
 
-exports.create = (req, res) => {
-  const { items } = req.body;
-  if (!items || items.length === 0) return res.status(400).json({ error: 'Debe agregar al menos un producto' });
-  const nueva = VentasModel.create(req.body);
-  res.status(201).json(nueva);
+exports.getById = async (req, res) => {
+  try {
+    const venta = await VentasModel.findById(req.params.id);
+    if (!venta) return res.status(404).json({ error: 'Venta no encontrada' });
+    res.json(venta);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 };
 
-exports.update = (req, res) => {
-  const actualizado = VentasModel.update(req.params.id, req.body);
-  if (!actualizado) return res.status(404).json({ error: 'Venta no encontrada' });
-  res.json(actualizado);
+exports.create = async (req, res) => {
+  try {
+    const { items, clienteId, clienteNombre } = req.body;
+    if (!items || items.length === 0)
+      return res.status(400).json({ error: 'Debe agregar al menos un producto' });
+    const nueva = await VentasModel.create({
+      ...req.body,
+      vendedor_id: req.user?.id || null
+    });
+    res.status(201).json(nueva);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 };
 
-exports.remove = (req, res) => {
-  const cancelada = VentasModel.cancel(req.params.id);
-  if (!cancelada) return res.status(404).json({ error: 'Venta no encontrada' });
-  res.json({ message: 'Venta cancelada' });
+exports.update = async (req, res) => {
+  try {
+    const actualizado = await VentasModel.update(req.params.id, req.body);
+    if (!actualizado) return res.status(404).json({ error: 'Venta no encontrada' });
+    res.json(actualizado);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+};
+
+exports.remove = async (req, res) => {
+  try {
+    const cancelada = await VentasModel.cancel(req.params.id);
+    if (!cancelada) return res.status(404).json({ error: 'Venta no encontrada' });
+    res.json({ message: 'Venta cancelada' });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 };

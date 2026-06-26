@@ -1,235 +1,154 @@
 /* ──────────────────────────────────────────────────────────
-   CRUZYMAR · dashboard.js
-   Chart.js — Gráficas profesionales
+   CRUZYMAR · dashboard.js — Datos reales desde MySQL
 ────────────────────────────────────────────────────────── */
 
-let chartBalance = null;
-let chartDona    = null;
+let _chartBalance = null;
+let _chartDona    = null;
 
 async function initDashboard() {
   try {
-    if (el('dashFechaActual')) {
-      el('dashFechaActual').textContent = new Date().toLocaleString('es-HN');
-    }
+    const data = await req('GET', '/dashboard');
+    const k    = data.kpis || {};
 
-    let datosVentas     = { totalHoy: 14850.00 };
-    let datosProduccion = [];
+    // ── KPIs ──────────────────────────────────────────────
+    if (el('kpiVentasMes'))           el('kpiVentasMes').textContent           = L(k.ventasMes || 0);
+    if (el('kpiLecheProcesada'))      el('kpiLecheProcesada').textContent      = N(k.produccionHoy || 0) + ' Lbs hoy';
+    if (el('kpiRendimientoGlobal'))   el('kpiRendimientoGlobal').textContent   = '↑ Rendimiento: ' + (k.rendimiento || 0) + '%';
+    if (el('kpiVencimientosProximos'))el('kpiVencimientosProximos').textContent = k.productosStockBajo || 0;
+    if (el('kpiPedidosBadge'))        el('kpiPedidosBadge').textContent        = (k.clientesActivos || 0) + ' activos';
 
-    try { datosVentas     = await req('GET', '/dashboard/ventas-hoy'); } catch(e) {}
-    try { datosProduccion = await req('GET', '/produccion');           } catch(e) {}
+    if (el('lastUpdate'))
+      el('lastUpdate').textContent = '✓ ' + new Date().toLocaleTimeString('es-HN', { hour:'2-digit', minute:'2-digit' });
 
-    // Variables de planta
-    const lecheRecibidaHoy   = 1250;
-    const proveedoresActivos = 8;
-    let lecheProcesadaHoy    = 0;
-    let cantidadObtenida     = 0;
-
-    if (datosProduccion?.length > 0) {
-      const hoyISO = new Date().toISOString().split('T')[0];
-      datosProduccion
-        .filter(p => p.fechaProduccion === hoyISO)
-        .forEach(p => {
-          lecheProcesadaHoy += parseFloat(p.lecheUsada)       || 0;
-          cantidadObtenida  += parseFloat(p.cantidadObtenida) || 0;
-        });
-    }
-
-    if (lecheProcesadaHoy === 0) { lecheProcesadaHoy = 980; cantidadObtenida = 182; }
-
-    const stockReserva      = lecheRecibidaHoy - lecheProcesadaHoy;
-    const rendimientoGlobal = ((cantidadObtenida / lecheProcesadaHoy) * 100).toFixed(1);
-
-    // Inyectar KPIs ERP
-    if (el('kpiVentasMes'))         el('kpiVentasMes').textContent         = L(datosVentas.totalHoy * 12 ?? 180000);
-    if (el('kpiPedidosBadge'))      el('kpiPedidosBadge').textContent      = `14 Pendientes`;
-    if (el('kpiAprobacion'))        el('kpiAprobacion').textContent        = `98.5%`;
-    if (el('kpiLecheProcesada'))    el('kpiLecheProcesada').textContent    = `${lecheProcesadaHoy} L`;
-    if (el('kpiLotesActivos'))      el('kpiLotesActivos').textContent      = `5 Lotes Activos`;
-    if (el('kpiRendimientoGlobal')) el('kpiRendimientoGlobal').textContent = `↑ Rendimiento: ${rendimientoGlobal}%`;
-    if (el('kpiVencimientosProximos')) el('kpiVencimientosProximos').textContent = `3`;
-
-    if (el('lastUpdate')) el('lastUpdate').textContent = 'Última actualización: ' + new Date().toLocaleString('es-HN');
-
-    renderGraficoBalance();
-    
-    // RBAC Dashboard
-    const u = Auth.user;
-    if (u && u.rol === 'produccion') {
-        // Ocultar tarjeta de ventas y gráfica dona
-        const cardVentas = document.querySelector('.kpi-card.ventas');
-        if (cardVentas) cardVentas.style.display = 'none';
-        
-        const chartDonaContainer = document.getElementById('graficoDona')?.parentElement?.parentElement;
-        if (chartDonaContainer) chartDonaContainer.style.display = 'none';
-        
-        // Ocultar acciones rápidas comerciales
-        document.querySelectorAll('.qa-ventas').forEach(btn => btn.style.display = 'none');
-        
-        // Expandir gráfica de líneas
-        const chartBalanceContainer = document.getElementById('graficoBalance')?.parentElement?.parentElement;
-        if (chartBalanceContainer) chartBalanceContainer.parentElement.style.gridTemplateColumns = '1fr';
-    } else {
-        renderGraficoDona();
-    }
-
-    renderLotesRecientes(datosProduccion);
+    // ── Gráficas ──────────────────────────────────────────
+    renderGraficoBalance(data.ventasSemana || []);
+    renderGraficoDona(data.topProductos   || []);
+    renderLotesRecientes(data.produccionHoy || []);
+    renderAlertasStock(k.productosStockBajo || 0);
 
   } catch(e) {
-    console.error('Error dashboard:', e);
+    console.error('Dashboard error:', e);
   }
 }
 
-// ── Gráfica líneas: Balance leche ─────
-function renderGraficoBalance() {
-  const ctx = el('graficoBalance');
-  if (!ctx) return;
+/* Gráfica barras ventas semana */
+function renderGraficoBalance(ventas) {
+  const canvas = el('graficoBalance');
+  if (!canvas || !window.Chart) return;
+  if (_chartBalance) { _chartBalance.destroy(); _chartBalance = null; }
 
-  const labels   = ['28/05','29/05','30/05','31/05','01/06','02/06','Hoy'];
-  const recibida = [1100,  1300,  1050,  1400,  1250,  1180,  1250];
-  const procesada= [950,   1200,  1050,  1100,  980,   1050,  980];
-
-  if (chartBalance) chartBalance.destroy();
-
-  chartBalance = new Chart(ctx, {
-    type: 'line',
+  _chartBalance = new Chart(canvas, {
+    type: 'bar',
     data: {
-      labels,
-      datasets: [
-        {
-          label: 'Leche Recibida (L)',
-          data: recibida,
-          borderColor: '#38BDF8',
-          backgroundColor: 'rgba(56,189,248,.08)',
-          borderWidth: 2.5,
-          pointBackgroundColor: '#38BDF8',
-          pointRadius: 4,
-          tension: 0.4,
-          fill: true,
-        },
-        {
-          label: 'Leche Procesada (L)',
-          data: procesada,
-          borderColor: '#468C28',
-          backgroundColor: 'rgba(70,140,40,.08)',
-          borderWidth: 2.5,
-          pointBackgroundColor: '#468C28',
-          pointRadius: 4,
-          tension: 0.4,
-          fill: true,
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: 'top',
-          labels: { font: { size: 12 }, usePointStyle: true, pointStyleWidth: 10 }
-        },
-        tooltip: {
-          callbacks: {
-            label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y} L`
-          }
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: false,
-          min: 800,
-          grid: { color: '#F1F5F9' },
-          ticks: { font: { size: 11 }, callback: v => v + ' L' }
-        },
-        x: {
-          grid: { display: false },
-          ticks: { font: { size: 11 } }
-        }
-      }
-    }
-  });
-}
-
-// ── Gráfica dona: Top productos ───────
-function renderGraficoDona() {
-  const ctx = el('graficoDona');
-  if (!ctx) return;
-
-  if (chartDona) chartDona.destroy();
-
-  chartDona = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: ['Queso Fresco', 'Quesillo', 'Mantequilla'],
+      labels: ventas.map(v => v.dia),
       datasets: [{
-        data: [55, 30, 15],
-        backgroundColor: ['#003C78', '#468C28', '#38BDF8'],
-        borderWidth: 2,
-        borderColor: '#fff',
-        hoverOffset: 6,
+        label: 'Ventas',
+        data: ventas.map(v => v.total),
+        backgroundColor: 'rgba(0,60,120,.75)',
+        borderRadius: 5
       }]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '65%',
+      responsive: true, maintainAspectRatio: false,
       plugins: {
-        legend: {
-          position: 'bottom',
-          labels: { font: { size: 11 }, usePointStyle: true, pointStyleWidth: 8, padding: 12 }
-        },
-        tooltip: {
-          callbacks: {
-            label: ctx => ` ${ctx.label}: ${ctx.parsed}%`
-          }
-        }
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => 'L. ' + Number(c.raw).toLocaleString('es-HN', {minimumFractionDigits:2}) }}
+      },
+      scales: {
+        x: { ticks: { color:'#94A3B8', font:{size:11} }, grid: { display:false } },
+        y: { ticks: { color:'#94A3B8', callback: v => 'L.' + Math.round(v/1000) + 'K' }, grid: { color:'rgba(0,0,0,.04)' } }
       }
     }
   });
 }
 
-// ── Tabla lotes recientes ─────────────
-function renderLotesRecientes(lista) {
-  const contenedor = el('tablaLotesRecientes');
-  if (!contenedor) return;
+/* Gráfica dona top productos */
+function renderGraficoDona(productos) {
+  const canvas = el('graficoDona');
+  if (!canvas || !window.Chart) return;
+  if (_chartDona) { _chartDona.destroy(); _chartDona = null; }
 
-  if (!lista || lista.length === 0) {
-    contenedor.innerHTML = `<div style="padding:30px;text-align:center;color:#64748B;font-size:13px">No hay lotes registrados hoy</div>`;
+  if (!productos.length) return;
+
+  _chartDona = new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels: productos.map(p => p.nombre),
+      datasets: [{
+        data: productos.map(p => p.ingresos),
+        backgroundColor: ['#003C78','#468C28','#1D4ED8','#D97706','#DC2626'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position:'bottom', labels:{ font:{size:11}, padding:8, boxWidth:10 } },
+        tooltip: { callbacks: { label: c => c.label + ': L.' + Number(c.raw).toLocaleString('es-HN') } }
+      }
+    }
+  });
+}
+
+/* Tabla lotes recientes */
+function renderLotesRecientes(lotes) {
+  const cont = el('tablaLotesRecientes');
+  if (!cont) return;
+
+  if (!lotes.length) {
+    cont.innerHTML = '<div style="padding:30px;text-align:center;color:#64748B;font-size:13px">Sin lotes registrados hoy</div>';
     return;
   }
 
-  const recientes = [...lista]
-    .sort((a, b) => new Date(b.creadoEn) - new Date(a.creadoEn))
-    .slice(0, 5);
+  const filas = lotes.map(l => {
+    const isComp = l.estado === 'Completada';
+    const badge  = isComp
+      ? '<span style="background:#DCFCE7;color:#15803D;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px">Completada</span>'
+      : '<span style="background:#DBEAFE;color:#1D4ED8;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px">En proceso</span>';
+    return `
+    <tr style="border-bottom:1px solid #F1F5F9">
+      <td style="padding:12px 20px;font-size:13px;font-weight:700;color:#003C78">${l.producto_nombre}</td>
+      <td style="padding:12px 20px;font-size:13px;color:#64748B">${l.turno}</td>
+      <td style="padding:12px 20px;font-size:13px;font-weight:700;color:#1E293B">${N(l.cantidad_obtenida || 0)} Lbs</td>
+      <td style="padding:12px 20px">${badge}</td>
+    </tr>`;
+  }).join('');
 
-  const badgeColor = {
-    'Completada': 'background:#EAF4E3;color:#2D6B18',
-    'En proceso': 'background:#EAF2FB;color:#0A4A8F',
-    'Pendiente':  'background:#FEF3C7;color:#9A6100',
-    'Cancelada':  'background:#FEF2F2;color:#991B1B',
-  };
-
-  contenedor.innerHTML = `
+  cont.innerHTML = `
     <table style="width:100%;border-collapse:collapse">
       <thead>
-        <tr style="background:#F8FAFC">
-          <th style="padding:10px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Lote</th>
-          <th style="padding:10px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Producto</th>
-          <th style="padding:10px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Leche</th>
-          <th style="padding:10px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Obtenido</th>
-          <th style="padding:10px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Rendimiento</th>
-          <th style="padding:10px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Estado</th>
+        <tr style="background:#F4F7FA;border-bottom:2px solid #E0E9F2">
+          <th style="padding:10px 20px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Producto</th>
+          <th style="padding:10px 20px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Turno</th>
+          <th style="padding:10px 20px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Cantidad</th>
+          <th style="padding:10px 20px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Estado</th>
         </tr>
       </thead>
-      <tbody>
-        ${recientes.map(p => `
-          <tr style="border-bottom:1px solid #F0F4F8">
-            <td style="padding:11px 16px;font-family:monospace;font-size:11px;font-weight:700;color:#003C78;background:#EAF2FB;border-radius:4px">${p.numeroLote || '—'}</td>
-            <td style="padding:11px 16px;font-size:13px;font-weight:600">${p.productoNombre}</td>
-            <td style="padding:11px 16px;font-size:13px;color:#0369A1;font-weight:600">${p.lecheUsada} L</td>
-            <td style="padding:11px 16px;font-size:13px;color:#468C28;font-weight:600">${p.cantidadObtenida} ${p.unidad || ''}</td>
-            <td style="padding:11px 16px;font-size:13px;font-weight:700;color:${p.rendimiento >= 18 ? '#468C28' : p.rendimiento >= 12 ? '#D97706' : '#E03535'}">${p.rendimiento}%</td>
-            <td style="padding:11px 16px"><span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;${badgeColor[p.estado] || 'background:#F1F5F9;color:#64748B'}">${p.estado}</span></td>
-          </tr>`).join('')}
-      </tbody>
+      <tbody>${filas}</tbody>
     </table>`;
 }
+
+/* Alerta stock bajo */
+function renderAlertasStock(stockBajo) {
+  const cont = el('alertasStockContainer');
+  if (!cont) return;
+  if (stockBajo === 0) {
+    cont.innerHTML = `<h4 style="margin:0;font-size:13px;color:#15803D;font-weight:700;display:flex;align-items:center;gap:6px">
+      <i class="ri-checkbox-circle-line"></i> Stock en niveles normales
+    </h4>`;
+  } else {
+    cont.querySelector?.('div')?.firstChild;  // dejar el HTML por defecto si ya tiene alertas
+  }
+}
+
+/* Inicializar cuando ya está Chart.js en la página */
+async function _dashboardInit() {
+  if (window.Chart) return initDashboard();
+  // Chart.js ya está cargado en index.html (línea 7)
+  await initDashboard();
+}
+
+if (document.readyState === 'loading')
+  document.addEventListener('DOMContentLoaded', _dashboardInit);
+else
+  _dashboardInit();

@@ -1,72 +1,49 @@
 /* ═══════════════════════════════════════
    CRUZYMAR · models/proveedoresModel.js
-   Acceso a datos de proveedores
+   Acceso a datos de proveedores — MySQL
 ═══════════════════════════════════════ */
 
-const db = require('../data/db');
+const pool = require('../database');
 const { v4: uuidv4 } = require('uuid');
 
-if (!db.proveedores) db.proveedores = [];
-
-/**
- * Listar proveedores activos con búsqueda opcional
- */
-exports.findAll = (buscar) => {
-  let lista = db.proveedores.filter(p => p.activo !== false);
+exports.findAll = async (buscar) => {
+  let sql  = 'SELECT * FROM proveedores WHERE activo = 1';
+  const params = [];
   if (buscar) {
-    lista = lista.filter(p =>
-      p.nombre.toLowerCase().includes(buscar.toLowerCase())
-    );
+    sql += ' AND nombre LIKE ?';
+    params.push(`%${buscar}%`);
   }
-  return lista;
+  sql += ' ORDER BY nombre ASC';
+  const [rows] = await pool.query(sql, params);
+  return rows;
 };
 
-/**
- * Buscar proveedor activo por ID
- */
-exports.findActiveById = (id) => {
-  return db.proveedores.find(p => p.id === id && p.activo !== false);
+exports.findActiveById = async (id) => {
+  const [rows] = await pool.query('SELECT * FROM proveedores WHERE id = ? AND activo = 1', [id]);
+  return rows[0] || null;
 };
 
-/**
- * Crear nuevo proveedor
- */
-exports.create = ({ nombre, telefono, email, direccion, tipo, rtn }) => {
-  const nuevo = {
-    id: uuidv4(),
-    nombre,
-    telefono: telefono || '',
-    email: email || '',
-    direccion: direccion || '',
-    tipo: tipo || 'Local',
-    rtn: rtn || '',
-    activo: true,
-    creadoEn: new Date().toISOString()
-  };
-  db.proveedores.push(nuevo);
-  return nuevo;
+exports.create = async ({ nombre, telefono, email, direccion, tipo, rtn }) => {
+  const id = uuidv4();
+  await pool.query(
+    'INSERT INTO proveedores (id, nombre, telefono, email, direccion, tipo, rtn) VALUES (?,?,?,?,?,?,?)',
+    [id, nombre, telefono||'', email||'', direccion||'', tipo||'Local', rtn||'']
+  );
+  const [rows] = await pool.query('SELECT * FROM proveedores WHERE id = ?', [id]);
+  return rows[0];
 };
 
-/**
- * Actualizar proveedor existente
- */
-exports.update = (id, data) => {
-  const idx = db.proveedores.findIndex(p => p.id === id);
-  if (idx === -1) return null;
-  db.proveedores[idx] = {
-    ...db.proveedores[idx],
-    ...data,
-    actualizadoEn: new Date().toISOString()
-  };
-  return db.proveedores[idx];
+exports.update = async (id, data) => {
+  const campos = ['nombre','telefono','email','direccion','tipo','rtn'];
+  const sets   = campos.filter(c => data[c] !== undefined).map(c => `${c} = ?`);
+  const vals   = campos.filter(c => data[c] !== undefined).map(c => data[c]);
+  if (!sets.length) return null;
+  await pool.query(`UPDATE proveedores SET ${sets.join(', ')} WHERE id = ?`, [...vals, id]);
+  const [rows] = await pool.query('SELECT * FROM proveedores WHERE id = ?', [id]);
+  return rows[0] || null;
 };
 
-/**
- * Eliminar proveedor (soft delete)
- */
-exports.softDelete = (id) => {
-  const idx = db.proveedores.findIndex(p => p.id === id);
-  if (idx === -1) return false;
-  db.proveedores[idx].activo = false;
-  return true;
+exports.softDelete = async (id) => {
+  const [res] = await pool.query('UPDATE proveedores SET activo = 0 WHERE id = ?', [id]);
+  return res.affectedRows > 0;
 };

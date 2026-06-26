@@ -1,0 +1,246 @@
+<!-- CRUZYMAR · comercial.html -->
+<div>
+  <!-- HEADER -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <div>
+      <h2 style="margin:0;font-size:20px;font-weight:800;color:#003C78">
+        <i class="ri-shopping-cart-line" style="color:#0A4A8F"></i> Comercial
+      </h2>
+      <p style="margin-top:4px;color:#64748B;font-size:13px">Ventas y clientes de CRUZYMAR</p>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button onclick="openNuevoCliente()"
+        style="background:#fff;color:#003C78;padding:10px 18px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">
+        <i class="ri-user-add-line"></i> Nuevo Cliente
+      </button>
+      <button onclick="openNuevaVenta()"
+        style="background:#003C78;color:#fff;padding:10px 18px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(0,60,120,.2)">
+        <i class="ri-shopping-bag-3-line"></i> Registrar Venta
+      </button>
+    </div>
+  </div>
+
+  <!-- TARJETAS -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px">
+    <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#EAF2FB;display:flex;align-items:center;justify-content:center"><i class="ri-shopping-cart-2-line" style="color:#003C78;font-size:18px"></i></div>
+        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Ventas Hoy</span>
+      </div>
+      <div id="vtaVentasDia" style="font-size:24px;font-weight:800;color:#003C78">0</div>
+    </div>
+    <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#F0FDF4;display:flex;align-items:center;justify-content:center"><i class="ri-money-dollar-circle-line" style="color:#16A34A;font-size:18px"></i></div>
+        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Ingresos Hoy</span>
+      </div>
+      <div id="vtaIngresosDia" style="font-size:24px;font-weight:800;color:#16A34A">L. 0.00</div>
+    </div>
+    <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#FFF7ED;display:flex;align-items:center;justify-content:center"><i class="ri-wallet-3-line" style="color:#EA580C;font-size:18px"></i></div>
+        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Por Cobrar</span>
+      </div>
+      <div id="vtaPorCobrar" style="font-size:24px;font-weight:800;color:#EA580C">L. 0.00</div>
+    </div>
+    <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#F5F3FF;display:flex;align-items:center;justify-content:center"><i class="ri-group-line" style="color:#7C3AED;font-size:18px"></i></div>
+        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Clientes</span>
+      </div>
+      <div id="vtaClientesActivos" style="font-size:24px;font-weight:800;color:#7C3AED">0</div>
+    </div>
+  </div>
+
+  <!-- DOS COLUMNAS -->
+  <div style="display:grid;grid-template-columns:60% 38%;gap:2%;margin-bottom:24px">
+
+    <!-- VENTAS -->
+    <div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2;overflow:hidden">
+      <div style="padding:14px 20px;border-bottom:1px solid #E0E9F2;background:#F8FAFC">
+        <span style="font-size:13px;font-weight:700;color:#003C78"><i class="ri-list-check-2"></i> Historial de Ventas</span>
+      </div>
+      <div style="overflow-y:auto;max-height:420px">
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr style="background:#F4F7FA;border-bottom:2px solid #E0E9F2;position:sticky;top:0;z-index:1">
+              <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">N° / Fecha</th>
+              <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Cliente</th>
+              <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Total</th>
+              <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Estado</th>
+              <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Acc.</th>
+            </tr>
+          </thead>
+          <tbody id="ventasTableBody">
+            <tr><td colspan="5" style="text-align:center;padding:40px;color:#64748B">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CLIENTES -->
+    <div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2;overflow:hidden">
+      <div style="padding:14px 20px;border-bottom:1px solid #E0E9F2;background:#F8FAFC">
+        <span style="font-size:13px;font-weight:700;color:#003C78"><i class="ri-group-line"></i> Clientes</span>
+      </div>
+      <div style="overflow-y:auto;max-height:420px">
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr style="background:#F4F7FA;border-bottom:2px solid #E0E9F2;position:sticky;top:0;z-index:1">
+              <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Nombre</th>
+              <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Tel.</th>
+              <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Tipo</th>
+              <th style="padding:10px 14px;text-align:center;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Acc.</th>
+            </tr>
+          </thead>
+          <tbody id="clientesTableBody">
+            <tr><td colspan="4" style="text-align:center;padding:40px;color:#64748B">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL NUEVO CLIENTE ═══ -->
+<div id="modalCliente" style="display:none;position:fixed;inset:0;background:rgba(15,35,73,.55);align-items:center;justify-content:center;z-index:1000;padding:20px;backdrop-filter:blur(4px)">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:460px;box-shadow:0 32px 80px rgba(0,0,0,.25)">
+    <div style="padding:18px 24px;border-bottom:1px solid #E0E9F2;display:flex;justify-content:space-between;align-items:center;border-radius:16px 16px 0 0">
+      <h3 style="font-size:15px;font-weight:700;color:#003C78;margin:0"><i class="ri-user-add-line"></i> Nuevo Cliente</h3>
+      <button onclick="closeModalCliente()" style="width:28px;height:28px;border-radius:8px;border:none;background:#F4F7FA;cursor:pointer;color:#64748B"><i class="ri-close-line"></i></button>
+    </div>
+    <div style="padding:22px 24px">
+      <form id="formCliente">
+        <div style="margin-bottom:14px">
+          <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px">Nombre *</label>
+          <input id="cliNombre" type="text" placeholder="Nombre completo o empresa"
+            style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px">Teléfono</label>
+            <input id="cliTelefono" type="tel" placeholder="9900-0000"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px">Tipo</label>
+            <select id="cliTipo" style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none">
+              <option value="Particular">Particular</option>
+              <option value="Pulpería">Pulpería</option>
+              <option value="Supermercado">Supermercado</option>
+              <option value="Restaurante">Restaurante</option>
+              <option value="Empresa">Empresa</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px">RTN</label>
+          <input id="cliRTN" type="text" placeholder="0000-0000-000000"
+            style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+        </div>
+      </form>
+    </div>
+    <div style="padding:14px 24px;border-top:1px solid #E0E9F2;display:flex;justify-content:flex-end;gap:10px;background:#F8FAFC;border-radius:0 0 16px 16px">
+      <button onclick="closeModalCliente()" style="padding:9px 18px;border:2px solid #E0E9F2;background:#fff;border-radius:8px;font-size:13px;cursor:pointer;color:#64748B">Cancelar</button>
+      <button onclick="saveCliente()" style="padding:9px 20px;background:#003C78;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">
+        <i class="ri-save-line"></i> Guardar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL NUEVA VENTA ═══ -->
+<div id="modalVenta" style="display:none;position:fixed;inset:0;background:rgba(15,35,73,.55);align-items:center;justify-content:center;z-index:1000;padding:20px;backdrop-filter:blur(4px)">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:680px;box-shadow:0 32px 80px rgba(0,0,0,.25);max-height:92vh;overflow-y:auto">
+    <div style="padding:18px 24px;border-bottom:1px solid #E0E9F2;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;z-index:10;border-radius:16px 16px 0 0">
+      <h3 style="font-size:15px;font-weight:700;color:#003C78;margin:0"><i class="ri-shopping-bag-3-line"></i> Registrar Venta</h3>
+      <button onclick="closeModalVenta()" style="width:28px;height:28px;border-radius:8px;border:none;background:#F4F7FA;cursor:pointer;color:#64748B"><i class="ri-close-line"></i></button>
+    </div>
+    <div style="padding:22px 24px">
+      <form id="formVenta">
+
+        <!-- Cliente y pago -->
+        <div style="margin-bottom:16px">
+          <h4 style="font-size:11px;font-weight:800;color:#64748B;text-transform:uppercase;margin-bottom:10px;border-bottom:1px solid #E0E9F2;padding-bottom:6px">Cliente y forma de pago</h4>
+          <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px">
+            <div>
+              <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:5px">Cliente</label>
+              <select id="vtaClienteId" style="width:100%;padding:9px 12px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none"></select>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:5px">Forma de pago</label>
+              <select id="vtaFormaPago" style="width:100%;padding:9px 12px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none">
+                <option value="Efectivo">Efectivo</option>
+                <option value="Transferencia">Transferencia</option>
+                <option value="Crédito">Crédito</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:5px">Estado</label>
+              <select id="vtaEstado" style="width:100%;padding:9px 12px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none">
+                <option value="Pagada">Pagada</option>
+                <option value="Pendiente">Pendiente</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Agregar productos -->
+        <div style="margin-bottom:16px">
+          <h4 style="font-size:11px;font-weight:800;color:#64748B;text-transform:uppercase;margin-bottom:10px;border-bottom:1px solid #E0E9F2;padding-bottom:6px">Productos</h4>
+          <div style="display:flex;gap:10px;align-items:flex-end">
+            <div style="flex:1">
+              <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:5px">Producto</label>
+              <select id="vtaProductoSel" style="width:100%;padding:9px 12px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none"></select>
+            </div>
+            <div style="width:90px">
+              <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:5px">Cantidad</label>
+              <input id="vtaCantItem" type="number" min="1" step="1" value="1"
+                style="width:100%;padding:9px 12px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+            </div>
+            <button type="button" onclick="agregarItemVenta()"
+              style="padding:9px 16px;background:#468C28;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">
+              <i class="ri-add-line"></i> Agregar
+            </button>
+          </div>
+        </div>
+
+        <!-- Lista de items -->
+        <div style="background:#F8FAFC;border-radius:10px;padding:14px;min-height:80px;margin-bottom:14px;border:1px solid #E0E9F2">
+          <div id="vtaItemsList"></div>
+          <div style="display:flex;justify-content:flex-end;margin-top:10px;padding-top:10px;border-top:1px solid #E0E9F2">
+            <span style="font-size:14px;font-weight:800;color:#003C78">Total: <span id="vtaTotalCalc">L. 0.00</span></span>
+          </div>
+        </div>
+
+        <!-- Factura -->
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#64748B;cursor:pointer">
+          <input id="vtaGenerarFactura" type="checkbox"
+            style="width:16px;height:16px;accent-color:#003C78">
+          Generar factura automáticamente
+        </label>
+
+      </form>
+    </div>
+    <div style="padding:14px 24px;border-top:1px solid #E0E9F2;display:flex;justify-content:flex-end;gap:10px;background:#F8FAFC;border-radius:0 0 16px 16px">
+      <button onclick="closeModalVenta()" style="padding:9px 18px;border:2px solid #E0E9F2;background:#fff;border-radius:8px;font-size:13px;cursor:pointer;color:#64748B">Cancelar</button>
+      <button onclick="saveVentaUnificada()" style="padding:9px 22px;background:#003C78;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">
+        <i class="ri-save-line"></i> Registrar Venta
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+.btn-accion { width:28px;height:28px;border-radius:6px;border:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;justify-content:center;transition:all .2s;margin:0 2px; }
+.btn-accion.verde { background:#F0FDF4;color:#15803D; }
+.btn-accion.rojo  { background:#FEF2F2;color:#991B1B; }
+.btn-accion:hover { opacity:.75;transform:scale(1.1); }
+table tr  { border-bottom:1px solid #F0F4F8;transition:background .2s; }
+table tr:hover { background:#F8FBFF; }
+table td  { padding:11px 14px;font-size:13px; }
+.badge    { padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700; }
+.b-ok     { background:#DCFCE7;color:#15803D; }
+.b-pend   { background:#FEF3C7;color:#D97706; }
+.b-err    { background:#FEE2E2;color:#DC2626; }
+</style>

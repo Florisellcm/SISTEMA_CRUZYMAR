@@ -1,38 +1,53 @@
-const db = require('../data/db');
+/* ═══════════════════════════════════════
+   CRUZYMAR · models/facturacionModel.js — MySQL
+═══════════════════════════════════════ */
+const pool = require('../database');
 const { v4: uuidv4 } = require('uuid');
 
-if (!db.facturacion)    db.facturacion    = [];
-if (!db.nextFactura) db.nextFactura = 1;
-
-exports.findAll = () => {
-  let lista = [...db.facturacion];
-  lista.sort((a, b) => new Date(b.creadoEn) - new Date(a.creadoEn));
-  return lista;
+exports.findAll = async () => {
+  const [rows] = await pool.query(`
+    SELECT f.*, c.nombre AS cliente_nombre
+    FROM facturacion f
+    LEFT JOIN clientes c ON c.id = f.cliente_id
+    ORDER BY f.creado_en DESC
+  `);
+  return rows;
 };
 
-exports.create = (data) => {
-  const numero = `FAC-${String(db.nextFactura).padStart(4, '0')}`;
-  db.nextFactura++;
-  const nueva = {
-    id: uuidv4(),
-    numero,
-    ...data,
-    creadoEn: new Date().toISOString()
-  };
-  db.facturacion.push(nueva);
-  return nueva;
+exports.findById = async (id) => {
+  const [rows] = await pool.query(`
+    SELECT f.*, c.nombre AS cliente_nombre
+    FROM facturacion f
+    LEFT JOIN clientes c ON c.id = f.cliente_id
+    WHERE f.id = ?`, [id]);
+  return rows[0] || null;
 };
 
-exports.update = (id, data) => {
-  const idx = db.facturacion.findIndex(f => f.id === id);
-  if (idx === -1) return null;
-  db.facturacion[idx] = { ...db.facturacion[idx], ...data, actualizadoEn: new Date().toISOString() };
-  return db.facturacion[idx];
+exports.create = async (data) => {
+  const [[cnt]] = await pool.query("SELECT LPAD(COUNT(*)+1,4,'0') AS num FROM facturacion");
+  const numero  = `FAC-${cnt.num}`;
+  const id      = uuidv4();
+  const fecha   = data.fecha || new Date().toISOString().slice(0, 10);
+  const total   = parseFloat(data.monto_total || data.total || 0);
+
+  await pool.query(
+    `INSERT INTO facturacion (id, numero, cliente_id, venta_id, total, estado, fecha)
+     VALUES (?, ?, ?, ?, ?, 'Emitida', ?)`,
+    [id, numero, data.cliente_id || null, data.venta_id || null, total, fecha]
+  );
+  return exports.findById(id);
 };
 
-exports.remove = (id) => {
-  const idx = db.facturacion.findIndex(f => f.id === id);
-  if (idx === -1) return false;
-  db.facturacion.splice(idx, 1);
-  return true;
+exports.update = async (id, data) => {
+  const campos = ['estado'];
+  const sets   = campos.filter(c => data[c] !== undefined).map(c => `${c} = ?`);
+  const vals   = campos.filter(c => data[c] !== undefined).map(c => data[c]);
+  if (!sets.length) return exports.findById(id);
+  await pool.query(`UPDATE facturacion SET ${sets.join(', ')} WHERE id = ?`, [...vals, id]);
+  return exports.findById(id);
+};
+
+exports.remove = async (id) => {
+  const [res] = await pool.query("UPDATE facturacion SET estado='Anulada' WHERE id = ?", [id]);
+  return res.affectedRows > 0;
 };

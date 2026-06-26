@@ -1,39 +1,25 @@
+/* ═══════════════════════════════════════
+   CRUZYMAR · controllers/facturacionController.js
+═══════════════════════════════════════ */
 const model = require('../models/facturacionModel');
 
-exports.getAll = (req, res) => {
-  try {
-    const data = model.findAll();
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+exports.getAll = async (req, res) => {
+  try { res.json(await model.findAll()); }
+  catch (e) { res.status(500).json({ error: e.message }); }
 };
-
-exports.create = (req, res) => {
-  try {
-    const nuevo = model.create(req.body);
-    res.status(201).json(nuevo);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
+exports.create = async (req, res) => {
+  try { res.status(201).json(await model.create(req.body)); }
+  catch (e) { res.status(400).json({ error: e.message }); }
 };
-
-exports.update = (req, res) => {
+exports.update = async (req, res) => {
   try {
-    const act = model.update(req.params.id, req.body);
-    if (!act) return res.status(404).json({ error: 'No encontrado' });
-    res.json(act);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
+    const r = await model.update(req.params.id, req.body);
+    r ? res.json(r) : res.status(404).json({ error: 'No encontrado' });
+  } catch (e) { res.status(400).json({ error: e.message }); }
 };
-
-exports.remove = (req, res) => {
+exports.remove = async (req, res) => {
   try {
-    const ok = model.remove(req.params.id);
-    if (!ok) return res.status(404).json({ error: 'No encontrado' });
-    res.json({ message: 'Eliminado' });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
+    const ok = await model.remove(req.params.id);
+    ok ? res.json({ message: 'Factura anulada' }) : res.status(404).json({ error: 'No encontrado' });
+  } catch (e) { res.status(400).json({ error: e.message }); }
 };
