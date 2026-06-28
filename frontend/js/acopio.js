@@ -121,7 +121,7 @@ async function saveRecepcionUnificada() {
     precio_litro: parseFloat(el('recPrecio')?.value) || 12,
     temperatura: parseFloat(el('recTemp').value) || null,
     turno: el('recTurno')?.value || 'Mañana',
-    fecha: el('recFecha')?.value || new Date().toISOString().slice(0, 10),
+    fecha: el('recFecha')?.value || new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10),
     observaciones: el('recObs').value
   };
 

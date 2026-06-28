@@ -46,7 +46,7 @@ function poblarSelectRecetas() {
 }
 
 function actualizarTarjetasProduccion() {
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   let lotesHoy = 0, lecheHoy = 0, prodHoy = 0;
 
   produccionData.forEach(p => {
@@ -110,7 +110,7 @@ function openModalProduccion() {
   poblarSelectRecetas();
   // Fecha de hoy por defecto
   const fi = el('prodFecha');
-  if (fi) fi.value = new Date().toISOString().slice(0, 10);
+  if (fi) fi.value = new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   el('modalProduccion').style.display = 'flex';
 }
 
@@ -124,7 +124,7 @@ async function saveProduccionUnificada() {
   const estado = el('prodEstado')?.value || 'En proceso';
   const cantidadObtenida = parseFloat(el('prodObtenido')?.value) || 0;
   const turno = el('prodTurno')?.value || 'Mañana';
-  const fechaProduccion = el('prodFecha')?.value || new Date().toISOString().slice(0, 10);
+  const fechaProduccion = el('prodFecha')?.value || new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   const observaciones = el('prodObs')?.value || '';
 
   if (!recetaVal) return toast('Seleccione el producto a elaborar', 'err');

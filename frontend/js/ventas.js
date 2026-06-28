@@ -26,7 +26,7 @@ async function loadVentas() {
 
 /* ─── TARJETAS ─── */
 function actualizarTarjetasComercial() {
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   let ventasHoy = 0, ingresosHoy = 0, porCobrar = 0;
 
   ventasData.forEach(v => {
@@ -241,7 +241,7 @@ async function saveVentaUnificada() {
         venta_id:    nuevaVenta.id,
         cliente_id:  clienteId || null,
         monto_total: nuevaVenta.total,
-        fecha:       new Date().toISOString().slice(0, 10)
+        fecha:       new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10)
       });
       toast('Venta y factura registradas ✅');
     } else {

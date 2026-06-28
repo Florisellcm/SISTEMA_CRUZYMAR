@@ -141,7 +141,7 @@ async function saveGasto() {
     categoria: el('gsCategoria')?.value || 'Otros',
     monto,
     proveedor: provObj ? provObj.nombre : '',
-    fecha: new Date().toISOString().slice(0, 10)
+    fecha: new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10)
   };
 
   try {

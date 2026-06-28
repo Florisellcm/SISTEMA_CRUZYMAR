@@ -1,228 +1,697 @@
 <!-- CRUZYMAR · reportes.html -->
 <style>
-/* ══ VARIABLES ══ */
-:root{
-  --navy:#003C78; --navy2:#004F9E; --verde:#468C28; --verde2:#2C6B10;
-  --red:#DC2626;  --amb:#D97706;   --slate:#64748B; --bgpage:#F4F7FA;
-}
+  /* ══ VARIABLES ══ */
+  :root {
+    --navy: #003C78;
+    --navy2: #004F9E;
+    --verde: #468C28;
+    --verde2: #2C6B10;
+    --red: #DC2626;
+    --amb: #D97706;
+    --slate: #64748B;
+    --bgpage: #F4F7FA;
+  }
 
-/* ══ CABECERA EMPRESA (pantalla) ══ */
-.rep-empresa-header{
-  display:flex;align-items:center;gap:16px;
-  background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 55%,var(--verde) 100%);
-  border-radius:14px;padding:18px 22px;margin-bottom:16px;
-  box-shadow:0 4px 18px rgba(0,60,120,.18);
-}
-.rep-empresa-logo-wrap{
-  width:60px;height:60px;min-width:60px;background:#fff;border-radius:10px;
-  display:flex;align-items:center;justify-content:center;padding:5px;
-  box-shadow:0 2px 6px rgba(0,0,0,.12);
-}
-.rep-empresa-logo{ width:100%;height:100%;object-fit:contain;border-radius:6px }
-.rep-empresa-info{ flex:1 }
-.rep-empresa-nombre{ margin:0;font-size:17px;font-weight:800;color:#fff }
-.rep-empresa-sub{ margin:2px 0 0;font-size:12px;color:rgba(255,255,255,.7) }
-.rep-empresa-modulo{ margin:5px 0 0;font-size:12px;color:#B5E0FF;font-weight:600 }
-.rep-fecha-chip{
-  background:rgba(255,255,255,.14);color:#fff;border-radius:20px;
-  padding:5px 13px;font-size:12px;font-weight:600;
-  border:1px solid rgba(255,255,255,.2);white-space:nowrap;
-}
+  /* ══ CABECERA EMPRESA (pantalla) ══ */
+  .rep-empresa-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 55%, var(--verde) 100%);
+    border-radius: 14px;
+    padding: 18px 22px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 18px rgba(0, 60, 120, .18);
+  }
 
-/* ══ GRUPO TABS ══ */
-.rep-group-bar{ display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap }
-.rep-group-btn{
-  display:inline-flex;align-items:center;gap:6px;padding:8px 16px;
-  border-radius:9px;border:2px solid #E0E9F2;background:#fff;
-  color:var(--slate);font-size:13px;font-weight:700;cursor:pointer;transition:.14s;
-}
-.rep-group-btn:hover{ border-color:var(--navy);color:var(--navy) }
-.rep-group-btn.active{ background:var(--navy);border-color:var(--navy);color:#fff }
+  .rep-empresa-logo-wrap {
+    width: 60px;
+    height: 60px;
+    min-width: 60px;
+    background: #fff;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .12);
+  }
 
-/* ══ SUB-TABS ══ */
-.rep-subtabs{ display:flex;gap:5px;padding:9px 11px;background:#F4F7FA;border-radius:11px;flex-wrap:wrap;margin-bottom:6px }
-.rep-sub-btn{
-  display:inline-flex;align-items:center;gap:5px;padding:6px 13px;
-  border-radius:7px;border:none;background:transparent;
-  color:var(--slate);font-size:12px;font-weight:600;cursor:pointer;transition:.11s;
-}
-.rep-sub-btn:hover{ background:#E8EFF8;color:var(--navy) }
-.rep-sub-btn.active{ background:var(--navy);color:#fff }
+  .rep-empresa-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 6px
+  }
 
-/* ══ FILTROS + ACCIONES ══ */
-.rep-toolbar{
-  display:flex;align-items:center;justify-content:space-between;
-  background:#fff;border:1.5px solid #E0E9F2;border-radius:11px;
-  padding:10px 14px;margin-bottom:14px;flex-wrap:wrap;gap:10px;
-}
-.rep-filtros{ display:flex;align-items:center;gap:8px;flex-wrap:wrap }
-.rep-filtros input[type=date],
-.rep-filtros select{
-  padding:7px 11px;border:1.5px solid #E0E9F2;border-radius:7px;
-  font-size:12px;outline:none;color:#1E293B;background:#FAFCFF;
-  font-family:inherit;cursor:pointer;
-}
-.rep-filtros input[type=date]:focus,
-.rep-filtros select:focus{ border-color:var(--navy) }
-.rep-filtros label{ font-size:11px;font-weight:700;color:var(--slate) }
-.rep-btn-filtrar{
-  padding:7px 15px;background:var(--navy);color:#fff;border:none;
-  border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;
-  display:inline-flex;align-items:center;gap:5px;transition:.14s;
-}
-.rep-btn-filtrar:hover{ background:var(--navy2) }
-.rep-acciones{ display:flex;gap:7px }
-.rep-btn-acc{
-  display:inline-flex;align-items:center;gap:5px;padding:7px 14px;
-  border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;transition:.14s;
-  border:1.5px solid #E0E9F2;background:#fff;color:var(--slate);
-}
-.rep-btn-acc:hover{ border-color:var(--navy);color:var(--navy);background:#F0F6FF }
-.rep-btn-acc.primary{ background:var(--navy);border-color:var(--navy);color:#fff }
-.rep-btn-acc.primary:hover{ background:var(--navy2) }
-.rep-btn-acc.verde{ background:var(--verde);border-color:var(--verde);color:#fff }
-.rep-btn-acc.verde:hover{ background:var(--verde2) }
+  .rep-empresa-info {
+    flex: 1
+  }
 
-/* ══ CABECERA REPORTE ══ */
-.rep-report-header{
-  display:flex;align-items:flex-start;justify-content:space-between;
-  background:#fff;border-radius:13px;padding:16px 20px;margin-bottom:13px;
-  border:1.5px solid #E0E9F2;flex-wrap:wrap;gap:10px;
-}
-.rep-rh-title{ display:flex;align-items:center;gap:11px }
-.rep-rh-icon{
-  width:42px;height:42px;border-radius:10px;
-  background:linear-gradient(135deg,var(--navy),var(--navy2));
-  display:flex;align-items:center;justify-content:center;
-  color:#fff;font-size:19px;flex-shrink:0;
-}
-.rep-rh-icon.verde{ background:linear-gradient(135deg,var(--verde2),var(--verde)) }
-.rep-rh-icon.rojo { background:linear-gradient(135deg,#991B1B,var(--red)) }
-.rep-rh-text h3{ margin:0;font-size:15px;font-weight:800;color:var(--navy) }
-.rep-rh-text p{ margin:2px 0 0;font-size:11px;color:var(--slate) }
-.rep-rh-meta{ display:flex;flex-direction:column;align-items:flex-end;gap:3px }
-.rep-meta-chip{
-  display:inline-flex;align-items:center;gap:4px;
-  font-size:11px;font-weight:600;color:var(--slate);
-  background:#F4F7FA;border-radius:5px;padding:2px 8px;
-}
+  .rep-empresa-nombre {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 800;
+    color: #fff
+  }
 
-/* ══ KPI CARDS ══ */
-.rep-krow{ display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:9px;margin-bottom:13px }
-.rep-kcard{
-  background:#fff;border-radius:11px;padding:13px 15px;
-  border:1.5px solid #E8EFF8;transition:.14s;
-}
-.rep-kcard:hover{ border-color:var(--navy);box-shadow:0 2px 7px rgba(0,60,120,.07) }
-.rep-kcard .lbl{ font-size:10px;color:#94A3B8;font-weight:700;margin-bottom:4px;text-transform:uppercase }
-.rep-kcard .val{ font-size:19px;font-weight:800;color:#1E293B }
-.rep-kcard .val.grn{ color:#15803D }
-.rep-kcard .val.red{ color:var(--red) }
-.rep-kcard .val.amb{ color:var(--amb) }
-.rep-kcard .val.blu{ color:var(--navy) }
+  .rep-empresa-sub {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: rgba(255, 255, 255, .7)
+  }
 
-/* ══ CARDS CONTENIDO ══ */
-.rep-card{
-  background:#fff;border-radius:13px;padding:17px 20px;
-  border:1.5px solid #E0E9F2;margin-bottom:12px;
-}
-.rep-card-title{
-  display:flex;align-items:center;gap:7px;
-  font-size:13px;font-weight:800;color:var(--navy);
-  margin:0 0 13px;padding-bottom:9px;border-bottom:2px solid #F4F7FA;
-}
-.rep-card-title i{ font-size:15px;color:var(--verde) }
-.rep-row2{ display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:12px }
-@media(max-width:720px){ .rep-row2{ grid-template-columns:1fr } }
-.rep-chart-wrap{ position:relative }
+  .rep-empresa-modulo {
+    margin: 5px 0 0;
+    font-size: 12px;
+    color: #B5E0FF;
+    font-weight: 600
+  }
 
-/* ══ TABLAS ══ */
-.rep-tbl{ width:100%;border-collapse:collapse;font-size:12.5px }
-.rep-tbl thead tr{ background:#F4F7FA }
-.rep-tbl thead th{
-  padding:9px 12px;text-align:left;font-size:10.5px;font-weight:700;
-  color:var(--slate);border-bottom:2px solid #E0E9F2;text-transform:uppercase;
-}
-.rep-tbl tbody tr{ border-bottom:1px solid #F1F5F9 }
-.rep-tbl tbody tr:hover{ background:#FAFCFF }
-.rep-tbl tbody td{ padding:9px 12px;color:#334155 }
+  .rep-fecha-chip {
+    background: rgba(255, 255, 255, .14);
+    color: #fff;
+    border-radius: 20px;
+    padding: 5px 13px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, .2);
+    white-space: nowrap;
+  }
 
-/* ══ BADGES ══ */
-.rb{ display:inline-block;padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:700;white-space:nowrap }
-.rb-ok { background:#DCFCE7;color:#15803D }
-.rb-rej{ background:#FEE2E2;color:var(--red) }
-.rb-pen{ background:#FEF3C7;color:var(--amb) }
-.rb-blu{ background:#DBEAFE;color:#1D4ED8 }
-.rb-obs{ background:#EDE9FE;color:#7C3AED }
+  /* ══ GRUPO TABS ══ */
+  .rep-group-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    flex-wrap: wrap
+  }
 
-/* ══ BARRAS ══ */
-.rep-bar-wrap{ display:flex;align-items:center;gap:8px;margin-bottom:7px }
-.rep-bar-lbl{ font-size:11.5px;color:var(--slate);min-width:110px;max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis }
-.rep-bar-bg{ flex:1;height:7px;background:#F1F5F9;border-radius:4px;overflow:hidden }
-.rep-bar-fill{ height:100%;border-radius:4px;transition:.4s }
-.rep-bar-val{ font-size:11.5px;font-weight:700;color:#1E293B;min-width:65px;text-align:right }
+  .rep-group-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 9px;
+    border: 2px solid #E0E9F2;
+    background: #fff;
+    color: var(--slate);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: .14s;
+  }
 
-/* ══ EXCEPCION ══ */
-.rep-exc-row{
-  display:flex;gap:11px;padding:13px;
-  border:1.5px solid #E0E9F2;border-radius:11px;margin-bottom:9px;
-  background:#FFFBF5;
-}
-.rep-exc-icon{ width:36px;height:36px;min-width:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px }
-.rep-exc-icon.red{ background:#FEE2E2;color:var(--red) }
-.rep-exc-icon.ok { background:#DCFCE7;color:#15803D }
+  .rep-group-btn:hover {
+    border-color: var(--navy);
+    color: var(--navy)
+  }
 
-/* ══ EMPTY ══ */
-.rep-empty{ text-align:center;padding:50px 20px;color:#94A3B8 }
-.rep-empty i{ font-size:40px;display:block;margin-bottom:10px }
+  .rep-group-btn.active {
+    background: var(--navy);
+    border-color: var(--navy);
+    color: #fff
+  }
 
-/* ══ SPINNER ══ */
-.rep-loading{ text-align:center;padding:60px 20px;color:#94A3B8 }
+  /* ══ SUB-TABS ══ */
+  .rep-subtabs {
+    display: flex;
+    gap: 5px;
+    padding: 9px 11px;
+    background: #F4F7FA;
+    border-radius: 11px;
+    flex-wrap: wrap;
+    margin-bottom: 6px
+  }
 
-/* ══════════════════════════════════════
+  .rep-sub-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 13px;
+    border-radius: 7px;
+    border: none;
+    background: transparent;
+    color: var(--slate);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: .11s;
+  }
+
+  .rep-sub-btn:hover {
+    background: #E8EFF8;
+    color: var(--navy)
+  }
+
+  .rep-sub-btn.active {
+    background: var(--navy);
+    color: #fff
+  }
+
+  /* ══ FILTROS + ACCIONES ══ */
+  .rep-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+    border: 1.5px solid #E0E9F2;
+    border-radius: 11px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .rep-filtros {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap
+  }
+
+  .rep-filtros input[type=date],
+  .rep-filtros select {
+    padding: 7px 11px;
+    border: 1.5px solid #E0E9F2;
+    border-radius: 7px;
+    font-size: 12px;
+    outline: none;
+    color: #1E293B;
+    background: #FAFCFF;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .rep-filtros input[type=date]:focus,
+  .rep-filtros select:focus {
+    border-color: var(--navy)
+  }
+
+  .rep-filtros label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--slate)
+  }
+
+  .rep-btn-filtrar {
+    padding: 7px 15px;
+    background: var(--navy);
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: .14s;
+  }
+
+  .rep-btn-filtrar:hover {
+    background: var(--navy2)
+  }
+
+  .rep-acciones {
+    display: flex;
+    gap: 7px
+  }
+
+  .rep-btn-acc {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 14px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: .14s;
+    border: 1.5px solid #E0E9F2;
+    background: #fff;
+    color: var(--slate);
+  }
+
+  .rep-btn-acc:hover {
+    border-color: var(--navy);
+    color: var(--navy);
+    background: #F0F6FF
+  }
+
+  .rep-btn-acc.primary {
+    background: var(--navy);
+    border-color: var(--navy);
+    color: #fff
+  }
+
+  .rep-btn-acc.primary:hover {
+    background: var(--navy2)
+  }
+
+  .rep-btn-acc.verde {
+    background: var(--verde);
+    border-color: var(--verde);
+    color: #fff
+  }
+
+  .rep-btn-acc.verde:hover {
+    background: var(--verde2)
+  }
+
+  /* ══ CABECERA REPORTE ══ */
+  .rep-report-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    background: #fff;
+    border-radius: 13px;
+    padding: 16px 20px;
+    margin-bottom: 13px;
+    border: 1.5px solid #E0E9F2;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .rep-rh-title {
+    display: flex;
+    align-items: center;
+    gap: 11px
+  }
+
+  .rep-rh-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--navy), var(--navy2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 19px;
+    flex-shrink: 0;
+  }
+
+  .rep-rh-icon.verde {
+    background: linear-gradient(135deg, var(--verde2), var(--verde))
+  }
+
+  .rep-rh-icon.rojo {
+    background: linear-gradient(135deg, #991B1B, var(--red))
+  }
+
+  .rep-rh-text h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--navy)
+  }
+
+  .rep-rh-text p {
+    margin: 2px 0 0;
+    font-size: 11px;
+    color: var(--slate)
+  }
+
+  .rep-rh-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px
+  }
+
+  .rep-meta-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--slate);
+    background: #F4F7FA;
+    border-radius: 5px;
+    padding: 2px 8px;
+  }
+
+  /* ══ KPI CARDS ══ */
+  .rep-krow {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 9px;
+    margin-bottom: 13px
+  }
+
+  .rep-kcard {
+    background: #fff;
+    border-radius: 11px;
+    padding: 13px 15px;
+    border: 1.5px solid #E8EFF8;
+    transition: .14s;
+  }
+
+  .rep-kcard:hover {
+    border-color: var(--navy);
+    box-shadow: 0 2px 7px rgba(0, 60, 120, .07)
+  }
+
+  .rep-kcard .lbl {
+    font-size: 10px;
+    color: #94A3B8;
+    font-weight: 700;
+    margin-bottom: 4px;
+    text-transform: uppercase
+  }
+
+  .rep-kcard .val {
+    font-size: 19px;
+    font-weight: 800;
+    color: #1E293B
+  }
+
+  .rep-kcard .val.grn {
+    color: #15803D
+  }
+
+  .rep-kcard .val.red {
+    color: var(--red)
+  }
+
+  .rep-kcard .val.amb {
+    color: var(--amb)
+  }
+
+  .rep-kcard .val.blu {
+    color: var(--navy)
+  }
+
+  /* ══ CARDS CONTENIDO ══ */
+  .rep-card {
+    background: #fff;
+    border-radius: 13px;
+    padding: 17px 20px;
+    border: 1.5px solid #E0E9F2;
+    margin-bottom: 12px;
+  }
+
+  .rep-card-title {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--navy);
+    margin: 0 0 13px;
+    padding-bottom: 9px;
+    border-bottom: 2px solid #F4F7FA;
+  }
+
+  .rep-card-title i {
+    font-size: 15px;
+    color: var(--verde)
+  }
+
+  .rep-row2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 11px;
+    margin-bottom: 12px
+  }
+
+  @media(max-width:720px) {
+    .rep-row2 {
+      grid-template-columns: 1fr
+    }
+  }
+
+  .rep-chart-wrap {
+    position: relative
+  }
+
+  /* ══ TABLAS ══ */
+  .rep-tbl {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px
+  }
+
+  .rep-tbl thead tr {
+    background: #F4F7FA
+  }
+
+  .rep-tbl thead th {
+    padding: 9px 12px;
+    text-align: left;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--slate);
+    border-bottom: 2px solid #E0E9F2;
+    text-transform: uppercase;
+  }
+
+  .rep-tbl tbody tr {
+    border-bottom: 1px solid #F1F5F9
+  }
+
+  .rep-tbl tbody tr:hover {
+    background: #FAFCFF
+  }
+
+  .rep-tbl tbody td {
+    padding: 9px 12px;
+    color: #334155
+  }
+
+  /* ══ BADGES ══ */
+  .rb {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 10.5px;
+    font-weight: 700;
+    white-space: nowrap
+  }
+
+  .rb-ok {
+    background: #DCFCE7;
+    color: #15803D
+  }
+
+  .rb-rej {
+    background: #FEE2E2;
+    color: var(--red)
+  }
+
+  .rb-pen {
+    background: #FEF3C7;
+    color: var(--amb)
+  }
+
+  .rb-blu {
+    background: #DBEAFE;
+    color: #1D4ED8
+  }
+
+  .rb-obs {
+    background: #EDE9FE;
+    color: #7C3AED
+  }
+
+  /* ══ BARRAS ══ */
+  .rep-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 7px
+  }
+
+  .rep-bar-lbl {
+    font-size: 11.5px;
+    color: var(--slate);
+    min-width: 110px;
+    max-width: 130px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis
+  }
+
+  .rep-bar-bg {
+    flex: 1;
+    height: 7px;
+    background: #F1F5F9;
+    border-radius: 4px;
+    overflow: hidden
+  }
+
+  .rep-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: .4s
+  }
+
+  .rep-bar-val {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #1E293B;
+    min-width: 65px;
+    text-align: right
+  }
+
+  /* ══ EXCEPCION ══ */
+  .rep-exc-row {
+    display: flex;
+    gap: 11px;
+    padding: 13px;
+    border: 1.5px solid #E0E9F2;
+    border-radius: 11px;
+    margin-bottom: 9px;
+    background: #FFFBF5;
+  }
+
+  .rep-exc-icon {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px
+  }
+
+  .rep-exc-icon.red {
+    background: #FEE2E2;
+    color: var(--red)
+  }
+
+  .rep-exc-icon.ok {
+    background: #DCFCE7;
+    color: #15803D
+  }
+
+  /* ══ EMPTY ══ */
+  .rep-empty {
+    text-align: center;
+    padding: 50px 20px;
+    color: #94A3B8
+  }
+
+  .rep-empty i {
+    font-size: 40px;
+    display: block;
+    margin-bottom: 10px
+  }
+
+  /* ══ SPINNER ══ */
+  .rep-loading {
+    text-align: center;
+    padding: 60px 20px;
+    color: #94A3B8
+  }
+
+  /* ══════════════════════════════════════
    CABECERA OCULTA — SOLO IMPRESIÓN
 ══════════════════════════════════════ */
-#rep-print-header{ display:none }
+  #rep-print-header {
+    display: none
+  }
 
-/* ══════════════════════════════════════
+  /* ══════════════════════════════════════
    @MEDIA PRINT
 ══════════════════════════════════════ */
-@media print{
-  /* Ocultar TODO del sistema excepto el reporte */
-  body > *:not(#app-wrapper),
-  #app-wrapper > *:not(main),
-  main > *:not(#dynamicContent),
-  #dynamicContent > *:not(#vistaReportes),
-  #vistaReportes > *:not(#rep-print-header):not(#rep-content),
-  #rep-root > *:not(#rep-content),
-  .rep-empresa-header,
-  .rep-group-bar,
-  [id^="rep-subtabs-"],
-  .rep-toolbar
-  { display:none !important }
+  @media print {
 
-  #rep-print-header{ display:block !important }
+    /* Ocultar TODO del sistema excepto el reporte */
+    body>*:not(#appPage),
+    #appPage>*:not(.main),
+    .main>*:not(#dynamicContent),
+    #dynamicContent>*:not(#rep-print-header):not(#rep-root),
+    #rep-root>*:not(#rep-content),
+    .rep-empresa-header,
+    .rep-report-header,
+    .rep-group-bar,
+    [id^="rep-subtabs-"],
+    .rep-toolbar {
+      display: none !important
+    }
 
-  body{ margin:0;background:#fff }
-  #rep-content{ margin-top:0 !important }
+    /* Reiniciar contenedores principales para evitar márgenes o layouts cortados en impresión */
+    #appPage,
+    .main,
+    #dynamicContent,
+    #rep-root,
+    #rep-content {
+      display: block !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100% !important;
+    }
 
-  /* Colores forzados */
-  .rep-kcard .val.grn{ color:#15803D !important }
-  .rep-kcard .val.red{ color:#DC2626 !important }
-  .rb-ok { background:#DCFCE7 !important;color:#15803D !important;-webkit-print-color-adjust:exact;print-color-adjust:exact }
-  .rb-rej{ background:#FEE2E2 !important;color:#DC2626 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact }
-  .rep-bar-fill,-webkit-print-color-adjust:exact;print-color-adjust:exact;
+    #rep-print-header {
+      display: block !important
+    }
 
-  .rep-tbl tr{ page-break-inside:avoid }
-  .rep-card{ page-break-inside:avoid;border:1px solid #ccc }
+    body {
+      margin: 0;
+      background: #fff;
+      width: 100%;
+    }
 
-  #rep-content::after{
-    content:'Impreso por Sistema ERP CRUZYMAR — Documento confidencial — Victoria, Yoro, Honduras';
-    display:block;text-align:center;font-size:9px;color:#94A3B8;
-    margin-top:18px;padding-top:9px;border-top:1px solid #E0E9F2;
+    #rep-content {
+      margin-top: 0 !important
+    }
+
+    /* Colores forzados */
+    .rep-kcard .val.grn {
+      color: #15803D !important
+    }
+
+    .rep-kcard .val.red {
+      color: #DC2626 !important
+    }
+
+    .rb-ok {
+      background: #DCFCE7 !important;
+      color: #15803D !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact
+    }
+
+    .rb-rej {
+      background: #FEE2E2 !important;
+      color: #DC2626 !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact
+    }
+
+    .rep-bar-fill {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .rep-tbl tr {
+      page-break-inside: avoid
+    }
+
+    .rep-card {
+      page-break-inside: avoid;
+      border: 1px solid #ccc
+    }
+
+    #rep-content::after {
+      content: 'Impreso por Sistema ERP CRUZYMAR — Documento confidencial — Victoria, Yoro, Honduras';
+      display: block;
+      text-align: center;
+      font-size: 9px;
+      color: #94A3B8;
+      margin-top: 18px;
+      padding-top: 9px;
+      border-top: 1px solid #E0E9F2;
+    }
+
+    @page {
+      size: letter landscape;
+      margin: 12mm 10mm
+    }
   }
-  @page{ size:letter landscape;margin:12mm 10mm }
-}
 </style>
 
 <!-- ══ CABECERA IMPRESIÓN (oculta en pantalla) ══ -->
@@ -231,18 +700,21 @@
     <img src="/img/logo.png" style="width:52px;height:52px;object-fit:contain">
     <div style="flex:1">
       <p style="margin:0;font-size:15px;font-weight:800;color:#003C78">CRUZYMAR Productos Lácteos</p>
-      <p style="margin:1px 0 0;font-size:10px;color:#64748B">Victoria, Yoro, Honduras — Sistema ERP de Gestión Lechera</p>
+      <p style="margin:1px 0 0;font-size:10px;color:#64748B">Victoria, Yoro, Honduras — Sistema ERP de Gestión Lechera
+      </p>
     </div>
     <div style="text-align:right">
       <p id="rph-fecha-imp" style="margin:0;font-size:10px;color:#64748B"></p>
       <p id="rph-usuario-imp" style="margin:2px 0 0;font-size:10px;color:#64748B"></p>
     </div>
   </div>
-  <div id="rph-barra" style="background:#003C78;color:#fff;padding:7px 12px;border-radius:5px;display:flex;justify-content:space-between;align-items:center;margin:8px 0">
+  <div id="rph-barra"
+    style="background:#003C78;color:#fff;padding:7px 12px;border-radius:5px;display:flex;justify-content:space-between;align-items:center;margin:8px 0">
     <span id="rph-titulo-imp" style="font-size:12px;font-weight:800"></span>
     <span id="rph-resp-imp" style="font-size:10px;opacity:.85"></span>
   </div>
-  <p id="rph-sub-imp" style="margin:0 0 10px;font-size:10px;color:#64748B;border-bottom:1.5px solid #E0E9F2;padding-bottom:7px"></p>
+  <p id="rph-sub-imp"
+    style="margin:0 0 10px;font-size:10px;color:#64748B;border-bottom:1.5px solid #E0E9F2;padding-bottom:7px"></p>
 </div>
 
 <!-- ══ ROOT ══ -->
@@ -271,26 +743,37 @@
     </button>
     <button class="rep-group-btn" data-group="exc" onclick="repSwitchGroup('exc')">
       <i class="ri-alarm-warning-line"></i> Por Excepción
-      <span id="rep-badge-exc" style="display:none;background:#DC2626;color:#fff;border-radius:20px;padding:0 6px;font-size:11px;margin-left:3px">!</span>
+      <span id="rep-badge-exc"
+        style="display:none;background:#DC2626;color:#fff;border-radius:20px;padding:0 6px;font-size:11px;margin-left:3px">!</span>
     </button>
   </div>
 
   <!-- sub-tabs -->
   <div id="rep-subtabs-det" class="rep-subtabs">
-    <button class="rep-sub-btn active" data-rep="d1" onclick="repLoad('d1')"><i class="ri-flask-line"></i> Producción Diaria</button>
-    <button class="rep-sub-btn" data-rep="d2" onclick="repLoad('d2')"><i class="ri-drop-line"></i> Control de Calidad</button>
-    <button class="rep-sub-btn" data-rep="d3" onclick="repLoad('d3')"><i class="ri-truck-line"></i> Distribución</button>
-    <button class="rep-sub-btn" data-rep="d4" onclick="repLoad('d4')"><i class="ri-archive-line"></i> Inventario</button>
+    <button class="rep-sub-btn active" data-rep="d1" onclick="repLoad('d1')"><i class="ri-flask-line"></i> Producción
+      Diaria</button>
+    <button class="rep-sub-btn" data-rep="d2" onclick="repLoad('d2')"><i class="ri-drop-line"></i> Control de
+      Calidad</button>
+    <button class="rep-sub-btn" data-rep="d3" onclick="repLoad('d3')"><i class="ri-truck-line"></i>
+      Distribución</button>
+    <button class="rep-sub-btn" data-rep="d4" onclick="repLoad('d4')"><i class="ri-archive-line"></i>
+      Inventario</button>
   </div>
   <div id="rep-subtabs-sin" class="rep-subtabs" style="display:none">
-    <button class="rep-sub-btn active" data-rep="s1" onclick="repLoad('s1')"><i class="ri-recycle-line"></i> Mermas</button>
-    <button class="rep-sub-btn" data-rep="s2" onclick="repLoad('s2')"><i class="ri-bank-line"></i> Estados Financieros</button>
-    <button class="rep-sub-btn" data-rep="s3" onclick="repLoad('s3')"><i class="ri-shopping-cart-line"></i> Ventas</button>
-    <button class="rep-sub-btn" data-rep="s4" onclick="repLoad('s4')"><i class="ri-user-heart-line"></i> Producto x Cliente</button>
+    <button class="rep-sub-btn active" data-rep="s1" onclick="repLoad('s1')"><i class="ri-recycle-line"></i>
+      Mermas</button>
+    <button class="rep-sub-btn" data-rep="s2" onclick="repLoad('s2')"><i class="ri-bank-line"></i> Estados
+      Financieros</button>
+    <button class="rep-sub-btn" data-rep="s3" onclick="repLoad('s3')"><i class="ri-shopping-cart-line"></i>
+      Ventas</button>
+    <button class="rep-sub-btn" data-rep="s4" onclick="repLoad('s4')"><i class="ri-user-heart-line"></i> Producto x
+      Cliente</button>
   </div>
   <div id="rep-subtabs-exc" class="rep-subtabs" style="display:none">
-    <button class="rep-sub-btn active" data-rep="e1" onclick="repLoad('e1')"><i class="ri-close-circle-line"></i> Leche No Apta</button>
-    <button class="rep-sub-btn" data-rep="e2" onclick="repLoad('e2')"><i class="ri-error-warning-line"></i> Stock Bajo</button>
+    <button class="rep-sub-btn active" data-rep="e1" onclick="repLoad('e1')"><i class="ri-close-circle-line"></i> Leche
+      No Apta</button>
+    <button class="rep-sub-btn" data-rep="e2" onclick="repLoad('e2')"><i class="ri-error-warning-line"></i> Stock
+      Bajo</button>
   </div>
 
   <!-- barra filtros + acciones -->

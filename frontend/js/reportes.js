@@ -114,7 +114,7 @@ const FILTROS_DEF = {
   ],
   s2: [
     { id:'f_mes',  lbl:'Mes', type:'select',
-      ops:[['1','Enero'],['2','Febrero'],['3','Marzo'],['4','Abril'],['5','Mayo'],['6','Junio'],
+      ops:[['todos','Todo el año'],['1','Enero'],['2','Febrero'],['3','Marzo'],['4','Abril'],['5','Mayo'],['6','Junio'],
            ['7','Julio'],['8','Agosto'],['9','Septiembre'],['10','Octubre'],['11','Noviembre'],['12','Diciembre']],
       def: String(new Date().getMonth()+1) },
     { id:'f_anio', lbl:'Año', type:'select',
@@ -122,7 +122,7 @@ const FILTROS_DEF = {
   ],
   s3: [
     { id:'f_mes',  lbl:'Mes', type:'select',
-      ops:[['1','Enero'],['2','Febrero'],['3','Marzo'],['4','Abril'],['5','Mayo'],['6','Junio'],
+      ops:[['todos','Todo el año'],['1','Enero'],['2','Febrero'],['3','Marzo'],['4','Abril'],['5','Mayo'],['6','Junio'],
            ['7','Julio'],['8','Agosto'],['9','Septiembre'],['10','Octubre'],['11','Noviembre'],['12','Diciembre']],
       def: String(new Date().getMonth()+1) },
     { id:'f_anio', lbl:'Año', type:'select',
@@ -130,7 +130,7 @@ const FILTROS_DEF = {
   ],
   s4: [
     { id:'f_mes',  lbl:'Mes', type:'select',
-      ops:[['1','Enero'],['2','Febrero'],['3','Marzo'],['4','Abril'],['5','Mayo'],['6','Junio'],
+      ops:[['todos','Todo el año'],['1','Enero'],['2','Febrero'],['3','Marzo'],['4','Abril'],['5','Mayo'],['6','Junio'],
            ['7','Julio'],['8','Agosto'],['9','Septiembre'],['10','Octubre'],['11','Noviembre'],['12','Diciembre']],
       def: String(new Date().getMonth()+1) },
     { id:'f_anio', lbl:'Año', type:'select',
@@ -143,7 +143,7 @@ const FILTROS_DEF = {
   e2: [],
 };
 
-function hoy(){ return new Date().toISOString().slice(0,10); }
+function hoy(){ return new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
 function primerDiaMes(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`; }
 function aniosOps(){ const a=new Date().getFullYear(); return [[a,a],[a-1,a-1],[a-2,a-2]].map(x=>[String(x[0]),String(x[1])]); }
 
@@ -276,7 +276,7 @@ async function repD1(){
     _krow([
       { lbl:'Litros procesados',  val:_N(k.total_litros)+' L',  cls:'grn' },
       { lbl:'Producto obtenido',  val:_N(k.total_unidades)+' Lbs', cls:'grn' },
-      { lbl:'Merma total',        val:_N(k.total_merma)+' kg',   cls:'red' },
+      { lbl:'Merma total',        val:_N(k.total_merma)+' Lbs',   cls:'red' },
       { lbl:'Lotes completados',  val:`${k.completados||0} / ${k.total_lotes||0}` },
     ]) +
     _card('Detalle de lotes del período','ri-flask-line', _tbl([
@@ -285,7 +285,7 @@ async function repD1(){
       { lbl:'Leche (L)',  key:'leche_usada',        render:r=>_N(r.leche_usada)+' L' },
       { lbl:'Obtenido',   key:'cantidad_obtenida',  render:r=>r.cantidad_obtenida>0?_N(r.cantidad_obtenida)+' Lbs':'—' },
       { lbl:'Rendimiento',key:'rendimiento',        render:r=>r.rendimiento>0?_P(r.rendimiento):'—' },
-      { lbl:'Merma',      key:'merma',              render:r=>`<span style="color:#DC2626">${_N(r.merma)} kg</span>`,tdStyle:'min-width:70px' },
+      { lbl:'Merma',      key:'merma',              render:r=>`<span style="color:#DC2626">${_N(r.merma)} Lbs</span>`,tdStyle:'min-width:70px' },
       { lbl:'Turno',      key:'turno' },
       { lbl:'Fecha',      key:'fecha_produccion',   render:r=>_fec(r.fecha_produccion) },
       { lbl:'Estado',     key:'estado',             render:r=>r.estado==='Completada'?_badge('Completada','rb-ok'):r.estado==='En proceso'?_badge('En proceso','rb-blu'):_badge(r.estado,'rb-pen') },
@@ -380,7 +380,7 @@ async function repD3(){
       { lbl:'Total facturado',     val:_L(k.total_facturado), cls:'grn' },
       { lbl:'Pendiente de cobro',  val:_L(k.pendiente_cobro), cls:(k.pendiente_cobro||0)>0?'amb':'' },
       { lbl:'Clientes atendidos',  val:k.clientes_atendidos||0, cls:'blu' },
-      { lbl:'Ticket promedio',     val:_L(k.ticket_promedio) },
+      { lbl:'Venta promedio',     val:_L(k.ticket_promedio) },
     ]) +
     _card('Ventas / despachos del período','ri-truck-line', _tbl([
       { lbl:'N°',      key:'numero',         style:'width:11%' },
@@ -443,7 +443,7 @@ async function repD4(){
     _card('Existencias actuales por producto','ri-archive-line', _tbl([
       { lbl:'Producto',    key:'nombre' },
       { lbl:'Categoría',  key:'categoria' },
-      { lbl:'Stock',      key:'stock',       render:r=>`<strong>${_N(r.stock)}</strong> ${r.unidad||'u.'}` },
+      { lbl:'Existencias',key:'stock',       render:r=>`<strong>${_N(r.stock)}</strong> ${r.unidad||'u.'}` },
       { lbl:'Mínimo',     key:'stock_minimo',render:r=>`${_N(r.stock_minimo)} ${r.unidad||'u.'}` },
       { lbl:'Cobertura',  key:'_cob',
         render:r=>{
@@ -489,7 +489,7 @@ async function repS1(){
 
   const html = _header('s1') +
     _krow([
-      { lbl:'Merma producción', val:_N(k.merma_produccion||0)+' kg', cls:'red' },
+      { lbl:'Merma producción', val:_N(k.merma_produccion||0)+' Lbs', cls:'red' },
       { lbl:'Merma acopio',    val:_N(k.merma_acopio||0)+' L',     cls:'red' },
       { lbl:'Total merma',     val:_N(k.merma_total||0),             cls:'red' },
       { lbl:'N° registros',    val:k.total_registros||0 },
@@ -522,7 +522,7 @@ async function repS1(){
       data:{ labels:causas.map(c=>c.causa||'Sin causa'), datasets:[{ data:causas.map(c=>c.total),backgroundColor:COLS,borderWidth:0 }]},
       options:{ responsive:true,maintainAspectRatio:false,
         plugins:{ legend:{position:'bottom',labels:{font:{size:11},padding:10}},
-          tooltip:{callbacks:{label:c=>c.label+': '+_N(c.raw)+' kg'}} } }});
+          tooltip:{callbacks:{label:c=>c.label+': '+_N(c.raw)+' Lbs'}} } }});
   });
 }
 
@@ -538,7 +538,7 @@ async function repS2(){
     _krow([
       { lbl:'Ingresos',       val:_L(k.ingresos),  cls:'grn' },
       { lbl:'Egresos',        val:_L(k.egresos),   cls:'red' },
-      { lbl:'Utilidad neta',  val:_L(k.utilidad),  cls:(k.utilidad||0)>=0?'grn':'red' },
+      { lbl:'Ganancia',       val:_L(k.utilidad),  cls:(k.utilidad||0)>=0?'grn':'red' },
       { lbl:'Margen',         val:_P(k.margen),    cls:(k.margen||0)>=15?'grn':(k.margen||0)>=5?'amb':'red' },
     ]) +
     _card('Ingresos vs Egresos por semana del mes','ri-line-chart-line',
@@ -589,7 +589,7 @@ async function repS3(){
     _krow([
       { lbl:'Total ventas',    val:k.total_ventas||0 },
       { lbl:'Ingresos totales',val:_L(k.total_ingresos), cls:'grn' },
-      { lbl:'Ticket promedio', val:_L(k.ticket_promedio) },
+      { lbl:'Venta promedio',  val:_L(k.ticket_promedio) },
       { lbl:'Clientes únicos', val:k.clientes_distintos||0, cls:'blu' },
     ]) +
     `<div class="rep-row2">` +
