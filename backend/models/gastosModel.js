@@ -25,7 +25,7 @@ exports.create = async ({ concepto, categoria, monto, fecha, proveedor, comproba
   await pool.query(
     'INSERT INTO gastos (id, concepto, categoria, monto, fecha, proveedor, comprobante, usuario_id) VALUES (?,?,?,?,?,?,?,?)',
     [id, concepto, categoria||'Otros', parseFloat(monto),
-     fecha || new Date().toISOString().slice(0,10),
+     fecha || new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10),
      proveedor||'', comprobante||'', usuario_id||null]
   );
   return exports.findById(id);

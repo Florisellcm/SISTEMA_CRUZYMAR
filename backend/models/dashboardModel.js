@@ -6,7 +6,7 @@
 const pool = require('../database');
 
 exports.getAll = async () => {
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   const mesInicio = hoy.slice(0, 7) + '-01';
 
   // Ejecutar todas las queries en paralelo

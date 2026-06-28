@@ -34,7 +34,7 @@ exports.create = async ({ clienteId, clienteNombre, items, metodoPago, observaci
   const [[cnt]]= await pool.query("SELECT LPAD(COUNT(*)+1,4,'0') AS num FROM ventas");
   const numero = `VTA-${cnt[0].num}`;
   const id     = uuidv4();
-  const fecha  = new Date().toISOString().slice(0, 10);
+  const fecha  = new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 
   await pool.query(
     `INSERT INTO ventas (id, numero, cliente_id, cliente_nombre, total, metodo_pago, estado, observaciones, fecha, vendedor_id)

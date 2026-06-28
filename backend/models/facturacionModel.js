@@ -27,7 +27,7 @@ exports.create = async (data) => {
   const [[cnt]] = await pool.query("SELECT LPAD(COUNT(*)+1,4,'0') AS num FROM facturacion");
   const numero  = `FAC-${cnt.num}`;
   const id      = uuidv4();
-  const fecha   = data.fecha || new Date().toISOString().slice(0, 10);
+  const fecha   = data.fecha || new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   const total   = parseFloat(data.monto_total || data.total || 0);
 
   await pool.query(

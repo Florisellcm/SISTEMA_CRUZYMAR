@@ -8,7 +8,7 @@ const { v4: uuidv4 } = require('uuid');
 
 // Genera número de lote: YYYYMMDD-T-NNN
 const genLote = async (fechaProduccion, turno) => {
-  const fecha    = (fechaProduccion || new Date().toISOString().slice(0,10)).replace(/-/g,'');
+  const fecha    = (fechaProduccion || new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10)).replace(/-/g,'');
   const inicial  = (turno || 'M').charAt(0).toUpperCase();
   const [rows]   = await pool.query(
     'SELECT COUNT(*)+1 AS next FROM produccion_lotes WHERE fecha_produccion = ?',
@@ -66,7 +66,7 @@ exports.create = async (data) => {
      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [id, numLote, receta_id||null, productoNombre, leche, cantidad,
      unidad||'libras', rendimiento, merma,
-     fechaProduccion || new Date().toISOString().slice(0,10),
+     fechaProduccion || new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10),
      turno||'Mañana', operario||'', operario_id||null,
      insumos||'', observaciones||'', estado||'En proceso', 'Pendiente']
   );

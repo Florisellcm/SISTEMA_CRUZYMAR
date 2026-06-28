@@ -41,7 +41,7 @@ exports.findAcopio = async (acopioId) => {
 };
 
 exports.getResumen = async (fecha) => {
-  const hoy = fecha || new Date().toISOString().slice(0, 10);
+  const hoy = fecha || new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   const [rows] = await pool.query(
     `SELECT
        COUNT(*)                                              AS total_pruebas,
@@ -70,7 +70,7 @@ exports.create = async (data) => {
      acidez   != null && acidez   !== '' ? parseFloat(acidez)   : null,
      temperatura != null && temperatura !== '' ? parseFloat(temperatura) : null,
      resultado||'Aprobado', motivo_rechazo||null, analista_id||null,
-     fecha || new Date().toISOString().slice(0, 10),
+     fecha || new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10),
      observaciones||'']
   );
   return exports.findById(id);

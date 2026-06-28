@@ -12,7 +12,7 @@ const pool = require('../database');
    Frecuencia: Diario | Almacenamiento: 5 años
 ────────────────────────────────────────────────────────────── */
 exports.getDetalladoProduccion = async ({ fecha, fechaFin, estado } = {}) => {
-  const hoy    = fecha    || new Date().toISOString().slice(0, 10);
+  const hoy    = fecha    || new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   const hasta  = fechaFin || hoy;
 
   let sql = `
@@ -52,7 +52,7 @@ exports.getDetalladoProduccion = async ({ fecha, fechaFin, estado } = {}) => {
    Frecuencia: Diario | Almacenamiento: 5 años
 ────────────────────────────────────────────────────────────── */
 exports.getDetalladoCalidad = async ({ fecha, fechaFin, resultado } = {}) => {
-  const hoy   = fecha    || new Date().toISOString().slice(0, 10);
+  const hoy   = fecha    || new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   const hasta = fechaFin || hoy;
 
   let sql = `
@@ -97,7 +97,7 @@ exports.getDetalladoCalidad = async ({ fecha, fechaFin, resultado } = {}) => {
    Frecuencia: Diario | Almacenamiento: 5 años
 ────────────────────────────────────────────────────────────── */
 exports.getDetalladoDistribucion = async ({ fecha, fechaFin, estado } = {}) => {
-  const hoy   = fecha    || new Date().toISOString().slice(0, 10);
+  const hoy   = fecha    || new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   const hasta = fechaFin || hoy;
 
   let sql = `
@@ -187,7 +187,7 @@ exports.getSintetizadoInventario = async () => {
    Almacenamiento: 5 años
 ────────────────────────────────────────────────────────────── */
 exports.getSintetizadoMermas = async ({ fecha, fechaFin } = {}) => {
-  const hoy   = fecha    || new Date().toISOString().slice(0, 10);
+  const hoy   = fecha    || new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   const hasta = fechaFin || hoy;
 
   const [registros] = await pool.query(`
@@ -227,10 +227,17 @@ exports.getSintetizadoMermas = async ({ fecha, fechaFin } = {}) => {
 ────────────────────────────────────────────────────────────── */
 exports.getSintetizadoFinanciero = async ({ mes, anio } = {}) => {
   const now = new Date();
-  const m   = mes  ? String(mes).padStart(2,'0')  : String(now.getMonth()+1).padStart(2,'0');
   const a   = anio || now.getFullYear();
-  const inicio = `${a}-${m}-01`;
-  const fin    = `${a}-${m}-31`;
+  let inicio, fin, m;
+  if (mes === 'todos') {
+    m = 'Todo el año';
+    inicio = `${a}-01-01`;
+    fin    = `${a}-12-31`;
+  } else {
+    m = mes ? String(mes).padStart(2,'0') : String(now.getMonth()+1).padStart(2,'0');
+    inicio = `${a}-${m}-01`;
+    fin    = `${a}-${m}-31`;
+  }
 
   const [[ingR]]  = await pool.query("SELECT COALESCE(SUM(total),0) AS v FROM ventas  WHERE fecha BETWEEN ? AND ? AND estado='Pagada'", [inicio, fin]);
   const [[egR]]   = await pool.query("SELECT COALESCE(SUM(monto),0) AS v FROM gastos  WHERE fecha BETWEEN ? AND ?", [inicio, fin]);
@@ -261,7 +268,7 @@ exports.getSintetizadoFinanciero = async ({ mes, anio } = {}) => {
   `, [inicio, fin]);
 
   return {
-    periodo: { mes: `${a}-${m}`, inicio, fin },
+    periodo: { mes: mes === 'todos' ? String(a) : `${a}-${m}`, inicio, fin },
     kpis: {
       ingresos, egresos, utilidad: ingresos - egresos,
       margen: ingresos > 0 ? parseFloat(((ingresos - egresos) / ingresos * 100).toFixed(1)) : 0
@@ -279,10 +286,17 @@ exports.getSintetizadoFinanciero = async ({ mes, anio } = {}) => {
 ────────────────────────────────────────────────────────────── */
 exports.getSintetizadoVentas = async ({ mes, anio } = {}) => {
   const now = new Date();
-  const m   = mes  ? String(mes).padStart(2,'0')  : String(now.getMonth()+1).padStart(2,'0');
   const a   = anio || now.getFullYear();
-  const inicio = `${a}-${m}-01`;
-  const fin    = `${a}-${m}-31`;
+  let inicio, fin, m;
+  if (mes === 'todos') {
+    m = 'Todo el año';
+    inicio = `${a}-01-01`;
+    fin    = `${a}-12-31`;
+  } else {
+    m = mes ? String(mes).padStart(2,'0') : String(now.getMonth()+1).padStart(2,'0');
+    inicio = `${a}-${m}-01`;
+    fin    = `${a}-${m}-31`;
+  }
 
   const [productos] = await pool.query(`
     SELECT vd.nombre AS producto,
@@ -312,7 +326,7 @@ exports.getSintetizadoVentas = async ({ mes, anio } = {}) => {
   `, [inicio, fin]);
 
   return {
-    periodo: { mes: `${a}-${m}`, inicio, fin },
+    periodo: { mes: mes === 'todos' ? String(a) : `${a}-${m}`, inicio, fin },
     kpis: kpiR,
     productos,
     topClientes
@@ -326,10 +340,17 @@ exports.getSintetizadoVentas = async ({ mes, anio } = {}) => {
 ────────────────────────────────────────────────────────────── */
 exports.getSintetizadoProductoCliente = async ({ mes, anio, cliente_id } = {}) => {
   const now = new Date();
-  const m   = mes  ? String(mes).padStart(2,'0')  : String(now.getMonth()+1).padStart(2,'0');
   const a   = anio || now.getFullYear();
-  const inicio = `${a}-${m}-01`;
-  const fin    = `${a}-${m}-31`;
+  let inicio, fin, m;
+  if (mes === 'todos') {
+    m = 'Todo el año';
+    inicio = `${a}-01-01`;
+    fin    = `${a}-12-31`;
+  } else {
+    m = mes ? String(mes).padStart(2,'0') : String(now.getMonth()+1).padStart(2,'0');
+    inicio = `${a}-${m}-01`;
+    fin    = `${a}-${m}-31`;
+  }
 
   let sql = `
     SELECT v.cliente_nombre,
@@ -359,7 +380,7 @@ exports.getSintetizadoProductoCliente = async ({ mes, anio, cliente_id } = {}) =
   }
 
   return {
-    periodo: { mes: `${a}-${m}`, inicio, fin },
+    periodo: { mes: mes === 'todos' ? String(a) : `${a}-${m}`, inicio, fin },
     registros,
     porCliente: Object.values(porCliente)
   };
@@ -371,7 +392,7 @@ exports.getSintetizadoProductoCliente = async ({ mes, anio, cliente_id } = {}) =
    Impreso (recibo) + Digital | Almacenamiento: 5 años
 ────────────────────────────────────────────────────────────── */
 exports.getExcepcionLecheNoApta = async ({ fecha, fechaFin } = {}) => {
-  const hoy   = fecha    || new Date().toISOString().slice(0, 10);
+  const hoy   = fecha    || new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   const hasta = fechaFin || hoy;
 
   const [rechazos] = await pool.query(`
@@ -470,7 +491,7 @@ exports.getExcepcionVencimientos = async () => {
    Resumen global (legacy dashboard)
 ────────────────────────────────────────────────────────────── */
 exports.getResumen = async () => {
-  const hoy      = new Date().toISOString().slice(0, 10);
+  const hoy      = new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   const mesInicio= hoy.slice(0,7) + '-01';
 
   const [[fin]]  = await pool.query("SELECT COALESCE(SUM(total),0) AS ing, COALESCE(SUM(total),0) AS eg FROM ventas WHERE fecha>=? AND estado='Pagada'", [mesInicio]);

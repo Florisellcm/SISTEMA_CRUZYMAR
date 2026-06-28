@@ -36,7 +36,7 @@ exports.create = async (data) => {
     [id, numero, data.proveedor_id||null, data.proveedor_nombre||'',
      data.concepto||'', parseFloat(data.monto)||0,
      data.estado||'Pendiente',
-     data.fecha || new Date().toISOString().slice(0,10),
+     data.fecha || new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10),
      data.notas||'']
   );
   return exports.findById(id);

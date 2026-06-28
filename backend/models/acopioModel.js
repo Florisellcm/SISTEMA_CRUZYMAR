@@ -32,7 +32,7 @@ exports.findById = async (id) => {
 };
 
 exports.getResumen = async (fecha) => {
-  const hoy = fecha || new Date().toISOString().slice(0, 10);
+  const hoy = fecha || new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   const [rows] = await pool.query(
     `SELECT
        COUNT(*)                   AS registros,
@@ -59,7 +59,7 @@ exports.create = async ({ proveedor_id, litros, temperatura, precio_litro, turno
      VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
     [id, proveedor_id||null, litrosN, temperatura ? parseFloat(temperatura) : null,
      precioN, total_pagar, turno||'Mañana',
-     fecha || new Date().toISOString().slice(0, 10),
+     fecha || new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10),
      estado||'Pendiente', motivo_rechazo||null, observaciones||'']
   );
   return exports.findById(id);

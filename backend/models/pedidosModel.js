@@ -29,7 +29,7 @@ exports.findById = async (id) => {
 
 exports.create = async (data) => {
   const id = uuid();
-  const fecha = data.fecha || new Date().toISOString().slice(0, 10);
+  const fecha = data.fecha || new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   await pool.query(
     `INSERT INTO pedidos (id, cliente_id, cliente_nombre, total, estado, fecha, observaciones)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
