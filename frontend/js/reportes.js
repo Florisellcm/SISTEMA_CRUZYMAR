@@ -505,27 +505,35 @@ async function repD1() {
   const qs = _buildQS({ fecha: _filtros.f_desde, fechaFin: _filtros.f_hasta, estado: _filtros.f_estado });
   const d = await _rq('/reportes/detallado/produccion' + qs);
   const k = d.kpis || {};
-
+ 
+  const registros = d.registros || [];
+  const conSubproducto = registros.filter(r => Number(r.salida_secundaria_cantidad) > 0).length;
+ 
   const html = _header('d1') +
     _card('Detalle de lotes del período', 'ri-flask-line', _tbl([
       { lbl: 'N° Lote', key: 'numero_lote', style: 'width:13%' },
-      { lbl: 'Producto', key: 'producto_nombre', style: 'width:20%' },
+      { lbl: 'Producto', key: 'producto_nombre', style: 'width:18%' },
       { lbl: 'Leche (L)', key: 'leche_usada', render: r => _N(r.leche_usada) + ' L' },
-      { lbl: 'Obtenido', key: 'cantidad_obtenida', render: r => r.cantidad_obtenida > 0 ? _N(r.cantidad_obtenida) + ' Lbs' : '—' },
+      { lbl: 'Obtenido', key: 'cantidad_obtenida', render: r => r.cantidad_obtenida > 0 ? _N(r.cantidad_obtenida) + (r.unidad === 'litros' ? ' L' : ' Lbs') : '—' },
       { lbl: 'Rendimiento', key: 'rendimiento', render: r => r.rendimiento > 0 ? _P(r.rendimiento) : '—' },
-      { lbl: 'Merma', key: 'merma', render: r => `<span style="color:#DC2626">${_N(r.merma)} Lbs</span>`, tdStyle: 'min-width:70px' },
+      {
+        lbl: 'Subproducto', key: 'salida_secundaria', tdStyle: 'min-width:110px',
+        render: r => Number(r.salida_secundaria_cantidad) > 0
+          ? `<span style="color:#0A6BC4">${_N(r.salida_secundaria_cantidad)} ${r.salida_secundaria_unidad === 'litros' ? 'L' : 'Lbs'} ${r.salida_secundaria_nombre || ''}</span>`
+          : '<span style="color:#94A3B8">—</span>'
+      },
       { lbl: 'Turno', key: 'turno' },
       { lbl: 'Fecha', key: 'fecha_produccion', render: r => _fec(r.fecha_produccion) },
       { lbl: 'Estado', key: 'estado', render: r => r.estado === 'Completada' ? _badge('Completada', 'rb-ok') : r.estado === 'En proceso' ? _badge('En proceso', 'rb-blu') : _badge(r.estado, 'rb-pen') },
-    ], d.registros), 'class="rep-card-detallado"') +
+    ], registros), 'class="rep-card-detallado"') +
     _krow([
       { lbl: 'Litros procesados', val: _N(k.total_litros) + ' L', cls: 'grn' },
-      { lbl: 'Producto obtenido', val: _N(k.total_unidades) + ' Lbs', cls: 'grn' },
-      { lbl: 'Merma total', val: _N(k.total_merma) + ' Lbs', cls: 'red' },
+    { lbl: 'Producción total de derivados (libras)', val: _N(k.total_libras) + ' Lbs', cls: 'grn' },
+      { lbl: 'Lotes con subproducto', val: conSubproducto, cls: 'blu' },
       { lbl: 'Lotes completados', val: `${k.completados || 0} / ${k.total_lotes || 0}` },
     ]) +
     _firma();
-
+ 
   _set('rep-content', html);
 }
 

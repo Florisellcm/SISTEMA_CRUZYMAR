@@ -534,15 +534,16 @@ async function saveProduccionUnificada() {
       return toast('Si el lote está completado, ingrese la crema y la leche descremada obtenidas', 'err');
 
     Object.assign(body, {
-      productoNombre: 'Crema',
-      productoInventarioId: cremaInv,
-      cantidadObtenida: crema,
-      unidad: 'litros',
-      salidaSecundariaNombre: 'Leche descremada',
-      salidaSecundariaInventarioId: descremadaInv,
-      salidaSecundariaCantidad: descremada,
-      salidaSecundariaUnidad: 'litros'
-    });
+  productoNombre: 'Leche descremada',
+  productoInventarioId: descremadaInv,
+  cantidadObtenida: descremada,
+  unidad: 'litros',
+
+  salidaSecundariaNombre: 'Crema',
+  salidaSecundariaInventarioId: cremaInv,
+  salidaSecundariaCantidad: crema,
+  salidaSecundariaUnidad: 'litros',
+});
 
   } else {
     const nombreProducto = def.manual ? (el('prodNombreManual')?.value || '').trim() : seleccion;

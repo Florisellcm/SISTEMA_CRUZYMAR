@@ -14,38 +14,101 @@ const pool = require('../database');
 exports.getDetalladoProduccion = async ({ fecha, fechaFin, estado } = {}) => {
   const now = new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000);
   const primerDia = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-  const hoy    = fecha    || primerDia;
-  const hasta  = fechaFin || now.toISOString().slice(0, 10);
+
+  const hoy = fecha || primerDia;
+  const hasta = fechaFin || now.toISOString().slice(0, 10);
 
   let sql = `
-    SELECT pl.*,
-           r.producto            AS receta_nombre,
-           r.rendimiento_esperado,
-           u.nombre              AS operario_nombre,
-           u.email               AS operario_email
+    SELECT
+      pl.*,
+      r.producto AS receta_nombre,
+      r.rendimiento_esperado,
+      u.nombre AS operario_nombre,
+      u.email AS operario_email
     FROM produccion_lotes pl
-    LEFT JOIN recetas  r ON r.id = pl.receta_id
+    LEFT JOIN recetas r ON r.id = pl.receta_id
     LEFT JOIN usuarios u ON u.id = pl.operario_id
     WHERE pl.fecha_produccion BETWEEN ? AND ?
   `;
+
   const params = [hoy, hasta];
-  if (estado) { sql += ' AND pl.estado = ?'; params.push(estado); }
+
+  if (estado) {
+    sql += ' AND pl.estado = ?';
+    params.push(estado);
+  }
+
   sql += ' ORDER BY pl.fecha_produccion DESC, pl.creado_en DESC';
 
   const [registros] = await pool.query(sql, params);
 
+  // ============================
+  // KPIs DEL REPORTE
+  // ============================
+
   const [kpiRow] = await pool.query(`
     SELECT
-      COALESCE(SUM(leche_usada), 0)        AS total_litros,
-      COALESCE(SUM(cantidad_obtenida), 0)  AS total_unidades,
-      COALESCE(SUM(merma), 0)              AS total_merma,
-      SUM(estado = 'Completada')           AS completados,
-      COUNT(*)                             AS total_lotes
+
+      /* Solo leche cruda (lotes raíz) */
+      COALESCE(
+        SUM(
+          CASE
+            WHEN lote_padre_id IS NULL
+            THEN leche_usada
+            ELSE 0
+          END
+        ),
+      0) AS total_litros,
+
+      /* Total producido */
+     /* Total producido SOLO en libras */
+COALESCE(
+  SUM(
+    CASE
+      WHEN LOWER(unidad) LIKE '%libr%'
+      THEN cantidad_obtenida
+      ELSE 0
+    END
+  ),
+0) AS total_libras,
+ /* Total producido SOLO en litros */
+COALESCE(
+  SUM(
+    CASE
+      WHEN LOWER(unidad) LIKE '%litr%'
+      THEN cantidad_obtenida
+      ELSE 0
+    END
+  ),
+0) AS total_litros,
+
+      /* Merma total */
+      COALESCE(SUM(merma),0) AS total_merma,
+
+      /* Lotes completados */
+      SUM(estado='Completada') AS completados,
+
+      /* Total de lotes */
+      COUNT(*) AS total_lotes,
+
+      /* Procesos con subproducto */
+      SUM(
+        salida_secundaria_cantidad IS NOT NULL
+        AND salida_secundaria_cantidad > 0
+      ) AS lotes_subproducto
+
     FROM produccion_lotes
     WHERE fecha_produccion BETWEEN ? AND ?
   `, [hoy, hasta]);
 
-  return { periodo: { desde: hoy, hasta }, kpis: kpiRow[0], registros };
+  return {
+    periodo: {
+      desde: hoy,
+      hasta
+    },
+    kpis: kpiRow[0],
+    registros
+  };
 };
 
 /* ──────────────────────────────────────────────────────────────
