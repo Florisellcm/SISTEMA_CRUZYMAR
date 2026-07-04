@@ -1,6 +1,11 @@
 /* ═══════════════════════════════════════
    CRUZYMAR · models/distribucionModel.js
    Sub-módulo Distribución (dentro de Comercial)
+
+   La hoja de ruta se arma automáticamente cada día tomando
+   las ventas marcadas como tipo_entrega = 'Reparto' en esa
+   fecha (el vendedor elige "Reparto" al registrar la venta,
+   en el módulo Comercial). No requiere asignación manual.
 ═══════════════════════════════════════ */
 const pool = require('../database');
 const { v4: uuid } = require('uuid');
@@ -23,7 +28,7 @@ exports.getHojaRuta = async (fecha) => {
     LEFT JOIN inventario_productos ip ON ip.id = vd.producto_id
     WHERE DATE(v.fecha) = ?
       AND v.estado != 'Cancelada'
-      AND (c.tipo IS NULL OR c.tipo != 'Particular')
+      AND v.tipo_entrega = 'Reparto'
     GROUP BY v.id
     ORDER BY v.cliente_nombre
   `, [fecha]);
@@ -40,10 +45,9 @@ exports.getHojaRuta = async (fecha) => {
     FROM ventas v
     JOIN ventas_detalle vd      ON vd.venta_id = v.id
     JOIN inventario_productos ip ON ip.id = vd.producto_id
-    LEFT JOIN clientes c        ON c.id  = v.cliente_id
     WHERE DATE(v.fecha) = ?
       AND v.estado != 'Cancelada'
-      AND (c.tipo IS NULL OR c.tipo != 'Particular')
+      AND v.tipo_entrega = 'Reparto'
     GROUP BY ip.id, ip.nombre, ip.unidad
     ORDER BY ip.nombre
   `, [fecha]);

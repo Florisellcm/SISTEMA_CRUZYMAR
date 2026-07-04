@@ -313,6 +313,8 @@ exports.getSintetizadoProveedores = async ({ mes, anio } = {}) => {
     WHERE fecha BETWEEN ? AND ?
   `, [inicio, fin]);
 
+
+  //ROUND(AVG(a.densidad), 3) AS densidad_promedio
   /* ── Tabla maestra por proveedor ── */
   const [porProveedor] = await pool.query(`
     SELECT
@@ -325,11 +327,13 @@ exports.getSintetizadoProveedores = async ({ mes, anio } = {}) => {
       COALESCE(SUM(CASE WHEN a.estado = 'Aceptada'  THEN a.litros END), 0) AS litros_aceptados,
       COALESCE(SUM(CASE WHEN a.estado = 'Rechazada' THEN a.litros END), 0) AS litros_rechazados,
       COALESCE(SUM(CASE WHEN a.estado = 'Aceptada'  THEN a.total_pagar END), 0) AS total_pagado,
+      ROUND(AVG(cp.densidad), 3) AS densidad_promedio,
       ROUND(AVG(CASE WHEN a.estado = 'Aceptada' THEN a.litros END), 1) AS promedio_litros,
       ROUND(SUM(a.estado = 'Aceptada') / NULLIF(COUNT(*), 0) * 100, 1) AS pct_aceptacion,
       MAX(a.fecha)                                                      AS ultima_entrega
     FROM acopio_leche a
     LEFT JOIN proveedores p ON p.id = a.proveedor_id
+    LEFT JOIN calidad_pruebas cp ON cp.acopio_id = a.id
     WHERE a.fecha BETWEEN ? AND ?
     GROUP BY a.proveedor_id, p.nombre, p.telefono
     ORDER BY total_entregas DESC, pct_aceptacion DESC
@@ -338,13 +342,23 @@ exports.getSintetizadoProveedores = async ({ mes, anio } = {}) => {
   /* ── Detalle de entregas individuales ── */
   const [registros] = await pool.query(`
     SELECT
-      a.fecha, a.turno, a.litros, a.precio_litro, a.total_pagar,
-      a.estado, a.motivo_rechazo, a.observaciones,
-      p.nombre AS proveedor_nombre
-    FROM acopio_leche a
-    LEFT JOIN proveedores p ON p.id = a.proveedor_id
-    WHERE a.fecha BETWEEN ? AND ?
-    ORDER BY a.fecha DESC, a.creado_en DESC
+  a.fecha,
+  a.turno,
+  a.litros,
+  a.precio_litro,
+  a.total_pagar,
+  a.estado,
+  a.motivo_rechazo,
+  a.observaciones,
+
+  cp.densidad AS densidad,
+  p.nombre AS proveedor_nombre
+
+FROM acopio_leche a
+LEFT JOIN calidad_pruebas cp ON cp.acopio_id = a.id
+LEFT JOIN proveedores p ON p.id = a.proveedor_id
+WHERE a.fecha BETWEEN ? AND ?
+ORDER BY a.fecha DESC, a.creado_en DESC
   `, [inicio, fin]);
 
   /* ── Top proveedores con más rechazos ── */

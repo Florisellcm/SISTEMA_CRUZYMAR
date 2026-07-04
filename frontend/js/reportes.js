@@ -660,6 +660,10 @@ async function repD4() {
 
 /* ══════════════════════════════════════
    S1 — DESEMPEÑO DE PROVEEDORES
+   Incluye: densidad de leche (indicador de calidad), sección
+   "Proveedor Destacado" (mejor calidad / mayor volumen) y
+   tonalidades de marca (navy + verde) distintas por proveedor
+   en la gráfica de barras, para que cada uno se distinga.
 ══════════════════════════════════════ */
 async function repS1() {
   const qs = _buildQS({ mes: _filtros.f_mes, anio: _filtros.f_anio });
@@ -667,6 +671,12 @@ async function repS1() {
   const k = d.kpis || {};
   const pp = d.porProveedor || [];
   const reg = d.registros || [];
+
+  /* ── Rango de densidad óptima para leche cruda (g/mL) ──
+     Ajustar si el estándar de calidad de la empresa usa otro rango. */
+  const DENSIDAD_MIN_OPTIMA = 1.028;
+  const DENSIDAD_MAX_OPTIMA = 1.034;
+  const DENSIDAD_IDEAL      = (DENSIDAD_MIN_OPTIMA + DENSIDAD_MAX_OPTIMA) / 2;
 
   /* ── Calificación visual por % aceptación ── */
   const _calif = (pct) => {
@@ -676,16 +686,37 @@ async function repS1() {
     return { lbl: 'Deficiente', cls: 'rb-rej' };
   };
 
+  /* ── Calificación de calidad de leche por densidad ── */
+  const _calidadLeche = (densidad) => {
+    const dd = Number(densidad || 0);
+    if (!dd) return { lbl: 'Sin dato', cls: 'rb-pen' };
+    if (dd >= DENSIDAD_MIN_OPTIMA && dd <= DENSIDAD_MAX_OPTIMA) return { lbl: 'Óptima', cls: 'rb-ok' };
+    if (dd >= DENSIDAD_MIN_OPTIMA - 0.004 && dd <= DENSIDAD_MAX_OPTIMA + 0.002) return { lbl: 'Aceptable', cls: 'rb-obs' };
+    return { lbl: 'Fuera de rango', cls: 'rb-rej' };
+  };
+
   /* ── Mini barra de aceptación ── */
   const _minibar = (pct) => {
     const p = Math.min(100, Number(pct || 0));
-    const c = p >= 90 ? '#468C28' : p >= 75 ? '#0A6BC4' : '#DC2626';
+    const c = p >= 90 ? '#468C28' : p >= 75 ? '#0A6BC4' : '#64748B';
     return `<div style="display:flex;align-items:center;gap:6px">
       <div style="flex:1;min-width:60px;height:7px;background:#F1F5F9;border-radius:4px;overflow:hidden">
         <div style="width:${p}%;height:100%;background:${c};border-radius:4px"></div>
       </div>
       <span style="font-size:11.5px;font-weight:700;color:${c};min-width:38px">${p.toFixed(1)}%</span>
     </div>`;
+  };
+
+  /* ── Mini indicador de densidad (qué tan cerca está del ideal) ── */
+  const _densidadPill = (densidad) => {
+    const dd = Number(densidad || 0);
+    if (!dd) return `<span style="color:#94A3B8;font-size:12px">—</span>`;
+    const cal = _calidadLeche(dd);
+    const col = cal.lbl === 'Óptima' ? '#468C28' : cal.lbl === 'Aceptable' ? '#0A6BC4' : '#64748B';
+    return `<span style="display:inline-flex;align-items:center;gap:5px">
+      <strong style="color:${col}">${dd.toFixed(3)}</strong>
+      <span style="font-size:9.5px;color:#94A3B8">g/mL</span>
+    </span>`;
   };
 
   /* ── Badge de estado de entrega ── */
@@ -706,6 +737,49 @@ async function repS1() {
     return '';
   })();
 
+  /* ── SÍNTESIS: mejor calidad (densidad más cercana al ideal) y mayor volumen ──
+     Solo se consideran proveedores con al menos una entrega. */
+  const conDatos = pp.filter(r => Number(r.total_entregas || 0) > 0);
+
+  const mejorCalidad = [...conDatos]
+    .filter(r => Number(r.densidad_promedio || 0) > 0)
+    .sort((a, b) => Math.abs(DENSIDAD_IDEAL - Number(a.densidad_promedio)) - Math.abs(DENSIDAD_IDEAL - Number(b.densidad_promedio)))[0] || null;
+
+  const mayorVolumen = [...conDatos]
+    .sort((a, b) => Number(b.litros_aceptados || 0) - Number(a.litros_aceptados || 0))[0] || null;
+
+  const destacadoCard = (mejorCalidad || mayorVolumen) ? `
+    <div class="rep-row2" style="margin-bottom:14px">
+      ${mejorCalidad ? `
+      <div style="background:linear-gradient(135deg,#F0FDF4,#fff);border:1.5px solid #BBF0C7;border-radius:12px;padding:16px 18px;display:flex;align-items:center;gap:14px">
+        <div style="width:44px;height:44px;border-radius:10px;background:#468C28;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ri-drop-line" style="color:#fff;font-size:20px"></i>
+        </div>
+        <div>
+          <div style="font-size:10.5px;font-weight:700;color:#2C6B10;text-transform:uppercase;letter-spacing:.4px"> Mejor calidad de leche</div>
+          <div style="font-size:16px;font-weight:800;color:#1E293B;margin-top:2px">${mejorCalidad.proveedor || 'S/N'}</div>
+          <div style="font-size:11.5px;color:#468C28;margin-top:2px">
+            Densidad promedio <strong>${Number(mejorCalidad.densidad_promedio).toFixed(3)} g/mL</strong>
+            · la más cercana al estándar óptimo (${DENSIDAD_MIN_OPTIMA}–${DENSIDAD_MAX_OPTIMA} g/mL)
+          </div>
+        </div>
+      </div>` : ''}
+      ${mayorVolumen ? `
+      <div style="background:linear-gradient(135deg,#EAF2FB,#fff);border:1.5px solid #D5E5F7;border-radius:12px;padding:16px 18px;display:flex;align-items:center;gap:14px">
+        <div style="width:44px;height:44px;border-radius:10px;background:#003C78;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ri-truck-line" style="color:#fff;font-size:20px"></i>
+        </div>
+        <div>
+          <div style="font-size:10.5px;font-weight:700;color:#0A4A8F;text-transform:uppercase;letter-spacing:.4px"> Mayor volumen entregado</div>
+          <div style="font-size:16px;font-weight:800;color:#1E293B;margin-top:2px">${mayorVolumen.proveedor || 'S/N'}</div>
+          <div style="font-size:11.5px;color:#0A6BC4;margin-top:2px">
+            <strong>${_N(mayorVolumen.litros_aceptados)} L</strong> aceptados en el período
+            · ${Number(mayorVolumen.pct_aceptacion || 0).toFixed(1)}% de aceptación
+          </div>
+        </div>
+      </div>` : ''}
+    </div>` : '';
+
   const html =
     _header('s1') +
 
@@ -716,19 +790,13 @@ async function repS1() {
         <strong>Período analizado:</strong> ${periodoLabel}
         &nbsp;·&nbsp; Total proveedores: <strong>${k.total_proveedores || 0}</strong>
         &nbsp;·&nbsp; Tasa de aceptación global:
-        <strong style="color:${Number(k.pct_aceptacion_global || 0) >= 85 ? '#468C28' : '#DC2626'}">${Number(k.pct_aceptacion_global || 0).toFixed(1)}%</strong>
+        <strong style="color:${Number(k.pct_aceptacion_global || 0) >= 85 ? '#468C28' : '#0A6BC4'}">${Number(k.pct_aceptacion_global || 0).toFixed(1)}%</strong>
       </p>
     </div>` +
 
-    /* ── KPI CARDS ── */
-    _krow([
-      { lbl: 'Total Entregas', val: _N(k.total_entregas), cls: 'blu' },
-      { lbl: 'Aceptadas', val: _N(k.total_aceptadas), cls: 'grn' },
-      { lbl: 'Rechazadas', val: _N(k.total_rechazadas), cls: Number(k.total_rechazadas || 0) > 0 ? 'red' : '' },
-      { lbl: 'Litros Aceptados', val: _N(k.litros_aceptados) + ' L', cls: 'grn' },
-      { lbl: 'Litros Rechazados', val: _N(k.litros_rechazados) + ' L', cls: Number(k.litros_rechazados || 0) > 0 ? 'red' : '' },
-      { lbl: 'Total Pagado', val: _L(k.total_pagado), cls: 'grn' },
-    ]) +
+    /* ── SÍNTESIS: proveedor destacado ── */
+    destacadoCard +
+
 
     /* ── FILA: dona + barras ── */
     `<div class="rep-row2">` +
@@ -743,13 +811,14 @@ async function repS1() {
 
     /* ── TABLA MAESTRA por proveedor ── */
     _card('Resumen por proveedor', 'ri-group-line', _tbl([
-      { lbl: 'Proveedor', key: 'proveedor', style: 'width:18%' },
+      { lbl: 'Proveedor', key: 'proveedor', style: 'width:16%' },
       { lbl: 'Teléfono', key: 'telefono', render: r => r.telefono || '—' },
-      { lbl: 'Entregas', key: 'total_entregas', style: 'width:7%' },
+      { lbl: 'Entregas', key: 'total_entregas', style: 'width:6%' },
       { lbl: 'Aceptadas', key: 'aceptadas', render: r => `<span style="color:#468C28;font-weight:700">${_N(r.aceptadas)}</span>` },
-      { lbl: 'Rechazadas', key: 'rechazadas', render: r => Number(r.rechazadas) > 0 ? `<span style="color:#DC2626;font-weight:700">${_N(r.rechazadas)}</span>` : `<span style="color:#94A3B8">0</span>` },
+      { lbl: 'Rechazadas', key: 'rechazadas', render: r => Number(r.rechazadas) > 0 ? `<span style="color:#64748B;font-weight:700">${_N(r.rechazadas)}</span>` : `<span style="color:#94A3B8">0</span>` },
       { lbl: 'Litros Acept.', key: 'litros_aceptados', render: r => _N(r.litros_aceptados) + ' L' },
-      { lbl: 'Prom. L/entrega', key: 'promedio_litros', render: r => r.promedio_litros ? _N(r.promedio_litros) + ' L' : '—' },
+      { lbl: 'Densidad Prom.', key: 'densidad_promedio', render: r => _densidadPill(r.densidad_promedio) },
+      { lbl: 'Calidad Leche', key: '_cal_leche', render: r => { const c = _calidadLeche(r.densidad_promedio); return _badge(c.lbl, c.cls); } },
       { lbl: 'Total Pagado', key: 'total_pagado', render: r => _L(r.total_pagado) },
       { lbl: '% Aceptación', key: 'pct_aceptacion', render: r => _minibar(r.pct_aceptacion) },
       { lbl: 'Calificación', key: '_cal', render: r => { const c = _calif(r.pct_aceptacion); return _badge(c.lbl, c.cls); } },
@@ -759,34 +828,44 @@ async function repS1() {
     /* ── TABLA DETALLE de entregas individuales ── */
     _card('Detalle de entregas del período', 'ri-list-check', _tbl([
       { lbl: 'Fecha', key: 'fecha', render: r => _fec(r.fecha) },
-      { lbl: 'Proveedor', key: 'proveedor_nombre', style: 'width:20%' },
+      { lbl: 'Proveedor', key: 'proveedor_nombre', style: 'width:17%' },
       { lbl: 'Turno', key: 'turno' },
       { lbl: 'Litros', key: 'litros', render: r => `<strong>${_N(r.litros)}</strong> L` },
+      { lbl: 'Densidad', key: 'densidad', render: r => _densidadPill(r.densidad) },
       { lbl: 'Precio/L', key: 'precio_litro', render: r => _L(r.precio_litro) },
       { lbl: 'Total', key: 'total_pagar', render: r => `<strong>${_L(r.total_pagar)}</strong>` },
       { lbl: 'Estado', key: 'estado', render: r => _estBadge(r.estado) },
       {
         lbl: 'Motivo Rechazo', key: 'motivo_rechazo',
         render: r => r.estado === 'Rechazada' && r.motivo_rechazo
-          ? `<span style="color:#DC2626;font-size:11px">${r.motivo_rechazo}</span>`
+          ? `<span style="color:#64748B;font-size:11px">${r.motivo_rechazo}</span>`
           : `<span style="color:#94A3B8">—</span>`
       },
     ], reg), 'class="rep-card-detallado"') +
+    /* ── KPI CARDS ── */
+    _krow([
+      { lbl: 'Total Entregas', val: _N(k.total_entregas), cls: 'blu' },
+      { lbl: 'Aceptadas', val: _N(k.total_aceptadas), cls: 'grn' },
+      { lbl: 'Rechazadas', val: _N(k.total_rechazadas), cls: Number(k.total_rechazadas || 0) > 0 ? 'red' : '' },
+      { lbl: 'Litros Aceptados', val: _N(k.litros_aceptados) + ' L', cls: 'grn' },
+      { lbl: 'Litros Rechazados', val: _N(k.litros_rechazados) + ' L', cls: Number(k.litros_rechazados || 0) > 0 ? 'red' : '' },
+      { lbl: 'Total Pagado', val: _L(k.total_pagado), cls: 'grn' },
+    ]) +
 
     _firma();
 
   _set('rep-content', html);
 
-  /* ── CHARTS ── */
+  /* ── CHARTS — tonalidades de marca (navy + verde), un color distinto por proveedor ── */
   _loadChart(() => {
-    /* Dona: Aceptadas vs Rechazadas vs Pendientes */
+    /* Dona: Aceptadas vs Rechazadas vs Pendientes (categorías, no proveedores) */
     const totalAc = Number(k.total_aceptadas || 0);
     const totalRec = Number(k.total_rechazadas || 0);
     const totalPen = Math.max(0, Number(k.total_entregas || 0) - totalAc - totalRec);
     const donaData = [
       { lbl: 'Aceptadas', val: totalAc, col: C.verde },
-      { lbl: 'Rechazadas', val: totalRec, col: C.red },
-      { lbl: 'Pendientes', val: totalPen, col: C.navy3 },
+      { lbl: 'Rechazadas', val: totalRec, col: '#B9D3EA' },
+      { lbl: 'Pendientes', val: totalPen, col: C.navy2 },
     ].filter(x => x.val > 0);
 
     if (donaData.length) {
@@ -811,7 +890,10 @@ async function repS1() {
       _donaLegend('cS1Dona', 'legS1Dona');
     }
 
-    /* Barras horizontales: top 8 por litros aceptados */
+    /* Barras horizontales: top 8 por litros aceptados.
+       Cada proveedor tiene su propia tonalidad (de la paleta COLS,
+       navy + verde) para que se distingan entre sí — la calidad de
+       la leche (densidad) se muestra aparte, en el tooltip. */
     const top8 = [...pp].sort((a, b) => Number(b.litros_aceptados) - Number(a.litros_aceptados)).slice(0, 8);
     if (top8.length) {
       _chart('cS1Bars', {
@@ -821,10 +903,7 @@ async function repS1() {
           datasets: [{
             label: 'Litros Aceptados',
             data: top8.map(r => Number(r.litros_aceptados)),
-            backgroundColor: top8.map(r => {
-              const p = Number(r.pct_aceptacion || 0);
-              return p >= 90 ? C.verde : p >= 75 ? C.navy2 : C.red;
-            }),
+            backgroundColor: top8.map((r, i) => COLS[i % COLS.length]),
             borderRadius: 5,
             borderSkipped: false
           }]
@@ -834,7 +913,16 @@ async function repS1() {
           responsive: true, maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
-            tooltip: { callbacks: { label: c => ' ' + _N(c.raw) + ' L aceptados' } },
+            tooltip: {
+              callbacks: {
+                label: c => {
+                  const r = top8[c.dataIndex];
+                  const dd = Number(r.densidad_promedio || 0);
+                  const base = ' ' + _N(c.raw) + ' L aceptados';
+                  return dd ? base + ' · densidad ' + dd.toFixed(3) + ' g/mL' : base;
+                }
+              }
+            },
             datalabels: {
               display: true, anchor: 'end', align: 'right',
               color: '#1E293B', font: { weight: '700', size: 10 },
@@ -891,14 +979,18 @@ async function repS2() {
     const utilidad = ingresosMes - egresosMes;
 
     // ── Chart 1: Comparativa REAL Ingresos vs Egresos vs Ganancia del mes ──
+    // Nota: antes se forzaba Ganancia a Math.max(utilidad,0), lo que hacía
+    // que un mes con pérdida se viera como "Ganancia: L. 0.00" en vez de
+    // mostrar la pérdida real. Ahora se grafica el valor real y cambia de
+    // tono si es negativo (pérdida) para que la gráfica no mienta.
     _chart('cS2Cmp', {
       type: 'bar',
       data: {
         labels: ['Ingresos', 'Egresos', 'Ganancia'],
         datasets: [{
           label: 'Monto (L.)',
-          data: [ingresosMes, egresosMes, Math.max(utilidad, 0)],
-          backgroundColor: [C.navy, C.verde, C.navy2],
+          data: [ingresosMes, egresosMes, utilidad],
+          backgroundColor: [C.navy, C.verde, utilidad >= 0 ? C.navy2 : '#64748B'],
           borderRadius: 6,
           borderSkipped: false
         }]
@@ -991,7 +1083,10 @@ async function repS2() {
 ══════════════════════════════════════ */
 async function repS3() {
   const qs = _buildQS({ mes: _filtros.f_mes, anio: _filtros.f_anio });
-  const d = await _rq('/api/reportes/sintetizado/ventas' + qs);
+  // Nota: _rq ya antepone "/api" internamente. Antes esta línea tenía
+  // "/api/reportes/..." y terminaba pidiendo "/api/api/reportes/..." (404),
+  // por eso esta gráfica salía vacía/rota. Se corrige quitando el /api extra.
+  const d = await _rq('/reportes/sintetizado/ventas' + qs);
   const k = d.kpis || {};
 
   const html = _header('s3') +
@@ -1045,7 +1140,9 @@ async function repS3() {
 ══════════════════════════════════════ */
 async function repS4() {
   const qs = _buildQS({ mes: _filtros.f_mes, anio: _filtros.f_anio });
-  const d = await _rq('/api/reportes/sintetizado/producto-cliente' + qs);
+  // Mismo fix de /api duplicado que en repS3 — antes pedía
+  // "/api/api/reportes/..." y fallaba en silencio.
+  const d = await _rq('/reportes/sintetizado/producto-cliente' + qs);
 
   const filas = (d.porCliente || []).map(cli => `
     <tr style="background:#F8FAFC">
@@ -1316,8 +1413,8 @@ function initReportes() {
   const chip = _el('rep-fecha-hoy');
   if (chip) chip.textContent = new Date().toLocaleDateString('es-HN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
   repLoad('d1');
-  // Pre-check excepciones
-  _rq('/api/reportes/excepcion/leche-no-apta').then(d => {
+  // Pre-check excepciones (mismo fix de /api duplicado)
+  _rq('/reportes/excepcion/leche-no-apta').then(d => {
     const b = _el('rep-badge-exc');
     if (b && (d.kpis?.total_rechazos || 0) > 0) { b.textContent = '!'; b.style.display = 'inline'; }
   }).catch(() => { });

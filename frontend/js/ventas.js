@@ -11,13 +11,13 @@ let inventarioLista = [];
 let itemsVenta      = [];   // carrito de la venta actual
 let editCliId       = null; // ID del cliente en edición
 
-/* ─── CARGAR DATOS GENERALES (Compatibilidad) ─── */
+/* ─── CARGAR DATOS (llamado desde app.js: PAGES.comercial.loader) ───
+   Nota: _currentPage (con guion bajo) es la variable global real que
+   define app.js. "clientes" ya tiene su propio loader dedicado
+   (PAGES.clientes.loader → loadClientesStandalone), así que esta
+   función solo necesita encargarse de la vista de Ventas. */
 async function loadVentas() {
-  if (currentPage === 'clientes') {
-    await loadClientesStandalone();
-  } else {
-    await loadVentasStandalone();
-  }
+  await loadVentasStandalone();
 }
 
 /* ─── CARGAR VENTAS (STANDALONE) ─── */
@@ -74,12 +74,15 @@ function actualizarTarjetasClientes() {
   if (el('cardClientesRTN'))       el('cardClientesRTN').textContent       = conRTN;
 }
 
-/* ─── RELOAD ROUTER INTERNO ─── */
+/* ─── RELOAD ROUTER INTERNO ───
+   _currentPage es la variable real declarada en app.js (con guion
+   bajo). Usar "currentPage" aquí (sin guion bajo) es justo el bug
+   que dejaba la pantalla pegada en "Cargando...". */
 function reloadComercialData() {
-  if (currentPage === 'comercial') {
-    loadVentasStandalone();
-  } else if (currentPage === 'clientes') {
+  if (typeof _currentPage !== 'undefined' && _currentPage === 'clientes') {
     loadClientesStandalone();
+  } else {
+    loadVentasStandalone();
   }
 }
 
@@ -99,10 +102,16 @@ function renderVentasListFiltered(lista) {
   if (!tbody) return;
   tbody.innerHTML = lista.map(v => {
     const badgeClass = v.estado === 'Pagada' ? 'b-ok' : v.estado === 'Pendiente' ? 'b-pend' : 'b-err';
+    const esReparto  = v.tipo_entrega === 'Reparto';
     return `<tr>
       <td><strong style="color:#003C78">${v.numero || '—'}</strong></td>
       <td style="font-size:12px;color:#64748B">${formatFecha((v.fecha||'').slice(0,10))}</td>
-      <td><strong>${v.cliente_nombre || 'Consumidor final'}</strong></td>
+      <td>
+        <strong>${v.cliente_nombre || 'Consumidor final'}</strong><br>
+        <span style="font-size:10px;font-weight:700;color:${esReparto ? '#0A6BC4' : '#94A3B8'}">
+          ${esReparto ? '🚚 Reparto' : '🏪 Local'}
+        </span>
+      </td>
       <td><span style="font-size:12px;color:#64748B">${v.metodo_pago || '—'}</span></td>
       <td><strong style="color:#003C78">${L(v.total)}</strong></td>
       <td><span class="badge ${badgeClass}">${v.estado}</span></td>
@@ -262,6 +271,7 @@ function deleteCliente(id) { desactivarCliente(id, 'este cliente'); }
 function openNuevaVenta() {
   itemsVenta = [];
   el('formVenta')?.reset();
+  if (el('vtaTipoEntrega')) el('vtaTipoEntrega').value = 'Local';
 
   // Poblar clientes
   const sel = el('vtaClienteId');
@@ -349,9 +359,10 @@ function renderItemsVenta() {
 async function saveVentaUnificada() {
   if (!itemsVenta.length) return toast('Agregue al menos un producto', 'err');
 
-  const clienteId   = el('vtaClienteId')?.value;
-  const metodoPago  = el('vtaFormaPago')?.value || 'Efectivo';
-  const estado      = el('vtaEstado')?.value    || 'Pagada';
+  const clienteId    = el('vtaClienteId')?.value;
+  const metodoPago   = el('vtaFormaPago')?.value    || 'Efectivo';
+  const estado       = el('vtaEstado')?.value       || 'Pagada';
+  const tipoEntrega  = el('vtaTipoEntrega')?.value   || 'Local';
 
   let clienteNombre = 'Consumidor final';
   if (clienteId) {
@@ -366,6 +377,7 @@ async function saveVentaUnificada() {
       items: itemsVenta,
       metodoPago,
       estado,
+      tipoEntrega,
       vendedor_id: null
     });
 
@@ -377,13 +389,17 @@ async function saveVentaUnificada() {
         monto_total: nuevaVenta.total,
         fecha:       new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10)
       });
-      toast('Venta y factura SAR generadas ✅');
+      toast(tipoEntrega === 'Reparto'
+        ? 'Venta y factura SAR generadas ✅ — se agregó a la hoja de ruta del día'
+        : 'Venta y factura SAR generadas ✅');
       closeModalVenta();
       reloadComercialData();
       // Abrir factura automáticamente
       setTimeout(() => imprimirFactura(nuevaVenta.id), 400);
     } else {
-      toast('Venta registrada ✅');
+      toast(tipoEntrega === 'Reparto'
+        ? 'Venta registrada ✅ — se agregó a la hoja de ruta del día'
+        : 'Venta registrada ✅');
       closeModalVenta();
       reloadComercialData();
     }
@@ -459,7 +475,6 @@ async function imprimirFactura(ventaId) {
           </tr>`;
         }).join('');
       } else {
-        // Fallback si no hay items detallados
         tbody.innerHTML = `<tr>
           <td style="padding:7px 12px">Total de la venta</td>
           <td style="padding:7px 10px;text-align:center">1</td>
@@ -469,17 +484,21 @@ async function imprimirFactura(ventaId) {
       }
     }
 
-    // Totales con ISV
     if (el('facSubtotal')) el('facSubtotal').textContent = `L. ${subtotalSinISV.toFixed(2)}`;
     if (el('facISV'))      el('facISV').textContent      = `L. ${isv.toFixed(2)}`;
     if (el('facTotal'))    el('facTotal').textContent    = `L. ${totalConISV.toFixed(2)}`;
 
-    // Vendedor
-    if (el('facVendedor') && Auth.user) {
-      el('facVendedor').textContent = `Atendido por: ${Auth.user.nombre || 'Vendedor'}`;
+    // Vendedor — el app.js real guarda el usuario en localStorage('user'),
+    // no en un objeto global "Auth" (ese ya no existe).
+    if (el('facVendedor')) {
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        el('facVendedor').textContent = `Atendido por: ${user.nombre || user.name || 'Vendedor'}`;
+      } catch(_) {
+        el('facVendedor').textContent = '';
+      }
     }
 
-    // Mostrar modal
     el('modalFactura').style.display = 'flex';
 
   } catch(e) {
@@ -492,9 +511,5 @@ function closeModalFactura() {
   if (m) m.style.display = 'none';
 }
 
-/* ─── UTILITARIOS ─── */
-function formatFecha(str) {
-  if (!str) return '—';
-  const [y, m, d] = str.split('-');
-  return `${d}/${m}/${y}`;
-}
+/* Nota: formatFecha ya la define app.js — se quitó de aquí para no
+   tener dos funciones con el mismo nombre en el mismo scope global. */

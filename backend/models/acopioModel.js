@@ -69,8 +69,9 @@ exports.findProveedorActivo = async (id) => {
 
 /**
  * Crea una recepción de leche. Según el estado, en la misma
- * transacción se acredita el inventario (Aceptada) o se registra
- * la merma (Rechazada). Si eso falla, toda la operación se revierte.
+ * transacción se acredita el inventario + se registra el gasto de
+ * pago al proveedor (Aceptada), o se registra la merma (Rechazada).
+ * Si algo de esto falla, toda la operación se revierte.
  */
 exports.create = async (data) => {
   const {
@@ -114,6 +115,20 @@ exports.create = async (data) => {
         motivo: 'Recepción de leche (Acopio)',
         usuario, usuario_id
       });
+
+      // Pago al proveedor por la materia prima recibida. Se registra
+      // solo si hay proveedor y un monto real que cobrar.
+      if (proveedor_id && total_pagar > 0) {
+        const [[prov]] = await conn.query('SELECT nombre FROM proveedores WHERE id = ?', [proveedor_id]);
+        await conn.query(
+          `INSERT INTO gastos (id, concepto, categoria, monto, fecha, proveedor, acopio_id, usuario_id)
+           VALUES (?,?,?,?,?,?,?,?)`,
+          [uuidv4(),
+            `Compra de leche cruda — ${prov ? prov.nombre : 'Proveedor'} (${litrosN} L)`,
+            'Materia Prima', total_pagar, fechaFinal,
+            prov ? prov.nombre : '', id, usuario_id || null]
+        );
+      }
     } else if (estadoFinal === 'Rechazada') {
       const [prodInv] = await conn.query('SELECT nombre FROM inventario_productos WHERE id = ?', [inventario_id]);
       await conn.query(
@@ -155,7 +170,7 @@ exports.update = async (id, data) => {
 };
 
 // Nota: eliminar una recepción NO revierte automáticamente el
-// inventario ni borra la merma asociada. Si quieres ese
+// inventario, ni borra la merma o el gasto asociados. Si quieres ese
 // comportamiento simétrico al de Producción, dímelo y lo agrego.
 exports.remove = async (id) => {
   const [res] = await pool.query('DELETE FROM acopio_leche WHERE id = ?', [id]);

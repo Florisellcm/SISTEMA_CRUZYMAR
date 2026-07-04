@@ -8,13 +8,12 @@
 let gastosData = [];
 let proveedoresGeneralData = [];
 
-/* ─── CARGAR DATOS GENERALES (Compatibilidad) ─── */
+/* ─── CARGAR DATOS (llamado desde app.js: PAGES.compras.loader) ───
+   "proveedores" ya tiene su propio loader dedicado en app.js
+   (PAGES.proveedores.loader → loadProveedoresStandalone), así que
+   esta función solo necesita encargarse de la vista de Compras/Gastos. */
 async function loadGastos() {
-  if (currentPage === 'proveedores') {
-    await loadProveedoresStandalone();
-  } else {
-    await loadGastosStandalone();
-  }
+  await loadGastosStandalone();
 }
 
 /* ─── CARGAR GASTOS (STANDALONE) ─── */
@@ -67,12 +66,14 @@ function actualizarTarjetasProveedores() {
   if (el('cardCooperativasTotal')) el('cardCooperativasTotal').textContent = cooperativas;
 }
 
-/* ─── RELOAD ROUTER INTERNO ─── */
+/* ─── RELOAD ROUTER INTERNO ───
+   _currentPage (con guion bajo) es la variable real declarada en
+   app.js. "currentPage" no existe ahí — ese era el bug. */
 function reloadComprasData() {
-  if (currentPage === 'compras') {
-    loadGastosStandalone();
-  } else if (currentPage === 'proveedores') {
+  if (typeof _currentPage !== 'undefined' && _currentPage === 'proveedores') {
     loadProveedoresStandalone();
+  } else {
+    loadGastosStandalone();
   }
 }
 
@@ -299,10 +300,5 @@ async function saveGasto() {
   }
 }
 
-function formatFecha(str) {
-  if (!str) return '—';
-  try {
-    const d = new Date(str);
-    return d.toLocaleDateString('es-HN', {day:'2-digit', month:'short', year:'numeric'});
-  } catch(e) { return str; }
-}
+/* Nota: formatFecha ya la define app.js — se quitó de aquí para no
+   tener dos funciones con el mismo nombre en el mismo scope global. */
