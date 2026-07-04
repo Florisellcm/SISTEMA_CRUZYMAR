@@ -1,0 +1,159 @@
+<!-- CRUZYMAR · calidad_lotes.html — Control de Calidad de Lotes de Producción -->
+<div>
+
+  <!-- HEADER -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <div>
+      <h2 style="margin:0;font-size:20px;font-weight:800;color:#003C78">
+        <i class="ri-shield-check-line" style="color:#468C28"></i> Control de Calidad de Lotes
+      </h2>
+      <p style="margin-top:4px;color:#64748B;font-size:13px">Inspección fisicoquímica y sensorial de producto terminado — ningún lote sale sin aprobación</p>
+    </div>
+    <div style="display:flex;gap:8px">
+      <select id="cqFiltroEstado" onchange="loadCalidadLotes()"
+        style="padding:9px 13px;border:2px solid #E0E9F2;border-radius:8px;font-size:12px;font-weight:600;outline:none;color:#1E293B">
+        <option value="Todos">Todos los estados</option>
+        <option value="Pendiente">⏳ Pendiente inspección</option>
+        <option value="Aprobado">✅ Aprobado</option>
+        <option value="Rechazado">❌ Rechazado</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+    <div style="background:#fff;border-radius:13px;padding:16px 18px;border:1.5px solid #E0E9F2;border-left:3px solid #003C78">
+      <div style="font-size:10px;font-weight:700;color:#94A3B8;text-transform:uppercase;margin-bottom:4px">Total lotes</div>
+      <div id="cqKpiTotal" style="font-size:22px;font-weight:800;color:#003C78">—</div>
+    </div>
+    <div style="background:#fff;border-radius:13px;padding:16px 18px;border:1.5px solid #E0E9F2;border-left:3px solid #468C28">
+      <div style="font-size:10px;font-weight:700;color:#94A3B8;text-transform:uppercase;margin-bottom:4px">Aprobados</div>
+      <div id="cqKpiApro" style="font-size:22px;font-weight:800;color:#2C6B10">—</div>
+    </div>
+    <div style="background:#fff;border-radius:13px;padding:16px 18px;border:1.5px solid #E0E9F2;border-left:3px solid #DC2626">
+      <div style="font-size:10px;font-weight:700;color:#94A3B8;text-transform:uppercase;margin-bottom:4px">Rechazados</div>
+      <div id="cqKpiRech" style="font-size:22px;font-weight:800;color:#DC2626">—</div>
+    </div>
+    <div style="background:#fff;border-radius:13px;padding:16px 18px;border:1.5px solid #E0E9F2;border-left:3px solid #0A6BC4">
+      <div style="font-size:10px;font-weight:700;color:#94A3B8;text-transform:uppercase;margin-bottom:4px">Tasa aprobación</div>
+      <div id="cqKpiTasa" style="font-size:22px;font-weight:800;color:#0A6BC4">—</div>
+    </div>
+  </div>
+
+  <!-- TABLA DE LOTES -->
+  <div style="background:#fff;border-radius:14px;border:1.5px solid #E0E9F2;overflow:hidden">
+    <div style="padding:14px 20px;border-bottom:1px solid #E0E9F2;background:#F8FAFC;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:13px;font-weight:700;color:#003C78"><i class="ri-list-check-2"></i> Lotes completados — Bitácora de calidad</span>
+      <div style="display:flex;gap:8px">
+        <input type="date" id="cqFechaDesde" onchange="loadCalidadLotes()"
+          style="padding:7px 10px;border:1.5px solid #E0E9F2;border-radius:7px;font-size:12px;outline:none">
+        <input type="date" id="cqFechaHasta" onchange="loadCalidadLotes()"
+          style="padding:7px 10px;border:1.5px solid #E0E9F2;border-radius:7px;font-size:12px;outline:none">
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;min-width:900px">
+        <thead>
+          <tr style="background:#EAF2FB;border-bottom:2px solid #D5E5F7">
+            <th style="padding:10px 14px;text-align:left;font-size:10.5px;font-weight:700;color:#003C78;text-transform:uppercase">N° Lote</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10.5px;font-weight:700;color:#003C78;text-transform:uppercase">Producto</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10.5px;font-weight:700;color:#003C78;text-transform:uppercase">Cantidad</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10.5px;font-weight:700;color:#003C78;text-transform:uppercase">Fecha Prod.</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10.5px;font-weight:700;color:#003C78;text-transform:uppercase">Inspector</th>
+            <th style="padding:10px 14px;text-align:left;font-size:10.5px;font-weight:700;color:#003C78;text-transform:uppercase">Estado calidad</th>
+            <th style="padding:10px 14px;text-align:center;font-size:10.5px;font-weight:700;color:#003C78;text-transform:uppercase">Acción</th>
+          </tr>
+        </thead>
+        <tbody id="cqTablaBody">
+          <tr><td colspan="7" style="text-align:center;padding:40px;color:#94A3B8">Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL INSPECCIÓN ════ -->
+<div id="cqModal" style="display:none;position:fixed;inset:0;background:rgba(15,35,73,.55);align-items:center;justify-content:center;z-index:1000;padding:20px;backdrop-filter:blur(4px)">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:580px;box-shadow:0 24px 60px rgba(0,0,0,.22);max-height:90vh;overflow-y:auto">
+
+    <!-- Header modal -->
+    <div style="padding:18px 24px;border-bottom:1px solid #E0E9F2;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;z-index:5;border-radius:16px 16px 0 0">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#EAF2FB;display:flex;align-items:center;justify-content:center">
+          <i class="ri-shield-check-line" style="color:#003C78;font-size:18px"></i>
+        </div>
+        <div>
+          <h3 style="margin:0;font-size:15px;font-weight:800;color:#003C78">Inspección de Calidad</h3>
+          <p id="cqModalSubtitulo" style="margin:0;font-size:11px;color:#64748B"></p>
+        </div>
+      </div>
+      <button onclick="closeCQModal()" style="width:28px;height:28px;border-radius:7px;border:none;background:#F4F7FA;cursor:pointer;color:#64748B;font-size:16px">✕</button>
+    </div>
+
+    <div style="padding:22px 24px">
+      <input type="hidden" id="cqLoteId">
+
+      <!-- Estado de la Inspección -->
+      <div style="margin-bottom:20px">
+        <label style="display:block;font-size:12.5px;font-weight:700;color:#1E293B;margin-bottom:10px">Resultado de la Inspección</label>
+        <div style="display:flex;gap:14px">
+          <!-- Aprobado -->
+          <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border:2.5px solid #22C55E;background:#F0FDF4;border-radius:10px;cursor:pointer;font-weight:700;color:#16A34A;transition:all 0.2s" id="lblAprobado">
+            <input type="radio" name="cqResultado" id="cqRadioAprobado" value="Aprobado" checked onchange="toggleCQResultado('Aprobado')">
+            Aprobado (Pasa)
+          </label>
+          <!-- Rechazado -->
+          <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border:2.5px solid #E2E8F0;border-radius:10px;cursor:pointer;font-weight:700;color:#64748B;transition:all 0.2s" id="lblRechazado">
+            <input type="radio" name="cqResultado" id="cqRadioRechazado" value="Rechazado" onchange="toggleCQResultado('Rechazado')">
+            Rechazado (No Pasa)
+          </label>
+        </div>
+      </div>
+
+      <!-- Parámetros Sensoriales (Marcas rápidas) -->
+      <div style="margin-bottom:18px">
+        <label style="display:block;font-size:12.5px;font-weight:700;color:#1E293B;margin-bottom:8px">Evaluación de Parámetros</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+          <div>
+            <label style="display:block;font-size:11px;font-weight:600;color:#64748B;margin-bottom:4px">Nivel de Sal</label>
+            <select id="cqSal" style="width:100%;padding:8px 10px;border:1.5px solid #E0E9F2;border-radius:8px;font-size:12.5px;outline:none;background:#fff">
+              <option value="Normal" selected>Normal</option>
+              <option value="Bajo">Bajo</option>
+              <option value="Alto">Alto</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:11px;font-weight:600;color:#64748B;margin-bottom:4px">Consistencia</label>
+            <select id="cqConsistencia" style="width:100%;padding:8px 10px;border:1.5px solid #E0E9F2;border-radius:8px;font-size:12.5px;outline:none;background:#fff">
+              <option value="Adecuada" selected>Adecuada</option>
+              <option value="Inadecuada">Inadecuada</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:11px;font-weight:600;color:#64748B;margin-bottom:4px">Color y Olor</label>
+            <select id="cqColorOlor" style="width:100%;padding:8px 10px;border:1.5px solid #E0E9F2;border-radius:8px;font-size:12.5px;outline:none;background:#fff">
+              <option value="Normal" selected>Normal</option>
+              <option value="Anormal">Anormal</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Observaciones / Motivo -->
+      <div style="margin-bottom:12px">
+        <label id="cqLabelObs" style="display:block;font-size:12.5px;font-weight:700;color:#1E293B;margin-bottom:6px">Observaciones (Opcional)</label>
+        <textarea id="cqObservaciones" rows="3" placeholder="Añada comentarios o notas sobre el lote..."
+          style="width:100%;padding:10px 12px;border:1.5px solid #E0E9F2;border-radius:8px;font-size:13.5px;outline:none;resize:vertical;box-sizing:border-box;font-family:inherit"></textarea>
+      </div>
+    </div>
+
+    <!-- Botones del modal -->
+    <div style="padding:16px 24px;border-top:1px solid #E0E9F2;background:#F8FAFC;border-radius:0 0 16px 16px;display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="closeCQModal()" style="padding:9px 18px;border:1.5px solid #E0E9F2;background:#fff;border-radius:8px;font-size:13px;cursor:pointer;color:#64748B;font-weight:600">Cancelar</button>
+      <button onclick="guardarInspeccionSimple()"
+        style="padding:10px 22px;background:#003C78;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 3px 10px rgba(0,60,120,0.18)">
+        <i class="ri-save-line"></i> Guardar Inspección
+      </button>
+    </div>
+  </div>
+</div>

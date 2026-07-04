@@ -4,24 +4,20 @@
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
     <div>
       <h2 style="margin:0;font-size:20px;font-weight:800;color:#003C78">
-        <i class="ri-shopping-cart-line" style="color:#0A4A8F"></i> Comercial
+        <i class="ri-shopping-cart-line" style="color:#0A4A8F"></i> Ventas y Facturación
       </h2>
-      <p style="margin-top:4px;color:#64748B;font-size:13px">Ventas y clientes de CRUZYMAR</p>
+      <p style="margin-top:4px;color:#64748B;font-size:13px">Historial de facturas emitidas, cuentas por cobrar y cobros en general</p>
     </div>
     <div style="display:flex;gap:10px">
-      <button onclick="openNuevoCliente()"
-        style="background:#fff;color:#003C78;padding:10px 18px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">
-        <i class="ri-user-add-line"></i> Nuevo Cliente
-      </button>
       <button onclick="openNuevaVenta()"
-        style="background:#003C78;color:#fff;padding:10px 18px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(0,60,120,.2)">
+        style="background:#003C78;color:#fff;padding:10px 20px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(0,60,120,.2)">
         <i class="ri-shopping-bag-3-line"></i> Registrar Venta
       </button>
     </div>
   </div>
 
   <!-- TARJETAS -->
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px">
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px">
     <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
         <div style="width:38px;height:38px;border-radius:10px;background:#EAF2FB;display:flex;align-items:center;justify-content:center"><i class="ri-shopping-cart-2-line" style="color:#003C78;font-size:18px"></i></div>
@@ -39,117 +35,41 @@
     <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
         <div style="width:38px;height:38px;border-radius:10px;background:#FFF7ED;display:flex;align-items:center;justify-content:center"><i class="ri-wallet-3-line" style="color:#EA580C;font-size:18px"></i></div>
-        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Por Cobrar</span>
+        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Por Cobrar (Créditos)</span>
       </div>
       <div id="vtaPorCobrar" style="font-size:24px;font-weight:800;color:#EA580C">L. 0.00</div>
     </div>
-    <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <div style="width:38px;height:38px;border-radius:10px;background:#F5F3FF;display:flex;align-items:center;justify-content:center"><i class="ri-group-line" style="color:#7C3AED;font-size:18px"></i></div>
-        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Clientes</span>
-      </div>
-      <div id="vtaClientesActivos" style="font-size:24px;font-weight:800;color:#7C3AED">0</div>
-    </div>
   </div>
 
-  <!-- DOS COLUMNAS -->
-  <div style="display:grid;grid-template-columns:60% 38%;gap:2%;margin-bottom:24px">
-
-    <!-- VENTAS -->
-    <div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2;overflow:hidden">
-      <div style="padding:14px 20px;border-bottom:1px solid #E0E9F2;background:#F8FAFC">
-        <span style="font-size:13px;font-weight:700;color:#003C78"><i class="ri-list-check-2"></i> Historial de Ventas</span>
-      </div>
-      <div style="overflow-y:auto;max-height:420px">
-        <table style="width:100%;border-collapse:collapse">
-          <thead>
-            <tr style="background:#F4F7FA;border-bottom:2px solid #E0E9F2;position:sticky;top:0;z-index:1">
-              <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">N° / Fecha</th>
-              <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Cliente</th>
-              <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Total</th>
-              <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Estado</th>
-              <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Acc.</th>
-            </tr>
-          </thead>
-          <tbody id="ventasTableBody">
-            <tr><td colspan="5" style="text-align:center;padding:40px;color:#64748B">Cargando...</td></tr>
-          </tbody>
-        </table>
-      </div>
+  <!-- LISTA DE VENTAS (ANCHO COMPLETO) -->
+  <div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2;overflow:hidden;margin-bottom:24px">
+    <div style="padding:16px 20px;border-bottom:1px solid #E0E9F2;background:#F8FAFC;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:13px;font-weight:700;color:#003C78"><i class="ri-list-check-2"></i> Historial General de Ventas y Facturas Emitidas</span>
+      <input id="buscarVentaStand" oninput="filtrarVentasStand()" placeholder="🔍 Buscar por número o cliente..." 
+        style="padding:8px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:12px;outline:none;width:240px">
     </div>
-
-    <!-- CLIENTES -->
-    <div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2;overflow:hidden">
-      <div style="padding:14px 20px;border-bottom:1px solid #E0E9F2;background:#F8FAFC">
-        <span style="font-size:13px;font-weight:700;color:#003C78"><i class="ri-group-line"></i> Clientes</span>
-      </div>
-      <div style="overflow-y:auto;max-height:420px">
-        <table style="width:100%;border-collapse:collapse">
-          <thead>
-            <tr style="background:#F4F7FA;border-bottom:2px solid #E0E9F2;position:sticky;top:0;z-index:1">
-              <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Nombre</th>
-              <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Tel.</th>
-              <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Tipo</th>
-              <th style="padding:10px 14px;text-align:center;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Acc.</th>
-            </tr>
-          </thead>
-          <tbody id="clientesTableBody">
-            <tr><td colspan="4" style="text-align:center;padding:40px;color:#64748B">Cargando...</td></tr>
-          </tbody>
-        </table>
-      </div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="background:#F4F7FA;border-bottom:2px solid #E0E9F2">
+            <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">N° Documento</th>
+            <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Fecha Emisión</th>
+            <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Cliente</th>
+            <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Forma de Pago</th>
+            <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Monto Total</th>
+            <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Estado Cobro</th>
+            <th style="padding:12px 16px;text-align:center;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;width:160px">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="ventasTableBody">
+          <tr><td colspan="7" style="text-align:center;padding:40px;color:#64748B">Cargando transacciones de venta...</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
 
-<!-- ═══ MODAL NUEVO CLIENTE ═══ -->
-<div id="modalCliente" style="display:none;position:fixed;inset:0;background:rgba(15,35,73,.55);align-items:center;justify-content:center;z-index:1000;padding:20px;backdrop-filter:blur(4px)">
-  <div style="background:#fff;border-radius:16px;width:100%;max-width:460px;box-shadow:0 32px 80px rgba(0,0,0,.25)">
-    <div style="padding:18px 24px;border-bottom:1px solid #E0E9F2;display:flex;justify-content:space-between;align-items:center;border-radius:16px 16px 0 0">
-      <h3 style="font-size:15px;font-weight:700;color:#003C78;margin:0"><i class="ri-user-add-line"></i> Nuevo Cliente</h3>
-      <button onclick="closeModalCliente()" style="width:28px;height:28px;border-radius:8px;border:none;background:#F4F7FA;cursor:pointer;color:#64748B"><i class="ri-close-line"></i></button>
-    </div>
-    <div style="padding:22px 24px">
-      <form id="formCliente">
-        <div style="margin-bottom:14px">
-          <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px">Nombre *</label>
-          <input id="cliNombre" type="text" placeholder="Nombre completo o empresa"
-            style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
-          <div>
-            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px">Teléfono</label>
-            <input id="cliTelefono" type="tel" placeholder="9900-0000"
-              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
-          </div>
-          <div>
-            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px">Tipo</label>
-            <select id="cliTipo" style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none">
-              <option value="Particular">Particular</option>
-              <option value="Pulpería">Pulpería</option>
-              <option value="Supermercado">Supermercado</option>
-              <option value="Restaurante">Restaurante</option>
-              <option value="Empresa">Empresa</option>
-            </select>
-          </div>
-        </div>
-        <div>
-          <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px">RTN</label>
-          <input id="cliRTN" type="text" placeholder="0000-0000-000000"
-            style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
-        </div>
-      </form>
-    </div>
-    <div style="padding:14px 24px;border-top:1px solid #E0E9F2;display:flex;justify-content:flex-end;gap:10px;background:#F8FAFC;border-radius:0 0 16px 16px">
-      <button onclick="closeModalCliente()" style="padding:9px 18px;border:2px solid #E0E9F2;background:#fff;border-radius:8px;font-size:13px;cursor:pointer;color:#64748B">Cancelar</button>
-      <button onclick="saveCliente()" style="padding:9px 20px;background:#003C78;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">
-        <i class="ri-save-line"></i> Guardar
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ MODAL NUEVA VENTA ═══ -->
+<!-- ═══ MODAL REGISTRAR VENTA ═══ -->
 <div id="modalVenta" style="display:none;position:fixed;inset:0;background:rgba(15,35,73,.55);align-items:center;justify-content:center;z-index:1000;padding:20px;backdrop-filter:blur(4px)">
   <div style="background:#fff;border-radius:16px;width:100%;max-width:680px;box-shadow:0 32px 80px rgba(0,0,0,.25);max-height:92vh;overflow-y:auto">
     <div style="padding:18px 24px;border-bottom:1px solid #E0E9F2;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;z-index:10;border-radius:16px 16px 0 0">
@@ -215,9 +135,9 @@
 
         <!-- Factura -->
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#64748B;cursor:pointer">
-          <input id="vtaGenerarFactura" type="checkbox"
+          <input id="vtaGenerarFactura" type="checkbox" checked
             style="width:16px;height:16px;accent-color:#003C78">
-          Generar factura automáticamente
+          Generar factura SAR automáticamente
         </label>
 
       </form>
@@ -231,10 +151,115 @@
   </div>
 </div>
 
+<!-- ═══ MODAL FACTURA SAR (Honduras) ═══ -->
+<div id="modalFactura" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);align-items:flex-start;justify-content:center;z-index:2000;padding:20px;overflow-y:auto;backdrop-filter:blur(6px)">
+  <div id="facturaImprimible" style="background:#fff;border-radius:4px;width:100%;max-width:780px;margin:auto;box-shadow:0 20px 60px rgba(0,0,0,.4);font-family:'Courier New',Courier,monospace">
+
+    <!-- Barra de acciones (no se imprime) -->
+    <div class="no-print" style="background:#003C78;padding:12px 20px;border-radius:4px 4px 0 0;display:flex;justify-content:space-between;align-items:center">
+      <span style="color:#fff;font-size:14px;font-weight:700"><i class="ri-file-text-line"></i> Factura SAR — Vista Previa</span>
+      <div style="display:flex;gap:10px">
+        <button onclick="window.print()" style="background:#468C28;color:#fff;padding:8px 18px;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer"><i class="ri-printer-line"></i> Imprimir</button>
+        <button onclick="closeModalFactura()" style="background:rgba(255,255,255,.15);color:#fff;padding:8px 16px;border:none;border-radius:6px;font-size:13px;cursor:pointer"><i class="ri-close-line"></i> Cerrar</button>
+      </div>
+    </div>
+
+    <!-- Cuerpo de la factura -->
+    <div style="padding:32px 40px;font-size:12px;color:#1a1a1a">
+
+      <!-- Encabezado empresa -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #003C78">
+        <div style="display:flex;align-items:center">
+          <img src="img/logo.png" style="height:60px;margin-right:16px;border-radius:6px;border:1px solid #E0E9F2;object-fit:contain" alt="Logo">
+          <div>
+            <div style="font-family:Arial,sans-serif;font-size:22px;font-weight:900;color:#003C78;letter-spacing:-0.5px">CRUZYMAR</div>
+            <div style="font-family:Arial,sans-serif;font-size:11px;color:#64748B;font-weight:600">PRODUCTOS LÁCTEOS S. DE R.L.</div>
+            <div style="margin-top:4px;font-size:11px;color:#374151;line-height:1.4">
+              Colonia Brisas del Río, Las Vegas, Victoria, Yoro<br>
+              Tel: (504) 9876-5432 &nbsp;|&nbsp; cruzymar@gmail.com<br>
+              RTN: <strong>0813-1990-001248</strong>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:right;background:#F8FAFC;border:2px solid #E0E9F2;border-radius:8px;padding:14px 18px">
+          <div style="font-family:Arial,sans-serif;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:1px">FACTURA</div>
+          <div id="facNumero" style="font-family:Arial,sans-serif;font-size:20px;font-weight:900;color:#003C78">FAC-0001</div>
+          <div id="facFecha" style="font-size:11px;color:#64748B;margin-top:4px">01/01/2026</div>
+        </div>
+      </div>
+
+      <!-- CAI y Rango -->
+      <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:6px;padding:10px 14px;margin-bottom:18px;font-size:10.5px">
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 16px">
+          <span style="font-weight:700;color:#EA580C">CAI:</span>
+          <span id="facCAI" style="font-family:'Courier New',monospace;letter-spacing:1px;color:#1a1a1a">A1B2C3-D4E5F6-G7H8I9-J0K1L2-M3N4O5-P6</span>
+          <span style="font-weight:700;color:#EA580C">Rango Autorizado:</span>
+          <span id="facRango" style="color:#1a1a1a">000-001-01-00000001 Al 000-001-01-00000500</span>
+          <span style="font-weight:700;color:#EA580C">Fecha Límite Emisión:</span>
+          <span id="facFechaLimite" style="color:#1a1a1a">31/12/2026</span>
+        </div>
+      </div>
+
+      <!-- Datos del cliente -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;padding:14px;background:#F8FAFC;border-radius:6px;border:1px solid #E0E9F2">
+        <div>
+          <div style="font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:4px">Cliente</div>
+          <div id="facClienteNombre" style="font-weight:700;color:#1E293B;font-size:13px">Consumidor Final</div>
+          <div id="facClienteTel" style="font-size:11px;color:#64748B;margin-top:2px"></div>
+        </div>
+        <div>
+          <div style="font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;margin-bottom:4px">RTN Cliente</div>
+          <div id="facClienteRTN" style="font-family:'Courier New',monospace;font-size:13px;color:#1E293B">—</div>
+          <div style="font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;margin-top:6px;margin-bottom:4px">Forma de Pago</div>
+          <div id="facMetodoPago" style="font-size:12px;color:#1E293B">Efectivo</div>
+        </div>
+      </div>
+
+      <!-- Tabla de productos -->
+      <table style="width:100%;border-collapse:collapse;margin-bottom:16px;font-size:11.5px">
+        <thead>
+          <tr style="background:#003C78;color:#fff">
+            <th style="padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase">Descripción del Producto</th>
+            <th style="padding:8px 10px;text-align:center;font-size:10px;text-transform:uppercase;width:60px">Cant.</th>
+            <th style="padding:8px 10px;text-align:right;font-size:10px;text-transform:uppercase;width:90px">P. Unit.</th>
+            <th style="padding:8px 12px;text-align:right;font-size:10px;text-transform:uppercase;width:100px">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody id="facItemsBody">
+        </tbody>
+      </table>
+
+      <!-- Totales -->
+      <div style="display:flex;justify-content:flex-end;margin-bottom:24px">
+        <div style="min-width:240px">
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #E0E9F2;font-size:12px">
+            <span style="color:#64748B">Subtotal (sin ISV):</span>
+            <span id="facSubtotal" style="font-weight:600">L. 0.00</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #E0E9F2;font-size:12px">
+            <span style="color:#64748B">ISV 15%:</span>
+            <span id="facISV" style="font-weight:600;color:#DC2626">L. 0.00</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:10px 0;margin-top:4px;border-top:2px solid #003C78;font-size:15px;font-weight:900">
+            <span style="color:#003C78">TOTAL A PAGAR:</span>
+            <span id="facTotal" style="color:#003C78">L. 0.00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pie de factura -->
+      <div style="border-top:1px dashed #CBD5E1;padding-top:14px;text-align:center;font-size:10px;color:#94A3B8;line-height:1.7">
+        <strong style="color:#374151">CRUZYMAR Productos Lácteos S. de R.L.</strong><br>
+        "La calidad láctea del Valle de Yoro directa a su mesa"<br>
+        Este documento es una representación impresa de la Factura — SAR Honduras<br>
+        <span id="facVendedor" style="font-size:10px;color:#64748B"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <style>
 .btn-accion { width:28px;height:28px;border-radius:6px;border:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;justify-content:center;transition:all .2s;margin:0 2px; }
-.btn-accion.verde { background:#F0FDF4;color:#15803D; }
-.btn-accion.rojo  { background:#FEF2F2;color:#991B1B; }
 .btn-accion:hover { opacity:.75;transform:scale(1.1); }
 table tr  { border-bottom:1px solid #F0F4F8;transition:background .2s; }
 table tr:hover { background:#F8FBFF; }
@@ -243,4 +268,12 @@ table td  { padding:11px 14px;font-size:13px; }
 .b-ok     { background:#DCFCE7;color:#15803D; }
 .b-pend   { background:#FEF3C7;color:#D97706; }
 .b-err    { background:#FEE2E2;color:#DC2626; }
+
+/* ── Estilos de impresión SAR ── */
+@media print {
+  body * { visibility: hidden !important; }
+  #facturaImprimible, #facturaImprimible * { visibility: visible !important; }
+  #facturaImprimible { position: fixed !important; inset: 0 !important; margin: 0 !important; padding: 20px !important; box-shadow: none !important; border-radius: 0 !important; font-size: 11px !important; }
+  .no-print { display: none !important; }
+}
 </style>

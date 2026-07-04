@@ -363,14 +363,24 @@ INSERT IGNORE INTO recetas (id, producto, unidad_producto, litros_por_unidad, re
 
 -- ── Inventario Inicial ────────────────────────────────────────
 INSERT IGNORE INTO inventario_productos (id, nombre, categoria, stock, stock_minimo, unidad, precio) VALUES
-('inv-001','Queso Fresco 500g',    'Queso',       120, 20,  'Unidades', 65.00),
-('inv-002','Leche Entera 1L',      'Leche',       350, 50,  'Litros',   28.00),
-('inv-003','Mantequilla 250g',     'Mantequilla', 8,   15,  'Unidades', 55.00),
-('inv-004','Quesillo Especial 1lb','Queso',       60,  10,  'Unidades', 80.00),
-('inv-005','Cuajo Líquido',        'Insumo',      5,   2,   'Litros',   120.00),
-('inv-006','Sal Fina',             'Insumo',      40,  10,  'Kg',       18.00),
-('inv-007','Yogur Natural 500g',   'Yogur',       85,  20,  'Unidades', 42.00),
-('inv-008','Crema de Leche',       'Crema',       30,  10,  'Litros',   35.00);
+('inv-001','Queso Crema 1lb',     'Queso',       120, 20,  'Libras',   65.00),
+('inv-002','Leche Entera 1L',       'Leche',       350, 50,  'Litros',   28.00),
+('inv-003','Mantequilla 1lb',      'Mantequilla', 85,  15,  'Libras',   50.00),
+('inv-004','Quesillo 1lb',         'Queso',       60,  10,  'Libras',   70.00),
+('inv-005','Queso Semicheco 1lb',  'Queso',       95,  15,  'Libras',   75.00),
+('inv-006','Queso con Chile 1lb',  'Queso',       40,  10,  'Libras',   68.00),
+('inv-007','Requesón 1lb',         'Requesón',    85,  20,  'Libras',   45.00),
+('inv-008','Suero 1L',             'Suero',       30,  10,  'Litros',   10.00),
+('inv-009','Leche Entera 500ml',   'Leche',       100, 15,  'Litros',   15.00),
+('inv-010','Queso Crema 0.5lb',    'Queso',       60,  10,  'Libras',   33.00),
+('inv-011','Queso Frijolero 1lb',  'Queso',       90,  10,  'Libras',   60.00),
+('inv-012','Queso Frijolero 0.5lb','Queso',       70,  10,  'Libras',   31.00),
+('inv-013','Queso Semi-seco 0.5lb','Queso',       85,  10,  'Libras',   38.00),
+('inv-014','Quesillo 0.5lb',       'Queso',       95,  10,  'Libras',   36.00),
+('inv-015','Suero 500ml',          'Suero',       150, 20,  'Litros',   6.00),
+('inv-016','Requesón 0.5lb',       'Requesón',    30,  5,   'Libras',   23.00),
+('inv-017','Mantequilla 0.5lb',    'Mantequilla', 90,  10,  'Libras',   26.00),
+('inv-018','Queso con Chile 0.5lb','Queso',       35,  5,   'Libras',   35.00);
 
 -- ── Acopio de leche (últimos días) ────────────────────────────
 INSERT IGNORE INTO acopio_leche (id, proveedor_id, litros, temperatura, precio_litro, total_pagar, turno, fecha, estado, observaciones) VALUES
@@ -462,3 +472,114 @@ INSERT IGNORE INTO compras (id, numero, proveedor_id, proveedor_nombre, concepto
 ('com-002','OC-0002','prov-003','Cooperativa La Unión','Leche cruda',        8600.00,'Recibida', DATE_SUB(CURDATE(),INTERVAL 5 DAY)),
 ('com-003','OC-0003','prov-002','Finca Don Roberto','Leche cruda',           5740.00,'Recibida', DATE_SUB(CURDATE(),INTERVAL 3 DAY)),
 ('com-004','OC-0004','prov-004','Ganadería Los Pinos','Leche cruda semana',  7200.00,'Pendiente',CURDATE());
+-- ════════════════════════════════════════════════════════════════
+-- SUB-MÓDULO: Control de Calidad de Lotes de Producción
+-- ════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS calidad_lotes (
+  id               CHAR(36)      NOT NULL PRIMARY KEY,
+  lote_id          CHAR(36)      NOT NULL,
+  inspector_id     CHAR(36)      DEFAULT NULL,
+  fecha_inspeccion DATE          NOT NULL,
+  humedad_pct      DECIMAL(5,2)  DEFAULT NULL,
+  grasa_pct        DECIMAL(5,2)  DEFAULT NULL,
+  sal_nivel        ENUM('Bajo','Normal','Alto') DEFAULT 'Normal',
+  consistencia     ENUM('Adecuada','Inadecuada') NOT NULL DEFAULT 'Adecuada',
+  color_olor       ENUM('Normal','Anormal')       NOT NULL DEFAULT 'Normal',
+  estado           ENUM('Aprobado','Rechazado')   NOT NULL DEFAULT 'Aprobado',
+  motivo_rechazo   TEXT          DEFAULT NULL,
+  observaciones    TEXT          DEFAULT NULL,
+  creado_en        DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_callote_lote      FOREIGN KEY (lote_id)      REFERENCES produccion_lotes(id) ON DELETE CASCADE,
+  CONSTRAINT fk_callote_inspector FOREIGN KEY (inspector_id) REFERENCES usuarios(id)         ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+-- ════════════════════════════════════════════════════════════════
+-- SUB-MÓDULO: Hojas de Ruta de Distribución
+-- ════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS distribucion_rutas (
+  id              CHAR(36)      NOT NULL PRIMARY KEY,
+  fecha_reparto   DATE          NOT NULL,
+  transportista   VARCHAR(100)  DEFAULT 'Repartidor',
+  estado          ENUM('Borrador','En ruta','Completada') NOT NULL DEFAULT 'Borrador',
+  total_clientes  INT           DEFAULT 0,
+  total_items     INT           DEFAULT 0,
+  total_cobrar    DECIMAL(12,2) DEFAULT 0,
+  generado_por    CHAR(36)      DEFAULT NULL,
+  creado_en       DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_ruta_user FOREIGN KEY (generado_por) REFERENCES usuarios(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+-- ════════════════════════════════════════════════════════════════
+-- CRUZYMAR · Migración: conectar Producción y Acopio a Inventario
+--
+-- Objetivo: que tanto un lote de producción como una recepción de
+-- leche apunten SIEMPRE a un producto real de inventario_productos
+-- por su id (no por nombre, que es frágil). Así el stock se
+-- actualiza siempre por el mismo camino: Inventario.registrarMovimientoTx.
+-- ════════════════════════════════════════════════════════════════
+
+-- ── 1) Producción: de qué inventario sale la materia prima y a
+--      cuál entra lo producido (principal + subproducto opcional) ──
+ALTER TABLE produccion_lotes
+  ADD COLUMN IF NOT EXISTS tipo_proceso                     VARCHAR(30)   DEFAULT 'Manual' AFTER receta_id,
+  ADD COLUMN IF NOT EXISTS entrada_tipo                     VARCHAR(80)   DEFAULT NULL     AFTER tipo_proceso,
+  ADD COLUMN IF NOT EXISTS lote_padre_id                    CHAR(36)      DEFAULT NULL     AFTER entrada_tipo,
+  ADD COLUMN IF NOT EXISTS materia_prima_inventario_id      CHAR(36)      DEFAULT NULL     AFTER lote_padre_id,
+  ADD COLUMN IF NOT EXISTS producto_inventario_id           CHAR(36)      DEFAULT NULL     AFTER materia_prima_inventario_id,
+  ADD COLUMN IF NOT EXISTS salida_secundaria_nombre         VARCHAR(80)   DEFAULT NULL     AFTER producto_inventario_id,
+  ADD COLUMN IF NOT EXISTS salida_secundaria_cantidad       DECIMAL(10,2) DEFAULT NULL     AFTER salida_secundaria_nombre,
+  ADD COLUMN IF NOT EXISTS salida_secundaria_unidad         VARCHAR(30)   DEFAULT NULL     AFTER salida_secundaria_cantidad,
+  ADD COLUMN IF NOT EXISTS salida_secundaria_inventario_id  CHAR(36)      DEFAULT NULL     AFTER salida_secundaria_unidad;
+
+-- ── 2) Acopio: a qué producto de inventario entra la leche recibida ──
+ALTER TABLE acopio_leche
+  ADD COLUMN IF NOT EXISTS inventario_id CHAR(36) DEFAULT NULL AFTER proveedor_id;
+
+-- ── 3) Llaves foráneas (MySQL no soporta "ADD CONSTRAINT IF NOT EXISTS",
+--      por eso se verifica primero en information_schema) ──
+
+SET @fk := (SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS
+            WHERE CONSTRAINT_NAME = 'fk_prod_lote_padre' AND TABLE_NAME = 'produccion_lotes');
+SET @sql := IF(@fk = 0,
+  'ALTER TABLE produccion_lotes ADD CONSTRAINT fk_prod_lote_padre
+     FOREIGN KEY (lote_padre_id) REFERENCES produccion_lotes(id) ON DELETE SET NULL',
+  'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @fk := (SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS
+            WHERE CONSTRAINT_NAME = 'fk_prod_mat_inv' AND TABLE_NAME = 'produccion_lotes');
+SET @sql := IF(@fk = 0,
+  'ALTER TABLE produccion_lotes ADD CONSTRAINT fk_prod_mat_inv
+     FOREIGN KEY (materia_prima_inventario_id) REFERENCES inventario_productos(id) ON DELETE SET NULL',
+  'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @fk := (SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS
+            WHERE CONSTRAINT_NAME = 'fk_prod_prod_inv' AND TABLE_NAME = 'produccion_lotes');
+SET @sql := IF(@fk = 0,
+  'ALTER TABLE produccion_lotes ADD CONSTRAINT fk_prod_prod_inv
+     FOREIGN KEY (producto_inventario_id) REFERENCES inventario_productos(id) ON DELETE SET NULL',
+  'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @fk := (SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS
+            WHERE CONSTRAINT_NAME = 'fk_prod_sec_inv' AND TABLE_NAME = 'produccion_lotes');
+SET @sql := IF(@fk = 0,
+  'ALTER TABLE produccion_lotes ADD CONSTRAINT fk_prod_sec_inv
+     FOREIGN KEY (salida_secundaria_inventario_id) REFERENCES inventario_productos(id) ON DELETE SET NULL',
+  'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @fk := (SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS
+            WHERE CONSTRAINT_NAME = 'fk_acopio_inv' AND TABLE_NAME = 'acopio_leche');
+SET @sql := IF(@fk = 0,
+  'ALTER TABLE acopio_leche ADD CONSTRAINT fk_acopio_inv
+     FOREIGN KEY (inventario_id) REFERENCES inventario_productos(id) ON DELETE SET NULL',
+  'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- ── 4) Estandarizar unidades existentes a solo "Litros" / "Libras" ──
+-- (opcional pero recomendado: evita que queden productos con "Unidades",
+--  "L", "lb" o variantes sueltas mezcladas en el mismo inventario)
+UPDATE inventario_productos SET unidad = 'Litros' WHERE unidad IN ('litros','L','l','lts');
+UPDATE inventario_productos SET unidad = 'Libras' WHERE unidad IN ('libras','lb','Lbs','lbs');

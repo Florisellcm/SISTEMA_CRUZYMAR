@@ -1,298 +1,277 @@
-/* ═══════════════════════════════════════════════════
-   CRUZYMAR · app.js ACTUALIZADO (Tabs)
+/* ══════════════════════════════════════════════════════════
+   CRUZYMAR · app.js — Núcleo del frontend
+   Utilidades globales · Autenticación · Navegación
+══════════════════════════════════════════════════════════ */
 
-═══════════════════════════════════════════════════ */
+// ── Configuración ────────────────────────────────────────
+const API_BASE = '/api';
 
-const API = '/api';
+// ── Utilidades globales ──────────────────────────────────
 
-const Auth = {
-  get token() { return localStorage.getItem('crz_token'); },
-  get user()  { return JSON.parse(localStorage.getItem('crz_user') || 'null'); },
-  save(token, user) {
-    localStorage.setItem('crz_token', token);
-    localStorage.setItem('crz_user', JSON.stringify(user));
-  },
-  clear() {
-    localStorage.removeItem('crz_token');
-    localStorage.removeItem('crz_user');
-  },
-  ok() { return !!this.token; }
-};
+/** Alias de document.getElementById */
+function el(id) { return document.getElementById(id); }
 
-async function req(method, path, body = null) {
-  const opts = { method, headers: { 'Content-Type': 'application/json' } };
-  if (Auth.token) opts.headers['Authorization'] = 'Bearer ' + Auth.token;
-  if (body) opts.body = JSON.stringify(body);
-  const r = await fetch(API + path, opts);
-  const d = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(d.error || 'Error ' + r.status);
-  return d;
+/** Formato moneda Honduras */
+function L(n) {
+  return 'L. ' + Number(n || 0).toLocaleString('es-HN', {
+    minimumFractionDigits: 2, maximumFractionDigits: 2
+  });
 }
 
-const el = id => document.getElementById(id);
-const L  = n  => 'L. ' + (+n || 0).toLocaleString('es-HN', { minimumFractionDigits: 2 });
-const N  = n  => (+n || 0).toLocaleString('es-HN');
+/** Formato número */
+function N(n) {
+  return Number(n || 0).toLocaleString('es-HN', {
+    minimumFractionDigits: 0, maximumFractionDigits: 2
+  });
+}
 
-function toast(msg, type = 'ok') {
-  const c = el('toastContainer');
-  if (!c) return;
+/** Formatear fecha en formato DD/MM/YYYY */
+function formatFecha(str) {
+  if (!str) return '—';
+  const fechaLimpia = (str + '').slice(0, 10);
+  const parts = fechaLimpia.split('-');
+  if (parts.length !== 3) return str;
+  const [y, m, d] = parts;
+  return `${d}/${m}/${y}`;
+}
+
+/**
+ * Petición HTTP a la API
+ * @param {string} method - GET, POST, PUT, DELETE
+ * @param {string} endpoint - Ruta relativa, ej: '/produccion'
+ * @param {object|null} body - Cuerpo JSON (opcional)
+ */
+async function req(method, endpoint, body = null) {
+  const token = localStorage.getItem('token');
+  const opts = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+    }
+  };
+  if (body) opts.body = JSON.stringify(body);
+
+  const res = await fetch(API_BASE + endpoint, opts);
+
+  if (res.status === 401) {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    showLogin();
+    throw new Error('Sesión expirada, por favor ingrese de nuevo.');
+  }
+
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    throw new Error(data.error || data.message || `Error ${res.status}`);
+  }
+
+  return data;
+}
+
+// ── Toast / Notificaciones ───────────────────────────────
+function toast(msg, tipo = 'ok') {
+  const container = el('toastContainer');
+  if (!container) return;
+
   const t = document.createElement('div');
-  t.className = 'toast' + (type === 'err' ? ' err' : '');
-  t.innerHTML = `<span>${type === 'err' ? '❌' : '✅'}</span><span>${msg}</span>`;
-  c.appendChild(t);
+  t.className = 'toast ' + (tipo === 'err' ? 'toast-err' : 'toast-ok');
+  t.innerHTML = (tipo === 'err' ? '⚠ ' : '✓ ') + msg;
+  container.appendChild(t);
+
+  setTimeout(() => t.classList.add('toast-show'), 10);
   setTimeout(() => {
-    t.style.opacity = '0';
-    t.style.transform = 'translateX(30px)';
-    t.style.transition = '.3s';
-    setTimeout(() => t.remove(), 300);
+    t.classList.remove('toast-show');
+    setTimeout(() => t.remove(), 400);
   }, 3500);
 }
 
-function iniciarReloj() {
-  const actualizar = () => {
-    const e = el('topDate');
-    if (e) e.textContent = new Date().toLocaleString('es-HN', {
-      dateStyle: 'full', timeStyle: 'medium'
-    });
-  };
-  actualizar();
-  setInterval(actualizar, 1000);
-}
-
+// ── Autenticación ────────────────────────────────────────
 async function login() {
-  const email = el('loginEmail')?.value;
-  const pass  = el('loginPass')?.value;
-  const err   = el('loginErr');
-  if (err) err.style.display = 'none';
+  const email = el('loginEmail')?.value?.trim();
+  const pass  = el('loginPass')?.value?.trim();
+  const errEl = el('loginErr');
+
   if (!email || !pass) {
-    if (err) { err.textContent = 'Ingrese email y contraseña'; err.style.display = 'block'; }
+    if (errEl) errEl.textContent = 'Complete todos los campos.';
     return;
   }
+
   try {
-    const d = await req('POST', '/auth/login', { email, password: pass });
-    Auth.save(d.token, d.usuario);
-    window.location.href = '/index.html';
-  } catch(e) {
-    if (err) { err.textContent = e.message; err.style.display = 'block'; }
+    const data = await req('POST', '/auth/login', { email, password: pass });
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user || { email, rol: 'admin' }));
+    showApp();
+  } catch (e) {
+    if (errEl) errEl.textContent = e.message || 'Credenciales incorrectas.';
   }
 }
 
 function logout() {
-  Auth.clear();
-  window.location.href = '/login.html';
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  showLogin();
 }
 
-// ── SIDEBAR ───────────────────────────────────
+// ── Mostrar Login / App ───────────────────────────────────
+function showLogin() {
+  const appPage   = el('appPage');
+  const loginPage = el('loginPage');
+  if (appPage)   appPage.style.display   = 'none';
+  if (loginPage) loginPage.style.display = 'flex';
+}
 
-let sidebarAbierto = true;
+function showApp() {
+  const appPage   = el('appPage');
+  const loginPage = el('loginPage');
+  if (appPage)   appPage.style.display   = '';
+  if (loginPage) loginPage.style.display = 'none';
 
-function toggleSidebar() {
-  const sb   = el('sidebar');
-  const main = document.querySelector('.main');
-  const icon = el('collapseIcon');
+  // Cargar info del usuario en sidebar
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const nombre = user.nombre || user.name || user.email || 'Administrador';
+    const email  = user.email || 'admin@cruzymar.com';
+    const inicial = nombre.charAt(0).toUpperCase();
+    if (el('sbUserName'))   el('sbUserName').textContent   = nombre;
+    if (el('sbUserEmail'))  el('sbUserEmail').textContent  = email;
+    if (el('sbUserAvatar')) el('sbUserAvatar').textContent = inicial;
+  } catch (_) {}
 
-  sidebarAbierto = !sidebarAbierto;
-  sb?.classList.toggle('open', sidebarAbierto);
+  navigateTo('dashboard');
+}
 
-  if (main) {
-    main.style.marginLeft = sidebarAbierto ? '240px' : '72px';
+// ── Navegación dinámica (SPA) ────────────────────────────
+
+// Mapa: clave de página → { titulo, subtitulo, htmlFile?, loaderFn? }
+const PAGES = {
+  dashboard:    { titulo: 'Panel Principal',         subtitulo: 'Resumen del sistema',              htmlFile: null,                loader: () => typeof initDashboard === 'function' && initDashboard() },
+  recepcion:    { titulo: 'Recepción y Calidad',     subtitulo: 'Control de ingreso de leche',      htmlFile: 'recepcion.html',    loader: () => typeof loadAcopio === 'function' && loadAcopio() },
+  produccion:   { titulo: 'Lotes y Recetas',         subtitulo: 'Gestión de producción',            htmlFile: 'produccion.html',   loader: () => typeof loadProduccionList === 'function' && loadProduccionList() },
+  calidadLotes: { titulo: 'Control de Calidad',      subtitulo: 'Inspección de lotes producidos',   htmlFile: 'calidadlotes.html', loader: () => { if (typeof _initCQFechas === 'function') _initCQFechas(); if (typeof loadCalidadLotes === 'function') loadCalidadLotes(); } },
+  inventario:   { titulo: 'Gestión de Inventario',   subtitulo: 'Stock de productos y materias',    htmlFile: 'inventario.html',   loader: () => typeof loadInventario === 'function' && loadInventario() },
+  comercial:    { titulo: 'Ventas y Facturas',        subtitulo: 'Gestión comercial',                htmlFile: 'comercial.html',    loader: () => typeof loadVentas === 'function' && loadVentas() },
+  distribucion: { titulo: 'Distribución',             subtitulo: 'Hoja de ruta del día',             htmlFile: 'distribucion.html', loader: null },
+  clientes:     { titulo: 'Clientes',                 subtitulo: 'Directorio de clientes',           htmlFile: 'clientes.html',     loader: () => typeof loadClientesStandalone === 'function' && loadClientesStandalone() },
+  compras:      { titulo: 'Compras y Gastos',         subtitulo: 'Registro de gastos',               htmlFile: 'compras.html',      loader: () => typeof loadGastos === 'function' && loadGastos() },
+  proveedores:  { titulo: 'Proveedores',              subtitulo: 'Directorio de proveedores',        htmlFile: 'proveedores.html',  loader: () => typeof loadProveedoresStandalone === 'function' && loadProveedoresStandalone() },
+  reportes:     { titulo: 'Reportes Consolidados',    subtitulo: 'Analítica y estadísticas',         htmlFile: 'reportes.html',     loader: () => typeof initReportes === 'function' && initReportes() },
+  configuracion:{ titulo: 'Configuración',            subtitulo: 'Ajustes del sistema',              htmlFile: 'configuracion.html',loader: () => typeof loadConfiguracion === 'function' && loadConfiguracion() },
+};
+
+let _currentPage = null;
+
+// Cache de fragmentos HTML ya cargados
+const _pageCache = {};
+
+async function navigateTo(page) {
+  const cfg = PAGES[page];
+  if (!cfg) { console.warn('Página no registrada:', page); return; }
+
+  _currentPage = page;
+
+  // Actualizar sidebar activo
+  document.querySelectorAll('.sb-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.page === page);
+  });
+
+  // Actualizar header
+  if (el('viewTitle'))    el('viewTitle').textContent    = cfg.titulo;
+  if (el('viewSubtitle')) el('viewSubtitle').textContent = cfg.subtitulo;
+
+  const content = el('dynamicContent');
+  if (!content) return;
+
+  if (!cfg.htmlFile) {
+    // Sección embebida en index.html (solo dashboard)
+    document.querySelectorAll('.seccion-dinamica').forEach(s => s.style.display = 'none');
+    const dynPanel = el('dynamicPageContent');
+    if (dynPanel) dynPanel.style.display = 'none';
+
+    const vistaId = 'vista' + page.charAt(0).toUpperCase() + page.slice(1);
+    const vista = el(vistaId);
+    if (vista) {
+      vista.style.display = 'block';
+      vista.style.animation = 'none';
+      void vista.offsetHeight;
+      vista.style.animation = 'fadeIn .22s ease';
+    }
+  } else {
+    // Ocultar secciones embebidas
+    document.querySelectorAll('.seccion-dinamica').forEach(s => s.style.display = 'none');
+
+    // Mostrar el contenedor dinámico
+    const dynPanel = el('dynamicPageContent');
+
+    if (!dynPanel) {
+      console.error('No se encontró #dynamicPageContent en el HTML');
+      return;
+    }
+
+    // Cargar fragmento si no está en caché
+    if (!_pageCache[page]) {
+      try {
+        const res = await fetch(cfg.htmlFile);
+        if (!res.ok) throw new Error(`No se pudo cargar ${cfg.htmlFile}`);
+        _pageCache[page] = await res.text();
+      } catch(e) {
+        dynPanel.innerHTML = `<div style="padding:40px;text-align:center;color:#DC2626">⚠ Error cargando página: ${e.message}</div>`;
+        dynPanel.style.display = 'block';
+        return;
+      }
+    }
+
+    dynPanel.innerHTML = _pageCache[page];
+    dynPanel.style.display = 'block';
+    dynPanel.style.animation = 'none';
+    void dynPanel.offsetHeight;
+    dynPanel.style.animation = 'fadeIn .22s ease';
   }
 
+  // Ejecutar loader de datos
+  if (typeof cfg.loader === 'function') {
+    try { cfg.loader(); } catch(e) { console.error('Error al cargar', page, e); }
+  }
+}
+
+
+
+function refreshCurrentPage() {
+  if (_currentPage) navigateTo(_currentPage);
+}
+
+// ── Sidebar toggle ───────────────────────────────────────
+function toggleSidebar() {
+  const sidebar     = el('sidebar');
+  const icon        = el('collapseIcon');
+  if (!sidebar) return;
+  sidebar.classList.toggle('open');
   if (icon) {
-    icon.className = sidebarAbierto
+    icon.className = sidebar.classList.contains('open')
       ? 'ri-arrow-left-s-line'
       : 'ri-arrow-right-s-line';
   }
 }
 
-function toggleGroup(labelEl) {
-  const group = labelEl.parentElement; // .sb-group
-  if (!group || !group.classList.contains('sb-group')) return;
-
-  const isOpen = group.classList.contains('open');
-
-  document.querySelectorAll('.sb-group').forEach(g => g.classList.remove('open'));
-
-  if (!isOpen) group.classList.add('open');
-}
-
-function abrirGrupoActivo() {
-  const activeItem = document.querySelector('.sb-nav .sb-item.active');
-  if (!activeItem) return;
-
-  const parentGroup = activeItem.closest('.sb-group');
-  if (!parentGroup) return;
-
-  document.querySelectorAll('.sb-group').forEach(g => g.classList.remove('open'));
-  parentGroup.classList.add('open');
-}
-
-// ── NAVEGACIÓN ────────────────────────────────
-let currentPage         = 'dashboard';
-let backupDashboardHTML = '';
-
-// Rutas actualizadas para módulos consolidados con tabs
-const PAGINAS = {
-  dashboard: { titulo: 'Panel Principal', subtitulo: 'Bienvenido al sistema', html: null, fn: () => initDashboard() },
-  recepcion: { titulo: 'Recepción y Calidad', subtitulo: 'Registro de entregas y pruebas', html: 'recepcion.html', fn: () => { loadAcopio(); } },
-  produccion: { titulo: 'Producción', subtitulo: 'Gestión de Lotes y Fórmulas', html: 'produccion.html', fn: () => { loadProduccion(); } },
-  inventario: { titulo: 'Gestión de Inventario', subtitulo: 'Stock, Movimientos y Vencimientos', html: 'inventario.html', fn: () => { loadInventario(); } },
-  comercial: { titulo: 'Comercial', subtitulo: 'Ventas, Clientes, Facturas y Pedidos', html: 'comercial.html', fn: () => { loadVentas(); } },
-  compras: { titulo: 'Compras y Gastos', subtitulo: 'Proveedores, Compras y Egresos', html: 'compras.html', fn: () => { loadGastos(); } },
-  reportes: { titulo: 'Reportes y Analítica', subtitulo: 'Indicadores clave de rendimiento', html: 'reportes.html', fn: () => { if(window.loadReportes) loadReportes(); } },
-  configuracion: { titulo: 'Configuración', subtitulo: 'Ajustes del sistema', html: 'configuracion.html', fn: () => loadConfiguracion() }
-};
-
-// Aliases para navegaciones cruzadas antiguas
-const ALIASES = {
-  'calidad': 'recepcion',
-  'lotes': 'produccion',
-  'ventas': 'comercial',
-  'clientes': 'comercial',
-  'pedidos': 'comercial',
-  'facturacion': 'comercial',
-  'proveedores': 'compras',
-  'gastos': 'compras'
-};
-
-async function navigateTo(page) {
-  // Manejo de alias si navegan con el viejo id
-  const targetPage = ALIASES[page] || page;
-  
-  const pagina = PAGINAS[targetPage];
-  if (!pagina) return;
-
-  currentPage = targetPage;
-  const container = el('dynamicContent');
-  const title = el('viewTitle');
-  const subtitle = el('viewSubtitle');
-  if (!container || !title) return;
-
-  title.textContent = pagina.titulo;
-
-  if (subtitle) {
-    subtitle.textContent = pagina.subtitulo || '';
-  }
-
-  // Sidebar activo
-  document.querySelectorAll('.sb-nav .sb-item').forEach(i => i.classList.remove('active'));
-  document.querySelector(`.sb-nav .sb-item[data-page="${targetPage}"]`)?.classList.add('active');
-
-  // Abre el grupo del acordeón que corresponde al item activo
-  abrirGrupoActivo();
-
-  if (targetPage === 'dashboard') {
-    if (!backupDashboardHTML) {
-      const vista = el('vistaDashboard');
-      if (vista) backupDashboardHTML = vista.outerHTML;
-    }
-    container.innerHTML = backupDashboardHTML;
-    setTimeout(() => pagina.fn(), 50);
-    return;
-  }
-
-  try {
-    const res = await fetch(pagina.html);
-    if (!res.ok) throw new Error(`No se pudo cargar ${pagina.html}`);
-    container.innerHTML = await res.text();
-    pagina.fn();
-    
-  } catch(err) {
-    container.innerHTML = `<div style="padding:30px;color:#E03535;font-weight:600">⚠️ Error: ${err.message}</div>`;
-  }
-}
-
-function refreshCurrentPage() { navigateTo(currentPage); }
-
-// ── MOSTRAR APP ───────────────────────────────
-function showApp() {
-  const app = el('appPage');
-  if (!app) return;
-  app.style.display = 'flex';
-
-  // Sidebar empieza abierto 
-  const main = document.querySelector('.main');
-  if (main) main.style.marginLeft = '240px';
-
-  const u = Auth.user;
-  if (u) {
-    const avatar = u.nombre ? u.nombre[0].toUpperCase() : 'U';
-    if (el('sbUserAvatar')) el('sbUserAvatar').textContent = avatar;
-    if (el('sbUserName'))   el('sbUserName').textContent   = u.nombre || 'Usuario';
-    if (el('sbUserEmail'))  el('sbUserEmail').textContent  = u.email  || '';
-    if (el('sbUserName')) {
-        el('sbUserName').textContent += ` (${u.rol})`;
-    }
-
-    // RBAC: Ocultar módulos según el rol (Adaptado a módulos consolidados)
-    const roleMap = {
-      'produccion': [
-        'comercial', 'compras', 'reportes', 'configuracion'
-      ],
-      'ventas': [
-        'recepcion', 'produccion', 'compras', 'configuracion'
-      ]
-    };
-    
-    const hiddenPages = roleMap[u.rol] || [];
-    document.querySelectorAll('.sb-nav .sb-item').forEach(item => {
-      const page = item.getAttribute('data-page');
-      if (hiddenPages.includes(page)) {
-        item.style.display = 'none';
-      } else {
-        item.style.display = 'flex';
-      }
-    });
-
-    // Ocultar grupos completos del acordeón si no les queda ningún item visible
-    document.querySelectorAll('.sb-nav .sb-group').forEach(group => {
-      const items = group.querySelectorAll('.sb-item');
-      const hayVisibles = Array.from(items).some(i => i.style.display !== 'none');
-      group.style.display = hayVisibles ? '' : 'none';
-    });
-  }
-
-  const vista = el('vistaDashboard');
-  if (vista) backupDashboardHTML = vista.outerHTML;
-  else {
-    const c = el('dynamicContent');
-    if (c) backupDashboardHTML = c.innerHTML;
-  }
-
-  if (document.readyState === 'complete') {
-    if (typeof initDashboard === 'function') initDashboard();
-  } else {
-    window.addEventListener('load', () => {
-      if (typeof initDashboard === 'function') initDashboard();
-    });
-  }
-
-  iniciarReloj();
-  abrirGrupoActivo();
-}
-
-// ── INIT ──────────────────────────────────────
+// ── Clicks del sidebar ───────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  const esLogin = window.location.pathname.includes('login.html');
-
-  ['loginEmail', 'loginPass'].forEach(id => {
-    el(id)?.addEventListener('keydown', e => {
-      if (e.key === 'Enter') login();
-    });
+  document.querySelectorAll('.sb-item[data-page]').forEach(item => {
+    item.addEventListener('click', () => navigateTo(item.dataset.page));
   });
 
-  if (!Auth.ok()) {
-    if (!esLogin) window.location.href = 'login.html';
-    return;
+  // Verificar autenticación al cargar
+  const token = localStorage.getItem('token');
+  if (token) {
+    showApp();
+  } else {
+    showLogin();
   }
-  if (esLogin) { window.location.href = 'index.html'; return; }
 
-  showApp();
-
-  // Clicks sidebar — solo items con data-page y sin clase proximamente
-  document.querySelectorAll('.sb-nav .sb-item[data-page]:not(.proximamente)').forEach(item => {
-    item.addEventListener('click', () => {
-      navigateTo(item.getAttribute('data-page'));
-    });
+  // Soporte Enter en el login
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && el('loginPage')?.style.display !== 'none') {
+      login();
+    }
   });
 });

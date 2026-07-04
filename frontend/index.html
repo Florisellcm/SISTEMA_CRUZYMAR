@@ -10,6 +10,46 @@
 </head>
 <body>
 
+<!-- ═══════════════════════════════════════════
+  LOGIN PAGE
+═══════════════════════════════════════════ -->
+<div id="loginPage" style="display:none">
+  <div class="login-deco"></div>
+
+  <div class="login-card">
+
+    <div class="login-brand">
+      <div class="login-logo-circle">
+        <img src="img/logo.png" style="width:60px;height:60px;object-fit:contain;border-radius:50%;">
+      </div>
+      <h1>CRUZYMAR</h1>
+      <p>Productos Lácteos</p>
+    </div>
+
+    <div class="login-divider">Acceso al Sistema</div>
+
+    <div class="form-group">
+      <label>Correo Electrónico</label>
+      <input type="email" id="loginEmail" value="admin@cruzymar.com" placeholder="usuario@cruzymar.com">
+    </div>
+
+    <div class="form-group">
+      <label>Contraseña</label>
+      <input type="password" id="loginPass" value="admin123" placeholder="••••••••">
+    </div>
+
+    <button class="btn-login" onclick="login()">
+      Ingresar al Sistema →
+    </button>
+
+    <div id="loginErr" class="login-error"></div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+  APP PAGE
+═══════════════════════════════════════════ -->
 <div id="appPage" style="display:none">
 <!-- ═══════════════════════════════════════════
 SIDEBAR
@@ -68,6 +108,10 @@ SIDEBAR
           <i class="ri-building-line sb-icon"></i>
           <span class="sb-label">Lotes y Recetas</span>
         </div>
+        <div class="sb-item" data-page="calidadLotes" title="Calidad de Lotes" style="padding-left:24px">
+          <i class="ri-shield-check-line sb-icon"></i>
+          <span class="sb-label">Control de Calidad</span>
+        </div>
       </div>
     </div>
 
@@ -86,9 +130,24 @@ SIDEBAR
     <div class="sb-group">
       <div class="sb-group-label sb-group-label--single">Comercial</div>
       <div class="sb-group-items sb-group-items--single">
-        <div class="sb-item" data-page="comercial" title="Ventas y Clientes">
+        <div class="sb-item" data-page="comercial" title="Ventas y Facturación">
           <i class="ri-shopping-cart-line sb-icon"></i>
-          <span class="sb-label">Ventas y Facturación</span>
+          <span class="sb-label">Ventas y Facturas</span>
+        </div>
+        <div class="sb-item" data-page="distribucion" title="Distribución" style="padding-left:24px">
+          <i class="ri-truck-line sb-icon"></i>
+          <span class="sb-label">Distribución</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CLIENTES -->
+    <div class="sb-group">
+      <div class="sb-group-label sb-group-label--single">Clientes</div>
+      <div class="sb-group-items sb-group-items--single">
+        <div class="sb-item" data-page="clientes" title="Directorio de Clientes">
+          <i class="ri-group-line sb-icon"></i>
+          <span class="sb-label">Clientes</span>
         </div>
       </div>
     </div>
@@ -99,7 +158,18 @@ SIDEBAR
       <div class="sb-group-items sb-group-items--single">
         <div class="sb-item" data-page="compras" title="Compras y Gastos">
           <i class="ri-store-2-line sb-icon"></i>
-          <span class="sb-label">Proveedores y Gastos</span>
+          <span class="sb-label">Compras y Gastos</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROVEEDORES -->
+    <div class="sb-group">
+      <div class="sb-group-label sb-group-label--single">Proveedores</div>
+      <div class="sb-group-items sb-group-items--single">
+        <div class="sb-item" data-page="proveedores" title="Directorio de Proveedores">
+          <i class="ri-truck-line sb-icon"></i>
+          <span class="sb-label">Proveedores</span>
         </div>
       </div>
     </div>
@@ -242,11 +312,11 @@ SIDEBAR
             </div>
           </div>
 
-          <!-- Gráfica dona: Top productos -->
+          <!-- Gráfica dona: Desempeño de Proveedores -->
           <div style="background:#fff;padding:24px;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.07);display:flex;flex-direction:column;justify-content:space-between">
             <div>
-              <h3 style="margin:0 0 4px;font-size:16px;color:#003C78;font-weight:700">Top Productos</h3>
-              <p style="margin:0 0 16px;font-size:13px;color:#64748B">Distribución de ventas</p>
+              <h3 style="margin:0 0 4px;font-size:16px;color:#003C78;font-weight:700">Aporte de Proveedores</h3>
+              <p style="margin:0 0 16px;font-size:13px;color:#64748B">Leche entregada este mes</p>
               <div style="position:relative;height:160px">
                 <canvas id="graficoDona"></canvas>
               </div>
@@ -287,7 +357,12 @@ SIDEBAR
         </div>
 
       </div>
+
+      <!-- Contenedor para páginas cargadas dinámicamente -->
+      <div id="dynamicPageContent" style="display:none"></div>
+
     </main>
+
   </div>
 </div>
 
@@ -301,6 +376,8 @@ SIDEBAR
 <script src="js/ventas.js"></script>
 <script src="js/gastos.js"></script>
 <script src="js/reportes.js"></script>
+<script src="js/calidadLotes.js"></script>
+<script src="js/distribucion.js"></script>
 <script>
   lucide.createIcons();
 </script>

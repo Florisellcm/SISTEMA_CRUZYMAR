@@ -73,6 +73,42 @@ exports.create = async (data) => {
      fecha || new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10),
      observaciones||'']
   );
+
+  // Sincronizar el estado de acopio_leche
+  if (acopio_id) {
+    const estadoAcopio = (resultado === 'Aprobado') ? 'Aceptada' : (resultado === 'Rechazado' ? 'Rechazada' : 'Pendiente');
+    await pool.query(
+      `UPDATE acopio_leche SET estado = ?, motivo_rechazo = ? WHERE id = ?`,
+      [estadoAcopio, motivo_rechazo || null, acopio_id]
+    );
+
+    // Si fue aprobado, ingresar los litros de leche al inventario
+    if (resultado === 'Aprobado') {
+      const [[acopio]] = await pool.query(`SELECT litros FROM acopio_leche WHERE id = ?`, [acopio_id]);
+      if (acopio && acopio.litros > 0) {
+        // Buscar el producto de tipo materia prima/leche entera en inventario
+        const [[prodLeche]] = await pool.query(
+          `SELECT id FROM inventario_productos WHERE (nombre LIKE '%Leche Entera%' OR nombre LIKE '%Leche cruda%') AND activo = 1 LIMIT 1`
+        );
+        if (prodLeche) {
+          // Aumentar stock
+          await pool.query(
+            `UPDATE inventario_productos SET stock = stock + ? WHERE id = ?`,
+            [acopio.litros, prodLeche.id]
+          );
+          // Registrar movimiento
+          await pool.query(`
+            INSERT INTO inventario_movimientos
+              (id, producto_id, tipo, cantidad, stock_resultante, motivo, usuario, fecha)
+            SELECT ?, ?, 'Entrada', ?, stock, 'Ingreso por acopio de leche aprobado', 'Sistema', NOW()
+            FROM inventario_productos WHERE id = ?`,
+            [uuidv4(), prodLeche.id, acopio.litros, prodLeche.id]
+          );
+        }
+      }
+    }
+  }
+
   return exports.findById(id);
 };
 

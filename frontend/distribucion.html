@@ -1,0 +1,89 @@
+<!-- CRUZYMAR · distribucion.html — Sub-módulo Distribución (dentro de Comercial) -->
+<div>
+
+  <!-- HEADER -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <div>
+      <h2 style="margin:0;font-size:20px;font-weight:800;color:#003C78">
+        <i class="ri-truck-line" style="color:#468C28"></i> Distribución — Hoja de Ruta
+      </h2>
+      <p style="margin-top:4px;color:#64748B;font-size:13px">Seleccioná la fecha y el sistema consolida automáticamente las entregas del día</p>
+    </div>
+  </div>
+
+  <!-- SELECTOR DE FECHA Y ACCIONES -->
+  <div style="background:#fff;border-radius:13px;border:1.5px solid #E0E9F2;padding:18px 22px;margin-bottom:18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:8px">
+      <label style="font-size:13px;font-weight:700;color:#003C78">Fecha de reparto:</label>
+      <input type="date" id="distFecha"
+        style="padding:9px 13px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;font-weight:600;color:#1E293B">
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <label style="font-size:13px;font-weight:700;color:#003C78">Transportista:</label>
+      <input type="text" id="distTransportista" placeholder="Nombre del repartidor" value="Repartidor"
+        style="padding:9px 13px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;width:200px">
+    </div>
+    <div style="display:flex;gap:8px;margin-left:auto">
+      <button onclick="loadDistribucion()"
+        style="padding:9px 18px;background:#003C78;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">
+        <i class="ri-refresh-line"></i> Generar Hoja de Ruta
+      </button>
+      <button onclick="distImprimir()"
+        style="padding:9px 18px;background:#468C28;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">
+        <i class="ri-printer-line"></i> Imprimir / PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTENIDO GENERADO -->
+  <div id="distContenido">
+    <div style="text-align:center;padding:60px;color:#94A3B8">
+      <i class="ri-truck-line" style="font-size:40px;display:block;margin-bottom:12px"></i>
+      <p style="font-size:14px;font-weight:600">Seleccioná una fecha y presioná "Generar Hoja de Ruta"</p>
+    </div>
+  </div>
+</div>
+
+<!-- SECCIÓN DE IMPRESIÓN (oculta en pantalla, visible al imprimir) -->
+<div id="distPrintArea" style="display:none">
+  <div style="font-family:Arial,sans-serif;font-size:12px;max-width:800px;margin:0 auto;padding:10mm">
+    <!-- Cabecera -->
+    <div style="display:flex;align-items:center;gap:14px;border-bottom:3px solid #003C78;padding-bottom:10px;margin-bottom:12px">
+      <img src="/img/logo.png" style="width:50px;height:50px;object-fit:contain">
+      <div style="flex:1">
+        <p style="margin:0;font-size:16px;font-weight:800;color:#003C78">CRUZYMAR Productos Lácteos</p>
+        <p style="margin:0;font-size:10px;color:#64748B">Victoria, Yoro, Honduras · Sistema ERP</p>
+      </div>
+      <div style="text-align:right">
+        <p id="distPrintFecha" style="margin:0;font-size:13px;font-weight:700;color:#003C78"></p>
+        <p id="distPrintTransp" style="margin:0;font-size:11px;color:#64748B"></p>
+      </div>
+    </div>
+    <h2 style="margin:0 0 6px;color:#003C78;font-size:16px">HOJA DE RUTA — DISTRIBUCIÓN</h2>
+    <!-- Resumen de carga -->
+    <h3 style="font-size:13px;background:#EAF2FB;color:#003C78;padding:6px 10px;border-radius:4px;margin:14px 0 6px">1. Resumen de Carga para Bodega</h3>
+    <div id="distPrintCarga"></div>
+    <!-- Detalle de entregas -->
+    <h3 style="font-size:13px;background:#EAF2FB;color:#003C78;padding:6px 10px;border-radius:4px;margin:14px 0 6px">2. Hoja de Ruta para el Repartidor</h3>
+    <div id="distPrintRuta"></div>
+    <!-- Totales -->
+    <div id="distPrintTotales" style="margin-top:14px;border-top:2px solid #003C78;padding-top:10px"></div>
+  </div>
+</div>
+
+<style>
+@media print {
+  body > *:not(#distPrintArea) { display:none !important }
+  #distPrintArea { display:block !important }
+  @page { size:letter portrait; margin:10mm }
+}
+.dist-card { background:#fff;border-radius:13px;border:1.5px solid #E0E9F2;overflow:hidden;margin-bottom:14px }
+.dist-card-header { padding:12px 18px;background:#F8FAFC;border-bottom:1px solid #E0E9F2;font-size:13px;font-weight:800;color:#003C78;display:flex;align-items:center;gap:7px }
+.dist-table { width:100%;border-collapse:collapse;font-size:12.5px }
+.dist-table thead tr { background:#EAF2FB }
+.dist-table thead th { padding:9px 12px;text-align:left;font-size:10.5px;font-weight:700;color:#003C78;border-bottom:2px solid #D5E5F7;text-transform:uppercase }
+.dist-table tbody tr { border-bottom:1px solid #F1F5F9 }
+.dist-table tbody tr:hover { background:#F8FBFF }
+.dist-table tbody td { padding:9px 12px;color:#334155 }
+.firma-box { width:120px;height:30px;border-bottom:1px solid #64748B;display:inline-block }
+</style>

@@ -4,10 +4,16 @@
   :root {
     --navy: #003C78;
     --navy2: #004F9E;
+    --navy3: #0A6BC4;
+    --navy4: #4DA3E0;
+    --navy-soft: #EAF2FB;
     --verde: #468C28;
     --verde2: #2C6B10;
+    --verde3: #6BAE45;
+    --verde4: #9AC97E;
+    --verde-soft: #F0F7EC;
     --red: #DC2626;
-    --amb: #D97706;
+    --amb: #0A6BC4;
     --slate: #64748B;
     --bgpage: #F4F7FA;
   }
@@ -17,11 +23,11 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 55%, var(--verde) 100%);
+    background: linear-gradient(120deg, var(--navy) 0%, var(--navy2) 38%, var(--navy3) 62%, var(--verde) 100%);
     border-radius: 14px;
     padding: 18px 22px;
     margin-bottom: 16px;
-    box-shadow: 0 4px 18px rgba(0, 60, 120, .18);
+    box-shadow: 0 4px 18px rgba(0, 60, 120, .2);
   }
 
   .rep-empresa-logo-wrap {
@@ -264,36 +270,37 @@
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    background: #fff;
-    border-radius: 13px;
-    padding: 16px 20px;
-    margin-bottom: 13px;
-    border: 1.5px solid #E0E9F2;
+    background: linear-gradient(135deg, var(--navy-soft) 0%, #fff 55%, var(--verde-soft) 100%);
+    border-radius: 14px;
+    padding: 20px 24px;
+    margin-bottom: 14px;
+    border: 1.5px solid #DCE8F5;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
   }
 
   .rep-rh-title {
     display: flex;
     align-items: center;
-    gap: 11px
+    gap: 14px
   }
 
   .rep-rh-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
-    background: linear-gradient(135deg, var(--navy), var(--navy2));
+    width: 52px;
+    height: 52px;
+    border-radius: 13px;
+    background: linear-gradient(135deg, var(--navy), var(--navy3));
     display: flex;
     align-items: center;
     justify-content: center;
     color: #fff;
-    font-size: 19px;
+    font-size: 23px;
     flex-shrink: 0;
+    box-shadow: 0 4px 10px rgba(0, 60, 120, .22);
   }
 
   .rep-rh-icon.verde {
-    background: linear-gradient(135deg, var(--verde2), var(--verde))
+    background: linear-gradient(135deg, var(--verde2), var(--verde3))
   }
 
   .rep-rh-icon.rojo {
@@ -302,22 +309,25 @@
 
   .rep-rh-text h3 {
     margin: 0;
-    font-size: 15px;
+    font-size: 22px;
     font-weight: 800;
-    color: var(--navy)
+    color: var(--navy);
+    letter-spacing: -.3px;
+    line-height: 1.15;
   }
 
   .rep-rh-text p {
-    margin: 2px 0 0;
-    font-size: 11px;
-    color: var(--slate)
+    margin: 4px 0 0;
+    font-size: 12.5px;
+    color: var(--slate);
+    font-weight: 500;
   }
 
   .rep-rh-meta {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 3px
+    gap: 4px
   }
 
   .rep-meta-chip {
@@ -325,11 +335,12 @@
     align-items: center;
     gap: 4px;
     font-size: 11px;
-    font-weight: 600;
-    color: var(--slate);
-    background: #F4F7FA;
-    border-radius: 5px;
-    padding: 2px 8px;
+    font-weight: 700;
+    color: var(--navy2);
+    background: var(--navy-soft);
+    border: 1px solid #D5E5F7;
+    border-radius: 6px;
+    padding: 3px 9px;
   }
 
   /* ══ KPI CARDS ══ */
@@ -345,12 +356,13 @@
     border-radius: 11px;
     padding: 13px 15px;
     border: 1.5px solid #E8EFF8;
+    border-left: 3px solid var(--navy3);
     transition: .14s;
   }
 
   .rep-kcard:hover {
     border-color: var(--navy);
-    box-shadow: 0 2px 7px rgba(0, 60, 120, .07)
+    box-shadow: 0 3px 10px rgba(0, 60, 120, .1)
   }
 
   .rep-kcard .lbl {
@@ -368,7 +380,7 @@
   }
 
   .rep-kcard .val.grn {
-    color: #15803D
+    color: var(--verde2)
   }
 
   .rep-kcard .val.red {
@@ -381,6 +393,22 @@
 
   .rep-kcard .val.blu {
     color: var(--navy)
+  }
+
+  .rep-kcard.k-grn {
+    border-left-color: var(--verde)
+  }
+
+  .rep-kcard.k-red {
+    border-left-color: var(--red)
+  }
+
+  .rep-kcard.k-amb {
+    border-left-color: var(--amb)
+  }
+
+  .rep-kcard.k-blu {
+    border-left-color: var(--navy3)
   }
 
   /* ══ CARDS CONTENIDO ══ */
@@ -401,12 +429,16 @@
     color: var(--navy);
     margin: 0 0 13px;
     padding-bottom: 9px;
-    border-bottom: 2px solid #F4F7FA;
+    border-bottom: 2px solid var(--navy-soft);
   }
 
   .rep-card-title i {
     font-size: 15px;
     color: var(--verde)
+  }
+
+  .rep-card.rep-card-detallado {
+    border-top: 3px solid var(--navy3);
   }
 
   .rep-row2 {
@@ -434,7 +466,7 @@
   }
 
   .rep-tbl thead tr {
-    background: #F4F7FA
+    background: var(--navy-soft)
   }
 
   .rep-tbl thead th {
@@ -442,8 +474,8 @@
     text-align: left;
     font-size: 10.5px;
     font-weight: 700;
-    color: var(--slate);
-    border-bottom: 2px solid #E0E9F2;
+    color: var(--navy2);
+    border-bottom: 2px solid #D5E5F7;
     text-transform: uppercase;
   }
 
@@ -452,7 +484,7 @@
   }
 
   .rep-tbl tbody tr:hover {
-    background: #FAFCFF
+    background: var(--navy-soft)
   }
 
   .rep-tbl tbody td {
@@ -471,8 +503,8 @@
   }
 
   .rb-ok {
-    background: #DCFCE7;
-    color: #15803D
+    background: var(--verde-soft);
+    color: var(--verde2)
   }
 
   .rb-rej {
@@ -481,18 +513,18 @@
   }
 
   .rb-pen {
-    background: #FEF3C7;
-    color: var(--amb)
+    background: var(--navy-soft);
+    color: var(--navy3)
   }
 
   .rb-blu {
-    background: #DBEAFE;
-    color: #1D4ED8
+    background: var(--navy-soft);
+    color: var(--navy2)
   }
 
   .rb-obs {
-    background: #EDE9FE;
-    color: #7C3AED
+    background: #E3F0FC;
+    color: var(--navy)
   }
 
   /* ══ BARRAS ══ */
@@ -596,6 +628,12 @@
 
   /* ══════════════════════════════════════
    @MEDIA PRINT
+   NOTA: reportes.html se inyecta vía innerHTML dentro de
+   #dynamicPageContent (ver app.js → navigateTo()), que a su vez
+   está dentro de #dynamicContent. Por eso #dynamicPageContent
+   debe estar en la cadena de excepciones y en el reset de layout;
+   si se omite, todo el contenido del reporte queda oculto al
+   imprimir porque su ancestro directo recibe display:none.
 ══════════════════════════════════════ */
   @media print {
 
@@ -603,7 +641,8 @@
     body>*:not(#appPage),
     #appPage>*:not(.main),
     .main>*:not(#dynamicContent),
-    #dynamicContent>*:not(#rep-print-header):not(#rep-root),
+    #dynamicContent>*:not(#dynamicPageContent),
+    #dynamicPageContent>*:not(#rep-print-header):not(#rep-root),
     #rep-root>*:not(#rep-content),
     .rep-empresa-header,
     .rep-report-header,
@@ -617,6 +656,7 @@
     #appPage,
     .main,
     #dynamicContent,
+    #dynamicPageContent,
     #rep-root,
     #rep-content {
       display: block !important;
@@ -667,6 +707,11 @@
       print-color-adjust: exact;
     }
 
+    .rep-kcard {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
     .rep-tbl tr {
       page-break-inside: avoid
     }
@@ -697,24 +742,25 @@
 <!-- ══ CABECERA IMPRESIÓN (oculta en pantalla) ══ -->
 <div id="rep-print-header">
   <div style="display:flex;align-items:center;gap:12px;padding-bottom:8px">
-    <img src="/img/logo.png" style="width:52px;height:52px;object-fit:contain">
+    <img src="/img/logo.png" style="width:48px;height:48px;object-fit:contain">
     <div style="flex:1">
-      <p style="margin:0;font-size:15px;font-weight:800;color:#003C78">CRUZYMAR Productos Lácteos</p>
-      <p style="margin:1px 0 0;font-size:10px;color:#64748B">Victoria, Yoro, Honduras — Sistema ERP de Gestión Lechera
+      <p style="margin:0;font-size:13px;font-weight:800;color:#003C78">CRUZYMAR Productos Lácteos</p>
+      <p style="margin:1px 0 0;font-size:9.5px;color:#64748B">Victoria, Yoro, Honduras — Sistema ERP de Gestión Lechera
       </p>
     </div>
     <div style="text-align:right">
-      <p id="rph-fecha-imp" style="margin:0;font-size:10px;color:#64748B"></p>
-      <p id="rph-usuario-imp" style="margin:2px 0 0;font-size:10px;color:#64748B"></p>
+      <p id="rph-fecha-imp" style="margin:0;font-size:9.5px;color:#64748B;font-weight:600"></p>
+      <p id="rph-usuario-imp" style="margin:2px 0 0;font-size:9.5px;color:#64748B"></p>
     </div>
   </div>
   <div id="rph-barra"
-    style="background:#003C78;color:#fff;padding:7px 12px;border-radius:5px;display:flex;justify-content:space-between;align-items:center;margin:8px 0">
-    <span id="rph-titulo-imp" style="font-size:12px;font-weight:800"></span>
-    <span id="rph-resp-imp" style="font-size:10px;opacity:.85"></span>
+    style="background:linear-gradient(120deg,#003C78,#0A6BC4);color:#fff;padding:12px 16px;border-radius:7px;margin:8px 0">
+    <span id="rph-titulo-imp"
+      style="display:block;font-size:21px;font-weight:800;letter-spacing:-.2px;line-height:1.2"></span>
+    <span id="rph-resp-imp" style="display:block;font-size:10px;opacity:.88;margin-top:3px;font-weight:500"></span>
   </div>
   <p id="rph-sub-imp"
-    style="margin:0 0 10px;font-size:10px;color:#64748B;border-bottom:1.5px solid #E0E9F2;padding-bottom:7px"></p>
+    style="margin:0 0 10px;font-size:10.5px;color:#64748B;border-bottom:1.5px solid #E0E9F2;padding-bottom:7px"></p>
 </div>
 
 <!-- ══ ROOT ══ -->
@@ -760,8 +806,8 @@
       Inventario</button>
   </div>
   <div id="rep-subtabs-sin" class="rep-subtabs" style="display:none">
-    <button class="rep-sub-btn active" data-rep="s1" onclick="repLoad('s1')"><i class="ri-recycle-line"></i>
-      Mermas</button>
+    <button class="rep-sub-btn active" data-rep="s1" onclick="repLoad('s1')"><i class="ri-team-line"></i> Desempeño
+      Proveedores</button>
     <button class="rep-sub-btn" data-rep="s2" onclick="repLoad('s2')"><i class="ri-bank-line"></i> Estados
       Financieros</button>
     <button class="rep-sub-btn" data-rep="s3" onclick="repLoad('s3')"><i class="ri-shopping-cart-line"></i>
@@ -772,8 +818,6 @@
   <div id="rep-subtabs-exc" class="rep-subtabs" style="display:none">
     <button class="rep-sub-btn active" data-rep="e1" onclick="repLoad('e1')"><i class="ri-close-circle-line"></i> Leche
       No Apta</button>
-    <button class="rep-sub-btn" data-rep="e2" onclick="repLoad('e2')"><i class="ri-error-warning-line"></i> Stock
-      Bajo</button>
   </div>
 
   <!-- barra filtros + acciones -->

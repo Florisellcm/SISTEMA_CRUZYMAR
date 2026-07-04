@@ -75,7 +75,7 @@ function renderGraficoDona(productos) {
     data: {
       labels: productos.map(p => p.nombre),
       datasets: [{
-        data: productos.map(p => p.ingresos),
+        data: productos.map(p => p.litros),
         backgroundColor: ['#003C78','#468C28','#1D4ED8','#D97706','#DC2626'],
         borderWidth: 0
       }]
@@ -84,7 +84,7 @@ function renderGraficoDona(productos) {
       responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: { position:'bottom', labels:{ font:{size:11}, padding:8, boxWidth:10 } },
-        tooltip: { callbacks: { label: c => c.label + ': L.' + Number(c.raw).toLocaleString('es-HN') } }
+        tooltip: { callbacks: { label: c => c.label + ': ' + Number(c.raw).toLocaleString('es-HN') + ' L' } }
       }
     }
   });

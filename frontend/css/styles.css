@@ -47,6 +47,10 @@ body {
   position: relative;
   overflow: hidden;
 }
+#loginPage[style*="display: none"],
+#loginPage[style*="display:none"] { display: none !important; }
+#appPage[style*="display: none"],
+#appPage[style*="display:none"] { display: none !important; }
 #loginPage::before {
   content:'';
   position:absolute; inset:0;
@@ -143,7 +147,8 @@ body {
 }
 .btn-login:hover { background:var(--azul-med); transform:translateY(-1px); box-shadow:0 8px 28px rgba(0,60,120,.4); }
 .btn-login:hover::after { transform:translateX(100%); }
-.login-error { color:var(--rojo); font-size:13px; text-align:center; margin-top:10px; display:none; padding:8px; background:#FEF2F2; border-radius:6px; }
+.login-error { color:var(--rojo); font-size:13px; text-align:center; margin-top:10px; min-height:0; padding:0; background:#FEF2F2; border-radius:6px; transition: padding .2s, min-height .2s; }
+.login-error:not(:empty) { padding:8px; min-height:1em; }
 
 /* ── APP LAYOUT ───────────────────── */
 #appPage { display:flex; min-height:100vh; }
@@ -820,3 +825,42 @@ body {
 
 /* Grupo oculto por RBAC (sin items visibles para el rol actual) */
 .sb-group[style*="display: none"] { display: none; }
+
+/* ══════════════════════════════════════════
+   SECCIONES DINÁMICAS (SPA navigation)
+   JS controla display via style=""
+══════════════════════════════════════════ */
+.seccion-dinamica {
+  display: none;
+}
+/* JS pone style="" (vacío) para mostrar — el inline style vacío no tiene display:none,
+   pero tampoco override el CSS. Usamos animación cuando se muestra. */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ══ Toast mejorado ══ */
+.toast-ok  { border-left-color: var(--verde); }
+.toast-err { border-left-color: var(--rojo); color: var(--rojo); }
+.toast { opacity: 0; transform: translateX(30px); transition: opacity .3s, transform .3s; }
+.toast.toast-show { opacity: 1; transform: translateX(0); }
+
+/* ══ Tablas y badges adicionales ══ */
+.badge.b-ok   { background: #DCFCE7; color: #15803D; }
+.badge.b-err  { background: #FEE2E2; color: #DC2626; }
+.badge.b-proc { background: #DBEAFE; color: #1D4ED8; }
+.badge.b-comp { background: #DCFCE7; color: #15803D; }
+
+.btn-accion {
+  border: none; border-radius: 6px;
+  padding: 5px 9px; cursor: pointer;
+  font-size: 13px; transition: all .18s;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.btn-accion.verde { background: #DCFCE7; color: #15803D; }
+.btn-accion.verde:hover { background: #15803D; color: #fff; }
+.btn-accion.rojo  { background: #FEE2E2; color: #DC2626; }
+.btn-accion.rojo:hover  { background: #DC2626; color: #fff; }
+.btn-accion:disabled { opacity: .35; cursor: not-allowed; }

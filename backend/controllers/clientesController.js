@@ -1,60 +1,47 @@
 /* ═══════════════════════════════════════
-   CRUZYMAR · controllers/calidadController.js
+   CRUZYMAR · controllers/clientesController.js
+   CRUD de Clientes con soft-delete
 ═══════════════════════════════════════ */
 
-const CalidadModel = require('../models/calidadModel');
+const ClientesModel = require('../models/clientesModel');
 
 exports.getAll = async (req, res) => {
   try {
-    const { fecha, resultado, acopio_id } = req.query;
-    const lista = await CalidadModel.findAll({ fecha, resultado, acopio_id });
+    const { buscar } = req.query;
+    const lista = await ClientesModel.findAll(buscar);
     res.json(lista);
-  } catch (e) { res.status(500).json({ error: e.message }); }
-};
-
-exports.getResumen = async (req, res) => {
-  try {
-    const resumen = await CalidadModel.getResumen(req.query.fecha);
-    res.json(resumen);
   } catch (e) { res.status(500).json({ error: e.message }); }
 };
 
 exports.getOne = async (req, res) => {
   try {
-    const registro = await CalidadModel.findById(req.params.id);
-    if (!registro) return res.status(404).json({ error: 'Registro no encontrado' });
-    res.json(registro);
+    const cliente = await ClientesModel.findById(req.params.id);
+    if (!cliente) return res.status(404).json({ error: 'Cliente no encontrado' });
+    res.json(cliente);
   } catch (e) { res.status(500).json({ error: e.message }); }
 };
 
 exports.create = async (req, res) => {
   try {
-    const { acopio_id } = req.body;
-    if (!acopio_id) return res.status(400).json({ error: 'El registro de acopio es obligatorio' });
-
-    const acopio = await CalidadModel.findAcopio(acopio_id);
-    if (!acopio) return res.status(404).json({ error: 'Registro de acopio no encontrado' });
-
-    const nuevo = await CalidadModel.create({
-      ...req.body,
-      analista_id: req.user?.id || null
-    });
+    if (!req.body.nombre) return res.status(400).json({ error: 'Nombre es obligatorio' });
+    const nuevo = await ClientesModel.create(req.body);
     res.status(201).json(nuevo);
   } catch (e) { res.status(500).json({ error: e.message }); }
 };
 
 exports.update = async (req, res) => {
   try {
-    const actualizado = await CalidadModel.update(req.params.id, req.body);
-    if (!actualizado) return res.status(404).json({ error: 'Registro no encontrado' });
+    const actualizado = await ClientesModel.update(req.params.id, req.body);
+    if (!actualizado) return res.status(404).json({ error: 'Cliente no encontrado' });
     res.json(actualizado);
   } catch (e) { res.status(500).json({ error: e.message }); }
 };
 
 exports.remove = async (req, res) => {
   try {
-    const eliminado = await CalidadModel.remove(req.params.id);
-    if (!eliminado) return res.status(404).json({ error: 'Registro no encontrado' });
-    res.json({ message: 'Registro eliminado' });
+    const ok = await ClientesModel.softDelete(req.params.id);
+    ok
+      ? res.json({ message: 'Cliente desactivado' })
+      : res.status(404).json({ error: 'Cliente no encontrado' });
   } catch (e) { res.status(500).json({ error: e.message }); }
 };

@@ -3,6 +3,7 @@
 ═══════════════════════════════════════ */
 
 const AcopioModel = require('../models/acopioModel');
+const Inventario = require('../models/inventarioModel');
 
 exports.getAll = async (req, res) => {
   try {
@@ -19,19 +20,38 @@ exports.getResumen = async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 };
 
+exports.getById = async (req, res) => {
+  try {
+    const item = await AcopioModel.findById(req.params.id);
+    if (!item) return res.status(404).json({ error: 'Registro no encontrado' });
+    res.json(item);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+};
+
 exports.create = async (req, res) => {
   try {
-    const { proveedor_id, litros, precio_litro } = req.body;
-    if (!proveedor_id)                        return res.status(400).json({ error: 'El proveedor es obligatorio' });
-    if (!litros || litros <= 0)               return res.status(400).json({ error: 'Los litros deben ser mayores a 0' });
-    if (!precio_litro || precio_litro <= 0)   return res.status(400).json({ error: 'El precio por litro es obligatorio' });
+    const { proveedor_id, litros, precio_litro, inventario_id, estado, motivo_rechazo } = req.body;
+
+    if (!proveedor_id)                      return res.status(400).json({ error: 'El proveedor es obligatorio' });
+    if (!litros || litros <= 0)             return res.status(400).json({ error: 'Los litros deben ser mayores a 0' });
+    if (!precio_litro || precio_litro <= 0) return res.status(400).json({ error: 'El precio por litro es obligatorio' });
+    if (!inventario_id)                     return res.status(400).json({ error: 'Debe indicar a qué producto de inventario corresponde esta recepción' });
+    if (estado === 'Rechazada' && !motivo_rechazo)
+      return res.status(400).json({ error: 'Debe indicar el motivo del rechazo' });
 
     const prov = await AcopioModel.findProveedorActivo(proveedor_id);
     if (!prov) return res.status(404).json({ error: 'Proveedor no encontrado' });
 
-    const nuevo = await AcopioModel.create(req.body);
+    const prodInv = await Inventario.findById(inventario_id);
+    if (!prodInv) return res.status(404).json({ error: 'El producto de inventario indicado no existe' });
+
+    const nuevo = await AcopioModel.create({
+      ...req.body,
+      usuario: req.user?.nombre,
+      usuario_id: req.user?.id || null
+    });
     res.status(201).json(nuevo);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(400).json({ error: e.message }); }
 };
 
 exports.update = async (req, res) => {
@@ -47,13 +67,5 @@ exports.remove = async (req, res) => {
     const eliminado = await AcopioModel.remove(req.params.id);
     if (!eliminado) return res.status(404).json({ error: 'Registro no encontrado' });
     res.json({ message: 'Registro eliminado' });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-};
-
-exports.getById = async (req, res) => {
-  try {
-    const item = await AcopioModel.findById(req.params.id);
-    if (!item) return res.status(404).json({ error: 'Registro no encontrado' });
-    res.json(item);
   } catch (e) { res.status(500).json({ error: e.message }); }
 };

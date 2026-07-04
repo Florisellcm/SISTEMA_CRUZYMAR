@@ -29,7 +29,7 @@ exports.findById = async (id) => {
 exports.create = async (data) => {
   const [[cnt]] = await pool.query("SELECT LPAD(COUNT(*)+1,4,'0') AS num FROM compras");
   const id     = uuid();
-  const numero = `OC-${cnt[0].num}`;
+  const numero = `OC-${cnt.num}`;
   await pool.query(
     `INSERT INTO compras (id, numero, proveedor_id, proveedor_nombre, concepto, monto, estado, fecha, notas)
      VALUES (?,?,?,?,?,?,?,?,?)`,

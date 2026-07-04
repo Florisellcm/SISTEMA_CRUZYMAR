@@ -12,8 +12,10 @@ const pool = require('../database');
    Frecuencia: Diario | Almacenamiento: 5 años
 ────────────────────────────────────────────────────────────── */
 exports.getDetalladoProduccion = async ({ fecha, fechaFin, estado } = {}) => {
-  const hoy    = fecha    || new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-  const hasta  = fechaFin || hoy;
+  const now = new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000);
+  const primerDia = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const hoy    = fecha    || primerDia;
+  const hasta  = fechaFin || now.toISOString().slice(0, 10);
 
   let sql = `
     SELECT pl.*,
@@ -52,10 +54,13 @@ exports.getDetalladoProduccion = async ({ fecha, fechaFin, estado } = {}) => {
    Frecuencia: Diario | Almacenamiento: 5 años
 ────────────────────────────────────────────────────────────── */
 exports.getDetalladoCalidad = async ({ fecha, fechaFin, resultado } = {}) => {
-  const hoy   = fecha    || new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-  const hasta = fechaFin || hoy;
+  const now = new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000);
+  const primerDia = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const hoy   = fecha    || primerDia;
+  const hasta = fechaFin || now.toISOString().slice(0, 10);
 
-  let sql = `
+  // 1. Pruebas de Calidad de Recepción de Leche (Materia Prima)
+  let sqlLeche = `
     SELECT cp.*,
            a.litros          AS litros_acopio,
            a.turno           AS turno_acopio,
@@ -69,26 +74,47 @@ exports.getDetalladoCalidad = async ({ fecha, fechaFin, resultado } = {}) => {
     LEFT JOIN usuarios     u ON u.id = cp.analista_id
     WHERE cp.fecha BETWEEN ? AND ?
   `;
-  const params = [hoy, hasta];
-  if (resultado) { sql += ' AND cp.resultado = ?'; params.push(resultado); }
-  sql += ' ORDER BY cp.fecha DESC, cp.creado_en DESC';
+  const paramsLeche = [hoy, hasta];
+  if (resultado) { sqlLeche += ' AND cp.resultado = ?'; paramsLeche.push(resultado); }
+  sqlLeche += ' ORDER BY cp.fecha DESC, cp.creado_en DESC';
 
-  const [registros] = await pool.query(sql, params);
+  const [recepcionLeche] = await pool.query(sqlLeche, paramsLeche);
 
-  const [kpiRow] = await pool.query(`
-    SELECT
-      COUNT(*)                                               AS total_pruebas,
-      SUM(resultado = 'Aprobado')                           AS aprobados,
-      SUM(resultado = 'Rechazado')                          AS rechazados,
-      SUM(resultado = 'Observación')                        AS observacion,
-      ROUND(SUM(resultado='Aprobado') / COUNT(*) * 100, 1) AS tasa_aprobacion,
-      SUM(prueba_alcohol = 'Positiva')                     AS alcohol_positivo,
-      SUM(densidad IS NOT NULL AND densidad < 1.028)        AS densidad_baja
-    FROM calidad_pruebas
-    WHERE fecha BETWEEN ? AND ?
-  `, [hoy, hasta]);
+  // 2. Pruebas de Calidad de Lotes de Producción (Producto Terminado)
+  let sqlLotes = `
+    SELECT pl.id, pl.numero_lote, pl.producto_nombre, pl.cantidad_obtenida, pl.unidad, pl.fecha_produccion, pl.turno, pl.calidad AS resultado, pl.observaciones
+    FROM produccion_lotes pl
+    WHERE pl.fecha_produccion BETWEEN ? AND ? AND pl.estado = 'Completada'
+  `;
+  const paramsLotes = [hoy, hasta];
+  if (resultado) { sqlLotes += ' AND pl.calidad = ?'; paramsLotes.push(resultado); }
+  sqlLotes += ' ORDER BY pl.fecha_produccion DESC, pl.numero_lote DESC';
 
-  return { periodo: { desde: hoy, hasta }, kpis: kpiRow[0], registros };
+  const [lotesProduccion] = await pool.query(sqlLotes, paramsLotes);
+
+  // 3. KPIs Consolidados
+  const totalLeche = recepcionLeche.length;
+  const aprobadosLeche = recepcionLeche.filter(r => r.resultado === 'Aprobado').length;
+  
+  const totalLotes = lotesProduccion.length;
+  const aprobadosLotes = lotesProduccion.filter(l => l.resultado === 'Aprobado').length;
+
+  const totalPruebas = totalLeche + totalLotes;
+  const totalAprobados = aprobadosLeche + aprobadosLotes;
+  const tasaAprobacion = totalPruebas > 0 ? (totalAprobados / totalPruebas * 100) : 100;
+
+  const kpis = {
+    total_pruebas: totalPruebas,
+    aprobados: totalAprobados,
+    rechazados: totalPruebas - totalAprobados,
+    tasa_aprobacion: tasaAprobacion,
+    recepcion_total: totalLeche,
+    recepcion_aprobados: aprobadosLeche,
+    lotes_total: totalLotes,
+    lotes_aprobados: aprobadosLotes
+  };
+
+  return { periodo: { desde: hoy, hasta }, kpis, recepcionLeche, lotesProduccion };
 };
 
 /* ──────────────────────────────────────────────────────────────
@@ -97,8 +123,10 @@ exports.getDetalladoCalidad = async ({ fecha, fechaFin, resultado } = {}) => {
    Frecuencia: Diario | Almacenamiento: 5 años
 ────────────────────────────────────────────────────────────── */
 exports.getDetalladoDistribucion = async ({ fecha, fechaFin, estado } = {}) => {
-  const hoy   = fecha    || new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-  const hasta = fechaFin || hoy;
+  const now = new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000);
+  const primerDia = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const hoy   = fecha    || primerDia;
+  const hasta = fechaFin || now.toISOString().slice(0, 10);
 
   let sql = `
     SELECT v.*,
@@ -111,6 +139,7 @@ exports.getDetalladoDistribucion = async ({ fecha, fechaFin, estado } = {}) => {
     LEFT JOIN clientes  c ON c.id = v.cliente_id
     LEFT JOIN usuarios  u ON u.id = v.vendedor_id
     WHERE v.fecha BETWEEN ? AND ?
+      AND (c.tipo IS NULL OR c.tipo != 'Particular')
   `;
   const params = [hoy, hasta];
   if (estado) { sql += ' AND v.estado = ?'; params.push(estado); }
@@ -123,20 +152,24 @@ exports.getDetalladoDistribucion = async ({ fecha, fechaFin, estado } = {}) => {
     SELECT vd.*, v.fecha AS fecha_venta, v.cliente_nombre
     FROM ventas_detalle vd
     JOIN ventas v ON v.id = vd.venta_id
+    LEFT JOIN clientes c ON c.id = v.cliente_id
     WHERE v.fecha BETWEEN ? AND ?
+      AND (c.tipo IS NULL OR c.tipo != 'Particular')
     ORDER BY v.fecha DESC
   `, [hoy, hasta]);
 
   const [kpiRow] = await pool.query(`
     SELECT
       COUNT(*)                                    AS total_facturas,
-      COALESCE(SUM(CASE WHEN estado='Pagada'   THEN total END), 0) AS total_facturado,
-      COALESCE(SUM(CASE WHEN estado='Pendiente'THEN total END), 0) AS pendiente_cobro,
-      SUM(estado = 'Pendiente')                   AS facturas_pendientes,
-      ROUND(AVG(total), 2)                        AS ticket_promedio,
-      COUNT(DISTINCT cliente_id)                  AS clientes_atendidos
-    FROM ventas
-    WHERE fecha BETWEEN ? AND ?
+      COALESCE(SUM(CASE WHEN v.estado='Pagada'   THEN v.total END), 0) AS total_facturado,
+      COALESCE(SUM(CASE WHEN v.estado='Pendiente'THEN v.total END), 0) AS pendiente_cobro,
+      SUM(v.estado = 'Pendiente')                   AS facturas_pendientes,
+      ROUND(AVG(v.total), 2)                        AS ticket_promedio,
+      COUNT(DISTINCT v.cliente_id)                  AS clientes_atendidos
+    FROM ventas v
+    LEFT JOIN clientes c ON c.id = v.cliente_id
+    WHERE v.fecha BETWEEN ? AND ?
+      AND (c.tipo IS NULL OR c.tipo != 'Particular')
   `, [hoy, hasta]);
 
   return { periodo: { desde: hoy, hasta }, kpis: kpiRow[0], registros: ventasCab, detalle: items };
@@ -182,42 +215,88 @@ exports.getSintetizadoInventario = async () => {
 };
 
 /* ──────────────────────────────────────────────────────────────
-   REPORTE 5 — Sintetizado Mermas y Desperdicios
-   Jefe de Producción + Calidad | Diario | Victoria, Yoro
+   REPORTE 5 — Sintetizado Desempeño de Proveedores
+   Encargado de Compras + Supervisor de Producción + Gerencia
+   Frecuencia: Mensual | Área: Recepción de Leche y Compras
    Almacenamiento: 5 años
 ────────────────────────────────────────────────────────────── */
-exports.getSintetizadoMermas = async ({ fecha, fechaFin } = {}) => {
-  const hoy   = fecha    || new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-  const hasta = fechaFin || hoy;
+exports.getSintetizadoProveedores = async ({ mes, anio } = {}) => {
+  const now = new Date();
+  const a   = anio || now.getFullYear();
+  let inicio, fin, m;
 
-  const [registros] = await pool.query(`
-    SELECT m.*,
-           pl.numero_lote,
-           pl.producto_nombre AS lote_producto,
-           u.nombre          AS responsable_nombre
-    FROM mermas m
-    LEFT JOIN produccion_lotes pl ON pl.id = m.lote_id
-    LEFT JOIN usuarios         u  ON u.id  = m.responsable_id
-    WHERE m.fecha BETWEEN ? AND ?
-    ORDER BY m.fecha DESC, m.creado_en DESC
-  `, [hoy, hasta]);
+  if (mes === 'todos') {
+    m      = 'Todo el año';
+    inicio = `${a}-01-01`;
+    fin    = `${a}-12-31`;
+  } else {
+    m      = mes ? String(mes).padStart(2, '0') : String(now.getMonth() + 1).padStart(2, '0');
+    inicio = `${a}-${m}-01`;
+    fin    = `${a}-${m}-31`;
+  }
 
-  const [kpiRow] = await pool.query(`
+  /* ── KPIs globales del período ── */
+  const [[kpiRow]] = await pool.query(`
     SELECT
-      COUNT(*)              AS total_registros,
-      COALESCE(SUM(CASE WHEN tipo='Producción' THEN cantidad END), 0) AS merma_produccion,
-      COALESCE(SUM(CASE WHEN tipo='Acopio'     THEN cantidad END), 0) AS merma_acopio,
-      COALESCE(SUM(cantidad), 0)                                      AS merma_total
-    FROM mermas WHERE fecha BETWEEN ? AND ?
-  `, [hoy, hasta]);
+      COUNT(*)                                                        AS total_entregas,
+      SUM(estado = 'Aceptada')                                        AS total_aceptadas,
+      SUM(estado = 'Rechazada')                                       AS total_rechazadas,
+      COALESCE(SUM(CASE WHEN estado = 'Aceptada' THEN litros END), 0) AS litros_aceptados,
+      COALESCE(SUM(CASE WHEN estado = 'Rechazada' THEN litros END), 0) AS litros_rechazados,
+      COALESCE(SUM(CASE WHEN estado = 'Aceptada' THEN total_pagar END), 0) AS total_pagado,
+      COUNT(DISTINCT proveedor_id)                                    AS total_proveedores,
+      ROUND(SUM(estado = 'Aceptada') / NULLIF(COUNT(*), 0) * 100, 1) AS pct_aceptacion_global
+    FROM acopio_leche
+    WHERE fecha BETWEEN ? AND ?
+  `, [inicio, fin]);
 
-  const [porCausa] = await pool.query(`
-    SELECT causa, SUM(cantidad) AS total, COUNT(*) AS ocurrencias
-    FROM mermas WHERE fecha BETWEEN ? AND ?
-    GROUP BY causa ORDER BY total DESC
-  `, [hoy, hasta]);
+  /* ── Tabla maestra por proveedor ── */
+  const [porProveedor] = await pool.query(`
+    SELECT
+      p.nombre                                                          AS proveedor,
+      p.telefono,
+      COUNT(*)                                                          AS total_entregas,
+      SUM(a.estado = 'Aceptada')                                        AS aceptadas,
+      SUM(a.estado = 'Rechazada')                                       AS rechazadas,
+      SUM(a.estado = 'Pendiente')                                       AS pendientes,
+      COALESCE(SUM(CASE WHEN a.estado = 'Aceptada'  THEN a.litros END), 0) AS litros_aceptados,
+      COALESCE(SUM(CASE WHEN a.estado = 'Rechazada' THEN a.litros END), 0) AS litros_rechazados,
+      COALESCE(SUM(CASE WHEN a.estado = 'Aceptada'  THEN a.total_pagar END), 0) AS total_pagado,
+      ROUND(AVG(CASE WHEN a.estado = 'Aceptada' THEN a.litros END), 1) AS promedio_litros,
+      ROUND(SUM(a.estado = 'Aceptada') / NULLIF(COUNT(*), 0) * 100, 1) AS pct_aceptacion,
+      MAX(a.fecha)                                                      AS ultima_entrega
+    FROM acopio_leche a
+    LEFT JOIN proveedores p ON p.id = a.proveedor_id
+    WHERE a.fecha BETWEEN ? AND ?
+    GROUP BY a.proveedor_id, p.nombre, p.telefono
+    ORDER BY total_entregas DESC, pct_aceptacion DESC
+  `, [inicio, fin]);
 
-  return { periodo: { desde: hoy, hasta }, kpis: kpiRow[0], registros, porCausa };
+  /* ── Detalle de entregas individuales ── */
+  const [registros] = await pool.query(`
+    SELECT
+      a.fecha, a.turno, a.litros, a.precio_litro, a.total_pagar,
+      a.estado, a.motivo_rechazo, a.observaciones,
+      p.nombre AS proveedor_nombre
+    FROM acopio_leche a
+    LEFT JOIN proveedores p ON p.id = a.proveedor_id
+    WHERE a.fecha BETWEEN ? AND ?
+    ORDER BY a.fecha DESC, a.creado_en DESC
+  `, [inicio, fin]);
+
+  /* ── Top proveedores con más rechazos ── */
+  const topRechazados = [...porProveedor]
+    .filter(r => Number(r.rechazadas) > 0)
+    .sort((a, b) => Number(b.rechazadas) - Number(a.rechazadas))
+    .slice(0, 8);
+
+  return {
+    periodo: { mes: mes === 'todos' ? String(a) : `${a}-${m}`, inicio, fin },
+    kpis: kpiRow,
+    porProveedor,
+    registros,
+    topRechazados
+  };
 };
 
 /* ──────────────────────────────────────────────────────────────

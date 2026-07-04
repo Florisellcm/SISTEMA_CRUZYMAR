@@ -6,8 +6,8 @@ const ProduccionModel = require('../models/produccionModel');
 
 exports.getAll = async (req, res) => {
   try {
-    const { estado, fecha } = req.query;
-    const lista = await ProduccionModel.findAll({ estado, fecha });
+    const { estado, fecha, tipoProceso } = req.query;
+    const lista = await ProduccionModel.findAll({ estado, fecha, tipoProceso });
     res.json(lista);
   } catch (e) { res.status(500).json({ error: e.message }); }
 };
@@ -20,26 +20,58 @@ exports.getById = async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 };
 
-exports.create = async (req, res) => {
+// Lotes completados recientes, para el selector opcional de "Lote de origen"
+exports.getRecientes = async (req, res) => {
   try {
-    const { productoNombre, lecheUsada, fechaProduccion } = req.body;
-    if (!productoNombre)  return res.status(400).json({ error: 'El producto es obligatorio' });
-    if (!lecheUsada)      return res.status(400).json({ error: 'Los litros de leche son obligatorios' });
-    if (!fechaProduccion) return res.status(400).json({ error: 'La fecha es obligatoria' });
-    const nuevo = await ProduccionModel.create({
-      ...req.body,
-      operario_id: req.user?.id || null
-    });
-    res.status(201).json(nuevo);
+    const lista = await ProduccionModel.findRecientes(20);
+    res.json(lista);
   } catch (e) { res.status(500).json({ error: e.message }); }
 };
 
+exports.create = async (req, res) => {
+  try {
+    const { productoNombre, lecheUsada, fechaProduccion, materiaPrimaInventarioId, productoInventarioId } = req.body;
+    if (!productoNombre) return res.status(400).json({ error: 'El producto es obligatorio' });
+    if (!lecheUsada) return res.status(400).json({ error: 'La cantidad de materia prima utilizada es obligatoria' });
+    if (!fechaProduccion) return res.status(400).json({ error: 'La fecha es obligatoria' });
+    if (!materiaPrimaInventarioId) return res.status(400).json({ error: 'Debe seleccionar de qué producto de inventario sale la materia prima' });
+    if (!productoInventarioId) return res.status(400).json({ error: 'Debe seleccionar a qué producto de inventario corresponde la salida' });
+
+    const nuevo = await ProduccionModel.create({
+      ...req.body,
+      tipoProceso: req.body.tipoProceso || 'Manual',
+      operario_id: req.user?.id || null
+    });
+    res.status(201).json(nuevo);
+  } catch (e) { res.status(400).json({ error: e.message }); }
+};
+
+// Edita SOLO metadatos (turno, fecha, observaciones)
 exports.update = async (req, res) => {
   try {
-    const actualizado = await ProduccionModel.update(req.params.id, req.body);
+    const { turno, fechaProduccion, observaciones, insumos } = req.body;
+    const actualizado = await ProduccionModel.update(req.params.id, {
+      turno, fecha_produccion: fechaProduccion, observaciones, insumos
+    });
     if (!actualizado) return res.status(404).json({ error: 'Lote no encontrado' });
     res.json(actualizado);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(400).json({ error: e.message }); }
+};
+
+// Completa un lote "En proceso" y acredita su(s) salida(s) al inventario
+exports.completar = async (req, res) => {
+  try {
+    const actualizado = await ProduccionModel.completar(req.params.id, req.body);
+    res.json(actualizado);
+  } catch (e) { res.status(400).json({ error: e.message }); }
+};
+
+// Cancela un lote, revirtiendo cualquier movimiento de inventario que haya generado
+exports.cancelar = async (req, res) => {
+  try {
+    const actualizado = await ProduccionModel.cancelar(req.params.id);
+    res.json(actualizado);
+  } catch (e) { res.status(400).json({ error: e.message }); }
 };
 
 exports.remove = async (req, res) => {
@@ -47,29 +79,5 @@ exports.remove = async (req, res) => {
     const eliminado = await ProduccionModel.remove(req.params.id);
     if (!eliminado) return res.status(404).json({ error: 'Lote no encontrado' });
     res.json({ message: 'Lote eliminado' });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-};
-
-// Override del update para mapear camelCase -> snake_case
-const _origUpdate = exports.update;
-exports.update = async (req, res) => {
-  try {
-    const raw = req.body;
-    // Mapeo camelCase -> snake_case
-    const data = {};
-    if (raw.cantidadObtenida !== undefined) data.cantidad_obtenida = parseFloat(raw.cantidadObtenida);
-    if (raw.lecheUsada       !== undefined) data.leche_usada       = parseFloat(raw.lecheUsada);
-    if (raw.productoNombre   !== undefined) data.producto_nombre   = raw.productoNombre;
-    if (raw.fechaProduccion  !== undefined) data.fecha_produccion  = raw.fechaProduccion;
-    if (raw.estado           !== undefined) data.estado            = raw.estado;
-    if (raw.turno            !== undefined) data.turno             = raw.turno;
-    if (raw.observaciones    !== undefined) data.observaciones      = raw.observaciones;
-    // También aceptar snake_case directo
-    Object.assign(data, Object.fromEntries(
-      Object.entries(raw).filter(([k]) => k === k.toLowerCase() && k.includes('_'))
-    ));
-    const actualizado = await ProduccionModel.update(req.params.id, data);
-    if (!actualizado) return res.status(404).json({ error: 'Lote no encontrado' });
-    res.json(actualizado);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(400).json({ error: e.message }); }
 };

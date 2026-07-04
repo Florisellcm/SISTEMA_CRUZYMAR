@@ -21,11 +21,12 @@ exports.getDetalladoInventario   = wrap(async (req) => m.getSintetizadoInventari
 exports.getDetalladoVentas       = wrap(async (req) => m.getDetalladoDistribucion(req.query));
 
 /* ── Sintetizados ───────────────────────────────────────────── */
-exports.getSintetizadoProduccion      = wrap(async (req) => m.getSintetizadoMermas(req.query));
+exports.getSintetizadoProduccion      = wrap(async (req) => m.getSintetizadoProveedores(req.query)); // S1 - Desempeño Proveedores
+exports.getSintetizadoProveedores     = wrap(async (req) => m.getSintetizadoProveedores(req.query)); // S1 - alias directo
 exports.getSintetizadoInventario      = wrap(async (req) => m.getSintetizadoInventario());
 exports.getSintetizadoVentas          = wrap(async (req) => m.getSintetizadoVentas(req.query));
 exports.getSintetizadoFinanciero      = wrap(async (req) => m.getSintetizadoFinanciero(req.query)); // S2
-exports.getSintetizadoRendimiento     = wrap(async (req) => m.getSintetizadoMermas(req.query));
+exports.getSintetizadoRendimiento     = wrap(async (req) => m.getSintetizadoProveedores(req.query));
 exports.getSintetizadoProductoCliente = wrap(async (req) => m.getSintetizadoProductoCliente(req.query)); // S4
 
 /* ── Por excepción ──────────────────────────────────────────── */

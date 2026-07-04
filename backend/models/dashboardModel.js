@@ -24,10 +24,10 @@ exports.getAll = async () => {
     pool.query(`SELECT DAYNAME(fecha) AS dia, SUM(total) AS total FROM ventas
                 WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 6 DAY) AND estado='Pagada'
                 GROUP BY fecha ORDER BY fecha ASC`),
-    pool.query(`SELECT vd.nombre, SUM(vd.cantidad) AS vendidos, SUM(vd.subtotal) AS ingresos
-                FROM ventas_detalle vd JOIN ventas v ON v.id = vd.venta_id
-                WHERE v.fecha >= ? AND v.estado='Pagada'
-                GROUP BY vd.nombre ORDER BY vendidos DESC LIMIT 5`, [mesInicio]),
+    pool.query(`SELECT p.nombre, COALESCE(SUM(a.litros), 0) AS litros
+                FROM acopio_leche a JOIN proveedores p ON p.id = a.proveedor_id
+                WHERE a.fecha >= ? AND a.estado='Aceptada'
+                GROUP BY p.id, p.nombre ORDER BY litros DESC LIMIT 5`, [mesInicio]),
     pool.query(`(SELECT 'venta' AS tipo, CONCAT('Venta ',v.numero,' — ',v.cliente_nombre) AS texto,
                   v.total AS monto, v.creado_en AS tiempo FROM ventas v ORDER BY v.creado_en DESC LIMIT 3)
                 UNION ALL
@@ -46,7 +46,6 @@ exports.getAll = async () => {
 
   return {
     kpis: {
-      ventasHoy:          Number(ventasHoyR[0].v),
       ventasMes,
       gastosMes,
       utilidadMes:        ventasMes - gastosMes,
@@ -55,7 +54,7 @@ exports.getAll = async () => {
       productosStockBajo: Number(stockBajoR[0].v)
     },
     ventasSemana,
-    topProductos:  topProdR[0].map(r => ({ nombre: r.nombre, vendidos: Number(r.vendidos), ingresos: Number(r.ingresos) })),
+    topProductos:  topProdR[0].map(r => ({ nombre: r.nombre, litros: Number(r.litros) })),
     actividad:     actividadR[0].map(r => ({
       tipo:   r.tipo,
       texto:  r.texto,
@@ -70,3 +69,4 @@ exports.getAll = async () => {
     }))
   };
 };
+
