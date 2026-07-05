@@ -1,0 +1,671 @@
+<!-- CRUZYMAR · produccion.html -->
+<div>
+
+  <!-- ══════════════════════════ HEADER ══════════════════════════ -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+    <div>
+      <h2 style="margin:0;font-size:20px;font-weight:800;color:#003C78">
+        <i class="ri-building-line" style="color:#0A4A8F"></i> Producción y Lotes
+      </h2>
+      <p style="margin-top:4px;color:#64748B;font-size:13px">Registro y seguimiento de la cadena de producción láctea</p>
+    </div>
+    <button onclick="openModalProduccion()"
+      style="background:linear-gradient(135deg,#003C78,#0A5FA8);color:#fff;padding:10px 22px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;box-shadow:0 4px 14px rgba(0,60,120,.28);transition:transform .15s,box-shadow .15s"
+      onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 18px rgba(0,60,120,.35)'"
+      onmouseout="this.style.transform='';this.style.boxShadow='0 4px 14px rgba(0,60,120,.28)'">
+      <i class="ri-add-line"></i> Registrar Lote
+    </button>
+  </div>
+
+  <!-- ══════════════════════════ KPI CARDS ══════════════════════════ -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px">
+    <div class="prod-kpi-card">
+      <div class="prod-kpi-icon" style="background:#EAF2FB"><i class="ri-building-line" style="color:#003C78;font-size:18px"></i></div>
+      <span class="prod-kpi-label">Lotes Hoy</span>
+      <div id="prodLotesHoy" class="prod-kpi-val" style="color:#003C78">0</div>
+    </div>
+    <div class="prod-kpi-card">
+      <div class="prod-kpi-icon" style="background:#FFF7ED"><i class="ri-drop-line" style="color:#EA580C;font-size:18px"></i></div>
+      <span class="prod-kpi-label">Leche Procesada</span>
+      <div id="prodLecheHoy" class="prod-kpi-val" style="color:#EA580C">0 L</div>
+    </div>
+    <div class="prod-kpi-card">
+      <div class="prod-kpi-icon" style="background:#F0FDF4"><i class="ri-box-3-line" style="color:#16A34A;font-size:18px"></i></div>
+      <span class="prod-kpi-label">Producto Terminado</span>
+      <div id="prodQuesoHoy" class="prod-kpi-val" style="color:#16A34A">0 Lbs</div>
+    </div>
+    <div class="prod-kpi-card">
+      <div class="prod-kpi-icon" style="background:#F5F3FF"><i class="ri-percent-line" style="color:#7C3AED;font-size:18px"></i></div>
+      <span class="prod-kpi-label">Rendimiento Global</span>
+      <div id="prodRendimiento" class="prod-kpi-val" style="color:#7C3AED">0%</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════ FLUJO DE PRODUCCIÓN ══════════════════════════ -->
+  <div class="prod-flow-section">
+    <div class="prod-flow-header">
+      <i class="ri-flow-chart" style="color:#003C78;font-size:16px"></i>
+      <span>Flujo de Producción</span>
+      <span class="prod-flow-legend">
+        <span class="prod-legend-dot" style="background:#64748B"></span> Materia Prima
+        <span class="prod-legend-dot" style="background:#0A84D6"></span> Intermedio
+        <span class="prod-legend-dot" style="background:#16A34A"></span> Producto Terminado
+      </span>
+    </div>
+
+    <div class="prod-flow-body">
+
+      <!-- ─── COLUMNA 1: Origen ─── -->
+      <div class="prod-flow-col">
+        <!-- Leche Almacenada (Materia Prima) -->
+        <div class="prod-node materia-prima">
+          <div class="prod-node-tag">Materia Prima</div>
+          <div class="prod-node-icon"><i class="ri-flask-line"></i></div>
+          <div class="prod-node-name">Leche Almacenada</div>
+          <div class="prod-node-sub">Recepción Aprobada</div>
+        </div>
+      </div>
+
+      <!-- ─── Flecha ─── -->
+      <div class="prod-flow-arrow-col">
+        <div class="prod-arrow-wrap">
+          <div class="prod-arrow-line"></div>
+          <div class="prod-process-chip" onclick="iniciarProcesoDesde('Descremado')" title="Iniciar lote de descremado">
+            <i class="ri-settings-3-line"></i> DESCREMADO
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── COLUMNA 2: Salidas del descremado ─── -->
+      <div class="prod-flow-col">
+        <!-- Crema -->
+        <div class="prod-node intermedio" style="margin-bottom:10px">
+          <div class="prod-node-tag">Intermedio</div>
+          <div class="prod-node-icon"><i class="ri-drop-fill"></i></div>
+          <div class="prod-node-name">Crema (Granel)</div>
+          <div class="prod-node-sub">Litros obtenidos</div>
+        </div>
+        <!-- Leche Descremada -->
+        <div class="prod-node intermedio">
+          <div class="prod-node-tag">Intermedio</div>
+          <div class="prod-node-icon"><i class="ri-drop-line"></i></div>
+          <div class="prod-node-name">Leche Descremada</div>
+          <div class="prod-node-sub">Granel · Litros</div>
+        </div>
+      </div>
+
+      <!-- ─── Flechas dobles ─── -->
+      <div class="prod-flow-arrow-col">
+        <div class="prod-arrow-wrap" style="margin-bottom:10px">
+          <div class="prod-arrow-line"></div>
+          <div class="prod-process-chip" onclick="iniciarProcesoDesde('Mantequilla Crema')" title="Iniciar lote de mantequilla">
+            <i class="ri-settings-3-line"></i> MANTEQUILLA
+          </div>
+        </div>
+        <div class="prod-arrow-wrap">
+          <div class="prod-arrow-line"></div>
+          <div class="prod-process-chip" onclick="iniciarProcesoDesde('Queso Crema')" title="Iniciar lote de queso">
+            <i class="ri-settings-3-line"></i> QUESO / QUESILLO
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── COLUMNA 3: Producto terminado o subproducto ─── -->
+      <div class="prod-flow-col">
+        <!-- Mantequilla PT -->
+        <div class="prod-node terminado" style="margin-bottom:10px">
+          <div class="prod-node-tag">Producto Terminado</div>
+          <div class="prod-node-icon"><i class="ri-box-3-line"></i></div>
+          <div class="prod-node-name">Mantequilla</div>
+          <div class="prod-node-sub">1 lb / 0.5 lb</div>
+        </div>
+        <!-- Queso PT + Suero -->
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="prod-node terminado">
+            <div class="prod-node-tag">Producto Terminado</div>
+            <div class="prod-node-icon"><i class="ri-box-3-line"></i></div>
+            <div class="prod-node-name">Queso / Quesillo</div>
+            <div class="prod-node-sub">1 lb / 0.5 lb</div>
+          </div>
+          <div class="prod-node intermedio">
+            <div class="prod-node-tag">Intermedio</div>
+            <div class="prod-node-icon"><i class="ri-water-flash-line"></i></div>
+            <div class="prod-node-name">Suero (Granel)</div>
+            <div class="prod-node-sub">Subproducto · Litros</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── Flecha final para Requesón ─── -->
+      <div class="prod-flow-arrow-col" style="align-self:flex-end;padding-bottom:8px">
+        <div class="prod-arrow-wrap">
+          <div class="prod-arrow-line"></div>
+          <div class="prod-process-chip" onclick="iniciarProcesoDesde('Requesón')" title="Iniciar lote de requesón">
+            <i class="ri-settings-3-line"></i> REQUESÓN
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── COLUMNA 4: Requesón ─── -->
+      <div class="prod-flow-col" style="align-self:flex-end">
+        <div class="prod-node terminado">
+          <div class="prod-node-tag">Producto Terminado</div>
+          <div class="prod-node-icon"><i class="ri-box-3-line"></i></div>
+          <div class="prod-node-name">Requesón</div>
+          <div class="prod-node-sub">1 lb / 0.5 lb</div>
+        </div>
+      </div>
+
+    </div><!-- /prod-flow-body -->
+  </div><!-- /prod-flow-section -->
+
+  <!-- ══════════════════════════ TABLA HISTORIAL ══════════════════════════ -->
+  <div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2;overflow:auto">
+    <div style="padding:16px 20px;border-bottom:1px solid #E0E9F2;display:flex;justify-content:space-between;align-items:center;background:#F8FAFC;border-radius:14px 14px 0 0;flex-wrap:wrap;gap:10px">
+      <span style="font-size:13px;font-weight:700;color:#003C78"><i class="ri-list-check-2"></i> Historial de Lotes</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <select id="filtroTipoProd" onchange="loadProduccionList()"
+          style="padding:8px 12px;border:2px solid #E0E9F2;border-radius:8px;font-size:12px;outline:none;background:#fff">
+          <option value="">Todos los procesos</option>
+          <option value="Descremado">Descremado</option>
+          <option value="Queso">Queso</option>
+          <option value="Mantequilla">Mantequilla</option>
+          <option value="Requeson">Requesón</option>
+          <option value="Manual">Manual</option>
+        </select>
+        <select id="filtroEstadoProd" onchange="loadProduccionList()"
+          style="padding:8px 12px;border:2px solid #E0E9F2;border-radius:8px;font-size:12px;outline:none;background:#fff">
+          <option value="">Todos los estados</option>
+          <option value="En proceso">En proceso</option>
+          <option value="Completada">Completada</option>
+          <option value="Cancelada">Cancelada</option>
+        </select>
+      </div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;min-width:1000px">
+      <thead>
+        <tr style="background:#F4F7FA;border-bottom:2px solid #E0E9F2">
+          <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">N° Lote</th>
+          <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Proceso</th>
+          <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Producto</th>
+          <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Entrada</th>
+          <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Obtenido</th>
+          <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Rendimiento</th>
+          <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Estado</th>
+          <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Fecha</th>
+          <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="produccionTableBody">
+        <tr><td colspan="9" style="text-align:center;padding:40px;color:#64748B">Cargando datos...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════ MODAL PRODUCCIÓN ══════════════════════════ -->
+<div id="modalProduccion"
+  style="display:none;position:fixed;inset:0;background:rgba(15,35,73,.55);align-items:center;justify-content:center;z-index:1000;padding:20px;backdrop-filter:blur(4px)">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:640px;box-shadow:0 32px 80px rgba(0,0,0,.25);max-height:90vh;overflow-y:auto">
+
+    <!-- Header modal -->
+    <div style="padding:20px 24px;border-bottom:1px solid #E0E9F2;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;z-index:10;border-radius:16px 16px 0 0">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:10px;background:#EAF2FB;display:flex;align-items:center;justify-content:center">
+          <i class="ri-building-line" style="color:#003C78;font-size:18px"></i>
+        </div>
+        <h3 style="font-size:16px;font-weight:700;color:#003C78;margin:0">Registrar Lote de Producción</h3>
+      </div>
+      <button onclick="closeModalProduccion()"
+        style="width:30px;height:30px;border-radius:8px;border:none;background:#F4F7FA;cursor:pointer;color:#64748B">
+        <i class="ri-close-line"></i>
+      </button>
+    </div>
+
+    <div style="padding:24px">
+      <form id="formProduccion">
+
+        <!-- PRODUCTO -->
+        <div style="margin-bottom:18px">
+          <h4 class="prod-form-section-title">Proceso / Producto a elaborar</h4>
+
+          <!-- Chips de proceso rápido -->
+          <div id="prodProcesoChips" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px">
+            <button type="button" class="prod-chip active" data-val="Descremado" onclick="seleccionarChip(this,'Descremado')">
+              <i class="ri-drop-fill"></i> Descremado
+            </button>
+            <button type="button" class="prod-chip" data-val="Queso Crema" onclick="seleccionarChip(this,'Queso Crema')">
+              <i class="ri-box-3-line"></i> Queso Crema
+            </button>
+            <button type="button" class="prod-chip" data-val="Queso Semi-Seco" onclick="seleccionarChip(this,'Queso Semi-Seco')">
+              <i class="ri-box-3-line"></i> Queso Semi-Seco
+            </button>
+            <button type="button" class="prod-chip" data-val="Mantequilla Crema" onclick="seleccionarChip(this,'Mantequilla Crema')">
+              <i class="ri-star-fill"></i> Mantequilla Crema
+            </button>
+            <button type="button" class="prod-chip" data-val="Mantequilla Rala" onclick="seleccionarChip(this,'Mantequilla Rala')">
+              <i class="ri-star-line"></i> Mantequilla Rala
+            </button>
+            <button type="button" class="prod-chip" data-val="Requesón" onclick="seleccionarChip(this,'Requesón')">
+              <i class="ri-water-flash-line"></i> Requesón
+            </button>
+            <button type="button" class="prod-chip" data-val="Otro" onclick="seleccionarChip(this,'Otro')">
+              <i class="ri-edit-line"></i> Otro
+            </button>
+          </div>
+
+          <!-- hidden select para compatibilidad con el JS existente -->
+          <select id="prodTipo" onchange="onProductoChange()" style="display:none">
+            <optgroup label="Del descremado de leche entera">
+              <option value="Descremado">Descremado (Crema + Leche Descremada)</option>
+            </optgroup>
+            <optgroup label="De leche descremada">
+              <option value="Queso Crema">Queso Crema</option>
+              <option value="Queso Semi-Seco">Queso Semi-Seco</option>
+            </optgroup>
+            <optgroup label="De crema">
+              <option value="Mantequilla Crema">Mantequilla Crema</option>
+              <option value="Mantequilla Rala">Mantequilla Rala</option>
+            </optgroup>
+            <optgroup label="De suero">
+              <option value="Requesón">Requesón</option>
+            </optgroup>
+            <optgroup label="Otro">
+              <option value="Otro">Otro producto (registro manual)</option>
+            </optgroup>
+          </select>
+
+          <!-- Indicador de flujo -->
+          <div id="prodFlujoIndicador" style="background:#F0F7FF;border:1px solid #C3DCFA;border-radius:8px;padding:10px 14px;font-size:12px;color:#0A4A8F;display:flex;align-items:center;gap:8px">
+            <i class="ri-information-line"></i>
+            <span id="prodFlujoTexto">Leche entera → <strong>Descremado</strong> → Crema (Granel) + Leche Descremada (Granel)</span>
+          </div>
+
+          <div id="campoNombreManual" style="display:none;margin-top:12px">
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px">Nombre del producto *</label>
+            <input id="prodNombreManual" type="text" placeholder="Ej: Yogur Natural"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+        </div>
+
+        <!-- INVENTARIO -->
+        <div style="margin-bottom:18px">
+          <h4 class="prod-form-section-title">Enlace con inventario</h4>
+
+          <!-- Info de flujo de inventario -->
+          <div id="invInfoBanner" style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:10px 13px;margin-bottom:14px;font-size:11.5px;color:#15803D;display:flex;gap:8px;align-items:flex-start">
+            <i class="ri-information-line" style="flex-shrink:0;margin-top:1px"></i>
+            <span id="invInfoTexto">El sistema descuenta automáticamente la materia prima del inventario al crear el lote. Los productos obtenidos se suman al stock cuando el lote se marca como <strong>Completado</strong>. Solo indique a qué ítem del catálogo corresponde cada entrada/salida.</span>
+          </div>
+
+          <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px" id="lblEntradaInv">Materia prima (producto de inventario) *</label>
+          <select id="prodMateriaPrimaInv"
+            style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;margin-bottom:14px">
+            <option value="">— Seleccionar —</option>
+          </select>
+
+          <!-- Contenedor oculto: el sistema auto-asocia los productos en JS por detrás, sin mostrar estos selects en pantalla -->
+          <div style="display:none">
+            <div id="campoSalidaSimpleInv">
+              <label id="lblSalidaSimpleInv">Producto que ingresa al stock</label>
+              <select id="prodProductoInv"></select>
+            </div>
+
+            <div id="campoSalidaDobleInv">
+              <select id="prodCremaInv"></select>
+              <select id="prodDescremadaInv"></select>
+            </div>
+
+            <div id="notaDescremado"></div>
+
+            <div id="campoSueroInv">
+              <select id="prodSueroInv"></select>
+            </div>
+          </div>
+        </div>
+
+        <!-- CANTIDADES -->
+        <div style="margin-bottom:18px">
+          <h4 class="prod-form-section-title">Cantidades</h4>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div>
+              <label id="lblEntrada" style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px">Leche entera utilizada (litros) *</label>
+              <input id="prodEntrada" type="number" min="0.1" step="0.5"
+                style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+            </div>
+            <div id="campoSalidaSimple">
+              <label id="lblSalida" style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px">Producto obtenido (libras)</label>
+              <input id="prodSalida" type="number" min="0" step="0.5"
+                style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+            </div>
+          </div>
+          <div id="campoSalidaDoble" style="display:none;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px">
+            <div>
+              <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px">Crema obtenida (litros)</label>
+              <input id="prodCrema" type="number" min="0" step="0.5"
+                style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px">Leche descremada obtenida (litros)</label>
+              <input id="prodDescremada" type="number" min="0" step="0.5"
+                style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+            </div>
+          </div>
+          <div id="campoSuero" style="display:none;margin-top:14px">
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px">Suero obtenido (litros)</label>
+            <input id="prodSuero" type="number" min="0" step="0.5" placeholder="Opcional"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+          <div style="font-size:10px;color:#94A3B8;margin-top:8px">
+            Deje la(s) cantidad(es) obtenida(s) en 0 y estado "En proceso" si el lote todavía no termina — se completa después desde la tabla.
+          </div>
+        </div>
+
+        <!-- TRAZABILIDAD -->
+        <div id="seccionTrazabilidad" style="margin-bottom:18px">
+          <h4 class="prod-form-section-title" id="lblTrazabilidadTitulo">Trazabilidad</h4>
+          <label id="lblTrazabilidadOrigen" style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px">Lote de origen</label>
+          <select id="prodLoteOrigen"
+            style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none">
+            <option value="">— Sin referencia / no aplica —</option>
+          </select>
+          <div id="lblTrazabilidadHelp" style="font-size:10px;color:#94A3B8;margin-top:4px">Referencia informativa a un lote anterior (ej: de qué descremado salió esta crema)</div>
+        </div>
+
+        <!-- DETALLES -->
+        <div style="margin-bottom:6px">
+          <h4 class="prod-form-section-title">Detalles del lote</h4>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+            <div>
+              <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px">Turno</label>
+              <select id="prodTurno"
+                style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none">
+                <option value="Mañana">Mañana</option>
+                <option value="Tarde">Tarde</option>
+                <option value="Noche">Noche</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px">Estado</label>
+              <select id="prodEstado"
+                style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none">
+                <option value="En proceso">En proceso</option>
+                <option value="Completada">Completada</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px">Fecha *</label>
+              <input id="prodFecha" type="date"
+                style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+            </div>
+          </div>
+          <div style="margin-top:14px">
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px">Observaciones</label>
+            <input id="prodObs" type="text" placeholder="Ej: Sin novedad"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+    <div style="padding:16px 24px;border-top:1px solid #E0E9F2;display:flex;justify-content:flex-end;gap:10px;background:#F8FAFC;border-radius:0 0 16px 16px">
+      <button onclick="closeModalProduccion()"
+        style="padding:10px 20px;border:2px solid #E0E9F2;background:#fff;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;color:#64748B">
+        Cancelar
+      </button>
+      <button onclick="saveProduccionUnificada()"
+        style="padding:10px 24px;background:linear-gradient(135deg,#003C78,#0A5FA8);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(0,60,120,.2)">
+        <i class="ri-save-line"></i> Guardar Lote
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════ ESTILOS ══════════════════════════ -->
+<style>
+  /* KPI cards */
+  .prod-kpi-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 18px 20px;
+    box-shadow: 0 2px 8px rgba(0,60,120,.06);
+    border: 1px solid #E0E9F2;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .prod-kpi-icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 4px;
+  }
+  .prod-kpi-label {
+    font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: .4px;
+  }
+  .prod-kpi-val {
+    font-size: 24px; font-weight: 800;
+  }
+
+  /* Flujo de producción */
+  .prod-flow-section {
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid #E0E9F2;
+    box-shadow: 0 2px 8px rgba(0,60,120,.06);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .prod-flow-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid #E0E9F2;
+    background: #F8FAFC;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #003C78;
+  }
+  .prod-flow-legend {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #64748B;
+  }
+  .prod-legend-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 3px;
+  }
+  .prod-flow-body {
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    overflow-x: auto;
+    min-height: 180px;
+  }
+  .prod-flow-col {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .prod-flow-arrow-col {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex-shrink: 0;
+    align-self: center;
+  }
+  .prod-arrow-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .prod-arrow-line {
+    width: 50px;
+    height: 2px;
+    background: linear-gradient(90deg, #C3DCFA, #0A84D6);
+    position: relative;
+  }
+  .prod-arrow-line::after {
+    content: '';
+    position: absolute;
+    right: -5px; top: -4px;
+    border: 5px solid transparent;
+    border-left: 7px solid #0A84D6;
+  }
+
+  /* Nodes */
+  .prod-node {
+    border-radius: 10px;
+    padding: 12px 14px;
+    min-width: 130px;
+    max-width: 155px;
+    border: 1.5px solid;
+    position: relative;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .prod-node:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0,0,0,.1);
+  }
+  .prod-node.materia-prima {
+    background: #F8FAFC;
+    border-color: #94A3B8;
+  }
+  .prod-node.intermedio {
+    background: #EFF7FF;
+    border-color: #60A5FA;
+  }
+  .prod-node.terminado {
+    background: #F0FDF4;
+    border-color: #4ADE80;
+  }
+  .prod-node-tag {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 6px;
+  }
+  .prod-node.materia-prima .prod-node-tag { color: #64748B; }
+  .prod-node.intermedio .prod-node-tag { color: #2563EB; }
+  .prod-node.terminado .prod-node-tag { color: #16A34A; }
+  .prod-node-icon {
+    font-size: 20px;
+    margin-bottom: 4px;
+  }
+  .prod-node.materia-prima .prod-node-icon { color: #64748B; }
+  .prod-node.intermedio .prod-node-icon { color: #2563EB; }
+  .prod-node.terminado .prod-node-icon { color: #16A34A; }
+  .prod-node-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1e2d42;
+    line-height: 1.3;
+  }
+  .prod-node-sub {
+    font-size: 10px;
+    color: #94A3B8;
+    margin-top: 2px;
+  }
+
+  /* Process chip (sobre la flecha) */
+  .prod-process-chip {
+    background: linear-gradient(135deg,#003C78,#0A5FA8);
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 9.5px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: transform .15s, box-shadow .15s;
+    box-shadow: 0 2px 8px rgba(0,60,120,.25);
+    letter-spacing: .3px;
+  }
+  .prod-process-chip:hover {
+    transform: scale(1.06);
+    box-shadow: 0 4px 12px rgba(0,60,120,.35);
+  }
+
+  /* Form styles */
+  .prod-form-section-title {
+    font-size: 11px;
+    font-weight: 800;
+    color: #64748B;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #E0E9F2;
+    padding-bottom: 6px;
+    letter-spacing: .4px;
+  }
+
+  /* Modal chips */
+  .prod-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 2px solid #E0E9F2;
+    background: #F8FAFC;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748B;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .prod-chip:hover {
+    border-color: #003C78;
+    color: #003C78;
+  }
+  .prod-chip.active {
+    background: #003C78;
+    border-color: #003C78;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(0,60,120,.2);
+  }
+
+  /* Table */
+  .btn-accion {
+    width: 28px; height: 28px;
+    border-radius: 6px; border: none;
+    cursor: pointer; font-size: 13px;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: all .2s;
+  }
+  .btn-accion.verde { background: #F0FDF4; color: #15803D; }
+  .btn-accion.rojo  { background: #FEF2F2; color: #991B1B; }
+  .btn-accion.gris  { background: #F4F7FA; color: #64748B; }
+  .btn-accion:hover:not([disabled]) { opacity: .75; transform: scale(1.1); }
+
+  table tr { border-bottom: 1px solid #F0F4F8; transition: background .2s; }
+  table tr:hover { background: #F8FBFF; }
+  table td { padding: 12px 16px; font-size: 13px; }
+
+  .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .b-comp { background: #DCFCE7; color: #15803D; }
+  .b-proc { background: #DBEAFE; color: #1D4ED8; }
+  .b-err  { background: #FEE2E2; color: #DC2626; }
+
+  @media (max-width: 700px) {
+    .prod-flow-body { gap: 8px; }
+    .prod-node { min-width: 110px; }
+  }
+</style>

@@ -1,0 +1,141 @@
+<!-- CRUZYMAR · clientes.html -->
+<div>
+  <!-- HEADER -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <div>
+      <h2 style="margin:0;font-size:20px;font-weight:800;color:#003C78">
+        <i class="ri-group-line" style="color:#0A4A8F"></i> Clientes
+      </h2>
+      <p style="margin-top:4px;color:#64748B;font-size:13px">Directorio de clientes y registro de RTN para facturación legal</p>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button onclick="openNuevoCliente()"
+        style="background:#003C78;color:#fff;padding:10px 20px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(0,60,120,.2)">
+        <i class="ri-user-add-line"></i> Nuevo Cliente
+      </button>
+    </div>
+  </div>
+
+  <!-- TARJETAS DE INDICADORES -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px">
+    <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#EAF2FB;display:flex;align-items:center;justify-content:center">
+          <i class="ri-group-line" style="color:#003C78;font-size:18px"></i>
+        </div>
+        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Total Clientes Activos</span>
+      </div>
+      <div id="cardTotalClientes" style="font-size:24px;font-weight:800;color:#003C78">0</div>
+    </div>
+    <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#FFF7ED;display:flex;align-items:center;justify-content:center">
+          <i class="ri-store-2-line" style="color:#EA580C;font-size:18px"></i>
+        </div>
+        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Pulperías / Supermercados</span>
+      </div>
+      <div id="cardClientesNegocios" style="font-size:24px;font-weight:800;color:#EA580C">0</div>
+    </div>
+    <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#F0FDF4;display:flex;align-items:center;justify-content:center">
+          <i class="ri-shield-user-line" style="color:#16A34A;font-size:18px"></i>
+        </div>
+        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Con RTN Registrado</span>
+      </div>
+      <div id="cardClientesRTN" style="font-size:24px;font-weight:800;color:#16A34A">0</div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN PRINCIPAL: LISTA DE CLIENTES -->
+  <div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2;overflow:hidden">
+    <div style="padding:16px 20px;border-bottom:1px solid #E0E9F2;display:flex;justify-content:space-between;align-items:center;background:#F8FAFC">
+      <span style="font-size:13px;font-weight:700;color:#003C78"><i class="ri-list-check"></i> Listado General de Clientes</span>
+      <input id="buscarClienteStand" oninput="filtrarClientesStand()" placeholder="🔍 Buscar cliente..." 
+        style="padding:8px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:12px;outline:none;width:240px">
+    </div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="background:#F4F7FA;border-bottom:2px solid #E0E9F2">
+            <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Cliente</th>
+            <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">RTN</th>
+            <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Teléfono</th>
+            <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Tipo</th>
+            <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Dirección</th>
+            <th style="padding:12px 16px;text-align:center;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;width:120px">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="clientesStandaloneTableBody">
+          <tr><td colspan="6" style="text-align:center;padding:40px;color:#64748B">Cargando directorio de clientes...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Cliente (Reutilizable para Nuevo/Editar) -->
+<div id="modalCliente" style="display:none;position:fixed;inset:0;background:rgba(15,35,73,.55);align-items:center;justify-content:center;z-index:1000;padding:20px;backdrop-filter:blur(4px)">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:480px;box-shadow:0 32px 80px rgba(0,0,0,.25)">
+    <div style="padding:18px 24px;border-bottom:1px solid #E0E9F2;display:flex;justify-content:space-between;align-items:center;border-radius:16px 16px 0 0">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:10px;background:#EAF2FB;display:flex;align-items:center;justify-content:center">
+          <i class="ri-user-line" style="color:#003C78;font-size:18px"></i>
+        </div>
+        <h3 id="tituloModalCliente" style="font-size:15px;font-weight:700;color:#003C78;margin:0">Nuevo Cliente</h3>
+      </div>
+      <button onclick="closeModalCliente()" style="width:28px;height:28px;border-radius:8px;border:none;background:#F4F7FA;cursor:pointer;color:#64748B"><i class="ri-close-line"></i></button>
+    </div>
+    <div style="padding:22px 24px">
+      <form id="formCliente">
+        <div style="margin-bottom:14px">
+          <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px">Nombre o Razón Social *</label>
+          <input id="cliNombre" type="text" placeholder="Nombre completo o empresa"
+            style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px">Teléfono</label>
+            <input id="cliTelefono" type="tel" placeholder="9900-0000"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px">Tipo de Cliente</label>
+            <select id="cliTipo" style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none">
+              <option value="Particular">Particular</option>
+              <option value="Pulpería">Pulpería</option>
+              <option value="Supermercado">Supermercado</option>
+              <option value="Restaurante">Restaurante / Comedor</option>
+              <option value="Empresa">Empresa</option>
+              <option value="Distribuidor">Distribuidor</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-bottom:14px">
+          <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px">RTN (Registro Tributario)</label>
+          <input id="cliRTN" type="text" placeholder="0000-0000-000000"
+            style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px">Dirección / Aldea</label>
+          <input id="cliDireccion" type="text" placeholder="Ej: Bo. El Calvario, Victoria, Yoro"
+            style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+        </div>
+      </form>
+    </div>
+    <div style="padding:14px 24px;border-top:1px solid #E0E9F2;display:flex;justify-content:flex-end;gap:10px;background:#F8FAFC;border-radius:0 0 16px 16px">
+      <button onclick="closeModalCliente()" style="padding:9px 18px;border:2px solid #E0E9F2;background:#fff;border-radius:8px;font-size:13px;cursor:pointer;color:#64748B">Cancelar</button>
+      <button onclick="saveCliente()" style="padding:9px 20px;background:#003C78;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">
+        <i class="ri-save-line"></i> Guardar
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+.btn-accion { width:28px;height:28px;border-radius:6px;border:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;justify-content:center;transition:all .2s;margin:0 2px; }
+.btn-accion:hover { opacity:.75;transform:scale(1.1); }
+table tr  { border-bottom:1px solid #F0F4F8;transition:background .2s; }
+table tr:hover { background:#F8FBFF; }
+table td  { padding:11px 14px;font-size:13px; }
+</style>

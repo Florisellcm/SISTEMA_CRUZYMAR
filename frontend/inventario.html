@@ -1,0 +1,233 @@
+<!-- ═══════════════════════════════════════════
+     CRUZYMAR · inventario.html (Unificado)
+     Inventario, Movimientos y Alertas en una vista
+═══════════════════════════════════════════ -->
+<div>
+  <!-- ── HEADER ── -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <div>
+      <h2 style="margin:0;font-size:20px;font-weight:800;color:#003C78">
+        <i class="ri-archive-line" style="color:#0A4A8F"></i> Gestión de Inventario
+      </h2>
+     <p style="margin-top:4px;color:#64748B;font-size:13px">Control de stock, ingresos, salidas y alertas de vencimiento</p>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button onclick="openModalProducto()"
+        style="background:#fff;color:#003C78;padding:10px 20px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">
+        <i class="ri-box-3-add-line"></i> Nuevo Producto
+      </button>
+      <button onclick="openModalMovimiento()"
+        style="background:#003C78;color:#fff;padding:10px 20px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(0,60,120,.2)">
+        <i class="ri-arrow-left-right-line"></i> Registrar Movimiento
+      </button>
+    </div>
+  </div>
+
+  <!-- Tarjetas -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px">
+    <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#EAF2FB;display:flex;align-items:center;justify-content:center">
+          <i class="ri-box-3-line" style="color:#003C78;font-size:18px"></i>
+        </div>
+        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Total Productos</span>
+      </div>
+      <div id="invTotal" style="font-size:24px;font-weight:800;color:#003C78">0</div>
+    </div>
+    <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#F0FDF4;display:flex;align-items:center;justify-content:center">
+          <i class="ri-money-dollar-circle-line" style="color:#16A34A;font-size:18px"></i>
+        </div>
+        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Valorización Total</span>
+      </div>
+      <div id="invValor" style="font-size:24px;font-weight:800;color:#16A34A">L. 0.00</div>
+    </div>
+    <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#FEF2F2;display:flex;align-items:center;justify-content:center">
+          <i class="ri-alert-line" style="color:#DC2626;font-size:18px"></i>
+        </div>
+        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Stock Crítico</span>
+      </div>
+      <div id="invStockCritico" style="font-size:24px;font-weight:800;color:#DC2626">0</div>
+    </div>
+    <div style="background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#FFF7ED;display:flex;align-items:center;justify-content:center">
+          <i class="ri-calendar-event-line" style="color:#EA580C;font-size:18px"></i>
+        </div>
+        <span style="font-size:12px;font-weight:600;color:#64748B;text-transform:uppercase">Próx. Vencimientos</span>
+      </div>
+      <div id="invVencimientosProximos" style="font-size:24px;font-weight:800;color:#EA580C">0</div>
+    </div>
+  </div>
+
+  <!-- DOS COLUMNAS: STOCK ACTUAL y MOVIMIENTOS RECIENTES -->
+  <div style="display:grid;grid-template-columns:60% 38%;gap:2%;margin-bottom:24px">
+    
+    <!-- STOCK ACTUAL -->
+    <div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2;overflow:hidden">
+      <div style="padding:16px 20px;border-bottom:1px solid #E0E9F2;display:flex;justify-content:space-between;align-items:center;background:#F8FAFC">
+        <span style="font-size:13px;font-weight:700;color:#003C78"><i class="ri-box-3-line"></i> Stock Actual</span>
+        <input id="buscarProducto" oninput="filtrarInventario()" placeholder="🔍 Buscar producto..." style="padding:8px 12px;border:2px solid #E0E9F2;border-radius:8px;font-size:12px;outline:none;width:180px">
+      </div>
+      <div style="overflow-y:auto;max-height:450px">
+        <table style="width:100%;border-collapse:collapse;min-width:500px">
+          <thead>
+            <tr style="background:#F4F7FA;border-bottom:2px solid #E0E9F2;position:sticky;top:0;z-index:1">
+              <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Producto</th>
+              <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Categoría</th>
+              <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Stock</th>
+              <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Estado</th>
+            </tr>
+          </thead>
+          <tbody id="inventarioTableBody">
+            <tr><td colspan="4" style="text-align:center;padding:40px;color:#64748B">Cargando inventario...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- MOVIMIENTOS RECIENTES -->
+    <div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2;overflow:hidden">
+      <div style="padding:16px 20px;border-bottom:1px solid #E0E9F2;display:flex;justify-content:space-between;align-items:center;background:#F8FAFC">
+        <span style="font-size:13px;font-weight:700;color:#003C78"><i class="ri-history-line"></i> Últimos Movimientos</span>
+      </div>
+      <div style="overflow-y:auto;max-height:450px">
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr style="background:#F4F7FA;border-bottom:2px solid #E0E9F2;position:sticky;top:0;z-index:1">
+              <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Producto</th>
+              <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Tipo</th>
+              <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Cant.</th>
+              <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Fecha</th>
+            </tr>
+          </thead>
+          <tbody id="movimientosTableBody">
+            <tr><td colspan="4" style="text-align:center;padding:40px;color:#64748B">Cargando movimientos...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal Producto (El que ya existía, sin cambios mayores) -->
+<div id="modalProducto" style="display:none;position:fixed;inset:0;background:rgba(15,35,73,.55);align-items:center;justify-content:center;z-index:1000;padding:20px;backdrop-filter:blur(4px)">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:500px;box-shadow:0 32px 80px rgba(0,0,0,.25)">
+    <div style="padding:20px 24px;border-bottom:1px solid #E0E9F2;display:flex;justify-content:space-between;align-items:center">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:10px;background:#EAF2FB;display:flex;align-items:center;justify-content:center">
+          <i class="ri-box-3-line" style="color:#003C78;font-size:18px"></i>
+        </div>
+        <h3 id="modalProductoTitulo" style="font-size:16px;font-weight:700;color:#003C78;margin:0">Nuevo Producto</h3>
+      </div>
+      <button onclick="closeModalProducto()" style="width:30px;height:30px;border-radius:8px;border:none;background:#F4F7FA;cursor:pointer;color:#64748B"><i class="ri-close-line"></i></button>
+    </div>
+    <div style="padding:24px">
+      <form id="formProducto">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div style="grid-column:span 2">
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">Nombre *</label>
+            <input id="invNombre" type="text" placeholder="Ej: Queso Fresco 500g" style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none">
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">Categoría</label>
+            <select id="invCategoria" style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none">
+              <option value="Queso">Queso</option>
+              <option value="Mantequilla">Mantequilla</option>
+              <option value="Leche">Leche</option>
+              <option value="Crema">Crema</option>
+              <option value="Yogurt">Yogurt</option>
+              <option value="Insumo">Insumo</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">Unidad</label>
+            <select id="invUnidad" style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none">
+              <option value="Unidades">Unidades (ud)</option>
+              <option value="Litros">Litros (L)</option>
+              <option value="Libras">Libras (lb)</option>
+              <option value="Kg">Kilogramos (kg)</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">Stock Actual</label>
+            <input id="invStock" type="number" min="0" step="0.1" placeholder="0" style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none">
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">Mínimo (Alerta)</label>
+            <input id="invStockMinimo" type="number" min="0" step="0.1" placeholder="0" style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none">
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">Precio (L.)</label>
+            <input id="invPrecio" type="number" min="0" step="0.01" placeholder="0.00" style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none">
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">Vencimiento</label>
+            <input id="invVencimiento" type="date" style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none">
+          </div>
+        </div>
+      </form>
+    </div>
+    <div style="padding:16px 24px;border-top:1px solid #E0E9F2;display:flex;justify-content:flex-end;gap:10px;background:#F8FAFC;border-radius:0 0 16px 16px">
+      <button onclick="closeModalProducto()" style="padding:10px 20px;border:2px solid #E0E9F2;background:#fff;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;color:#64748B">Cancelar</button>
+      <button onclick="saveProducto()" style="padding:10px 24px;background:#003C78;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Movimiento -->
+<div id="modalMovimiento" style="display:none;position:fixed;inset:0;background:rgba(15,35,73,.55);align-items:center;justify-content:center;z-index:1000;padding:20px;backdrop-filter:blur(4px)">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:400px;box-shadow:0 32px 80px rgba(0,0,0,.25)">
+    <div style="padding:20px 24px;border-bottom:1px solid #E0E9F2;display:flex;justify-content:space-between;align-items:center">
+      <h3 style="font-size:16px;font-weight:700;color:#003C78;margin:0">Registrar Movimiento</h3>
+      <button onclick="closeModalMovimiento()" style="width:30px;height:30px;border-radius:8px;border:none;background:#F4F7FA;cursor:pointer;color:#64748B"><i class="ri-close-line"></i></button>
+    </div>
+    <div style="padding:24px">
+      <form id="formMovimiento">
+        <div style="display:grid;grid-template-columns:1fr;gap:14px">
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">Producto *</label>
+            <select id="movProducto" style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none"></select>
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">Tipo *</label>
+            <select id="movTipo" style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none">
+              <option value="Entrada">Entrada (+)</option>
+              <option value="Salida">Salida (-)</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">Cantidad *</label>
+            <input id="movCantidad" type="number" min="0.1" step="0.1" placeholder="0" style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none">
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px;text-transform:uppercase">Motivo</label>
+            <input id="movMotivo" type="text" placeholder="Ej: Producción, Venta, Merma..." style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none">
+          </div>
+        </div>
+      </form>
+    </div>
+    <div style="padding:16px 24px;border-top:1px solid #E0E9F2;display:flex;justify-content:flex-end;gap:10px;background:#F8FAFC;border-radius:0 0 16px 16px">
+      <button onclick="closeModalMovimiento()" style="padding:10px 20px;border:2px solid #E0E9F2;background:#fff;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;color:#64748B">Cancelar</button>
+      <button onclick="saveMovimiento()" style="padding:10px 24px;background:#003C78;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Confirmar Movimiento</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  table tr { border-bottom:1px solid #F0F4F8; transition: background .2s;}
+  table tr:hover { background:#F8FBFF; }
+  table td { padding:12px 16px;font-size:13px; }
+  .badge { padding:4px 8px;border-radius:4px;font-size:11px;font-weight:700;text-transform:uppercase;}
+  .b-ok { background:#F0FDF4;color:#16A34A; }
+  .b-warn { background:#FFFBEB;color:#D97706; }
+  .b-err { background:#FEF2F2;color:#DC2626; }
+  .b-in { background:#EAF2FB;color:#0A4A8F; }
+  .b-out { background:#FEF2F2;color:#991B1B; }
+</style>
+</div>
