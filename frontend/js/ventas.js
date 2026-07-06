@@ -5,11 +5,11 @@
    Victoria, Yoro, Honduras
 ══════════════════════════════════════════════ */
 
-let ventasData      = [];
-let clientesData    = [];
+let ventasData = [];
+let clientesData = [];
 let inventarioLista = [];
-let itemsVenta      = [];   // carrito de la venta actual
-let editCliId       = null; // ID del cliente en edición
+let itemsVenta = [];   // carrito de la venta actual
+let editCliId = null; // ID del cliente en edición
 
 /* ─── CARGAR DATOS GENERALES (Compatibilidad) ─── */
 async function loadVentas() {
@@ -28,9 +28,13 @@ async function loadVentasStandalone() {
       req('GET', '/clientes'),
       req('GET', '/inventario')
     ]);
+    console.log("Ventas:", ventasData);
+    console.log("Clientes:", clientesData);
+    console.log("Inventario:", inventarioLista);
     actualizarTarjetasComercial();
     renderVentasList();
-  } catch(e) {
+  } catch (e) {
+    console.error(e);
     toast('Error cargando ventas: ' + e.message, 'err');
   }
 }
@@ -41,12 +45,12 @@ async function loadClientesStandalone() {
     clientesData = await req('GET', '/clientes');
     actualizarTarjetasClientes();
     renderClientesStandaloneList();
-  } catch(e) {
+  } catch (e) {
     toast('Error cargando clientes: ' + e.message, 'err');
   }
 }
 
-/* ─── ACTUALIZACIÓN DE TARJETAS ─── */
+/* ─── ACTUALIZACIÓN DE TARJETAS (datos frescos desde API) ─── */
 function actualizarTarjetasComercial() {
   const hoy = new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   let ventasHoy = 0, ingresosHoy = 0, porCobrar = 0;
@@ -59,19 +63,20 @@ function actualizarTarjetasComercial() {
     if (v.estado === 'Pendiente') porCobrar += parseFloat(v.total || 0);
   });
 
-  if (el('vtaVentasDia'))       el('vtaVentasDia').textContent       = ventasHoy;
-  if (el('vtaIngresosDia'))     el('vtaIngresosDia').textContent     = L(ingresosHoy);
-  if (el('vtaPorCobrar'))       el('vtaPorCobrar').textContent       = L(porCobrar);
+  if (el('vtaVentasDia')) el('vtaVentasDia').textContent = ventasHoy;
+  if (el('vtaIngresosDia')) el('vtaIngresosDia').textContent = L(ingresosHoy);
+  if (el('vtaPorCobrar')) el('vtaPorCobrar').textContent = L(porCobrar);
 }
+
 
 function actualizarTarjetasClientes() {
   const total = clientesData.length;
   const negocios = clientesData.filter(c => c.tipo !== 'Particular').length;
   const conRTN = clientesData.filter(c => c.rtn && c.rtn.trim()).length;
 
-  if (el('cardTotalClientes'))     el('cardTotalClientes').textContent     = total;
-  if (el('cardClientesNegocios'))  el('cardClientesNegocios').textContent  = negocios;
-  if (el('cardClientesRTN'))       el('cardClientesRTN').textContent       = conRTN;
+  if (el('cardTotalClientes')) el('cardTotalClientes').textContent = total;
+  if (el('cardClientesNegocios')) el('cardClientesNegocios').textContent = negocios;
+  if (el('cardClientesRTN')) el('cardClientesRTN').textContent = conRTN;
 }
 
 /* ─── RELOAD ROUTER INTERNO ─── */
@@ -87,57 +92,119 @@ function reloadComercialData() {
 function renderVentasList() {
   const tbody = el('ventasTableBody');
   if (!tbody) return;
+
   if (!ventasData.length) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:#64748B">Sin ventas registradas en el sistema.<br><small>Registre una venta haciendo clic en "Registrar Venta"</small></td></tr>`;
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align:center;padding:40px;color:#64748B">
+          No existen ventas registradas.
+        </td>
+      </tr>`;
     return;
   }
+
+  // Mostrar todas las ventas ordenadas por fecha descendente
   renderVentasListFiltered(ventasData);
 }
 
 function renderVentasListFiltered(lista) {
   const tbody = el('ventasTableBody');
   if (!tbody) return;
+
   tbody.innerHTML = lista.map(v => {
-    const badgeClass = v.estado === 'Pagada' ? 'b-ok' : v.estado === 'Pendiente' ? 'b-pend' : 'b-err';
-    return `<tr>
-      <td><strong style="color:#003C78">${v.numero || '—'}</strong></td>
-      <td style="font-size:12px;color:#64748B">${formatFecha((v.fecha||'').slice(0,10))}</td>
-      <td><strong>${v.cliente_nombre || 'Consumidor final'}</strong></td>
-      <td><span style="font-size:12px;color:#64748B">${v.metodo_pago || '—'}</span></td>
-      <td><strong style="color:#003C78">${L(v.total)}</strong></td>
-      <td><span class="badge ${badgeClass}">${v.estado}</span></td>
-      <td style="text-align:center;white-space:nowrap">
-        <button class="btn-accion" onclick="imprimirFactura('${v.id}')" title="Ver / Imprimir Factura SAR"
-          style="background:#EAF2FB;color:#003C78;width:28px;height:28px;border-radius:6px;border:none;cursor:pointer;margin:0 2px">
-          <i class="ri-file-text-line"></i>
-        </button>
-        ${v.estado === 'Pendiente'
-          ? `<button class="btn-accion" onclick="marcarPagada('${v.id}')" title="Marcar como pagada"
-              style="background:#DCFCE7;color:#15803D;width:28px;height:28px;border-radius:6px;border:none;cursor:pointer;margin:0 2px">
-              <i class="ri-check-line"></i>
-             </button>`
-          : ''}
-        <button class="btn-accion" onclick="cancelarVenta('${v.id}')" title="Cancelar venta"
-          style="background:#FEE2E2;color:#DC2626;width:28px;height:28px;border-radius:6px;border:none;cursor:pointer;margin:0 2px">
-          <i class="ri-close-line"></i>
-        </button>
-      </td>
-    </tr>`;
+    const badgeClass = v.estado === 'Pagada'
+      ? 'b-ok'
+      : v.estado === 'Pendiente'
+        ? 'b-pend'
+        : 'b-err';
+
+    return `
+      <tr>
+        <td><strong style="color:#003C78">${v.numero || '—'}</strong></td>
+        <td style="font-size:12px;color:#64748B">${formatFecha((v.fecha || '').slice(0, 10))}</td>
+        <td><strong>${v.cliente_nombre || 'Consumidor final'}</strong></td>
+        <td><span style="font-size:12px;color:#64748B">${v.metodo_pago || '—'}</span></td>
+        <td><strong style="color:#003C78">${L(v.total)}</strong></td>
+        <td><span class="badge ${badgeClass}">${v.estado}</span></td>
+        <td style="text-align:center;white-space:nowrap">
+          <button class="btn-accion" onclick="imprimirFactura('${v.id}')"
+            title="Ver / Imprimir Factura SAR"
+            style="background:#EAF2FB;color:#003C78;width:28px;height:28px;border-radius:6px;border:none;cursor:pointer;margin:0 2px">
+            <i class="ri-file-text-line"></i>
+          </button>
+
+          ${v.estado === 'Pendiente'
+        ? `<button class="btn-accion"
+                onclick="marcarPagada('${v.id}')"
+                title="Marcar como pagada"
+                style="background:#DCFCE7;color:#15803D;width:28px;height:28px;border-radius:6px;border:none;cursor:pointer;margin:0 2px">
+                <i class="ri-check-line"></i>
+              </button>`
+        : ''}
+
+          <button class="btn-accion"
+            onclick="cancelarVenta('${v.id}')"
+            title="Cancelar venta"
+            style="background:#FEE2E2;color:#DC2626;width:28px;height:28px;border-radius:6px;border:none;cursor:pointer;margin:0 2px">
+            <i class="ri-close-line"></i>
+          </button>
+        </td>
+      </tr>
+    `;
   }).join('');
+}
+
+/* periodo activo: 'hoy' | 'semana' | 'mes' | 'todo' */
+let _periodoVentas = 'hoy';
+
+function filtrarVentasPeriodo(periodo) {
+  _periodoVentas = periodo;
+  // Resaltar botón activo
+  ['hoy', 'semana', 'mes', 'todo'].forEach(p => {
+    const btn = el('filtroVta' + p.charAt(0).toUpperCase() + p.slice(1));
+    if (btn) {
+      btn.style.background = p === periodo ? '#003C78' : 'transparent';
+      btn.style.color = p === periodo ? '#fff' : '#003C78';
+    }
+  });
+  filtrarVentasStand();
 }
 
 function filtrarVentasStand() {
   const query = (el('buscarVentaStand')?.value || '').toLowerCase().trim();
-  if (!query) {
-    renderVentasListFiltered(ventasData);
-    return;
+  const estado = (el('filtroVtaEstado')?.value || '').toLowerCase();
+
+  const ahora = new Date();
+  const hoyStr = new Date(Date.now() - ahora.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+
+  // Calcular rango según período activo
+  let desde = null;
+  if (_periodoVentas === 'hoy') {
+    desde = hoyStr;
+  } else if (_periodoVentas === 'semana') {
+    const d = new Date(); d.setDate(d.getDate() - 6);
+    desde = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  } else if (_periodoVentas === 'mes') {
+    desde = hoyStr.slice(0, 7) + '-01';
   }
-  const filtrados = ventasData.filter(v => 
-    (v.numero || '').toLowerCase().includes(query) ||
-    (v.cliente_nombre || '').toLowerCase().includes(query) ||
-    (v.metodo_pago || '').toLowerCase().includes(query)
-  );
-  renderVentasListFiltered(filtrados);
+  // 'todo' => sin límite de fecha
+
+  let lista = ventasData.filter(v => {
+    const fv = (v.fecha || '').slice(0, 10);
+    if (desde && fv < desde) return false;
+    if (estado && (v.estado || '').toLowerCase() !== estado) return false;
+    if (query) {
+      const hayMatch =
+        (v.numero || '').toLowerCase().includes(query) ||
+        (v.cliente_nombre || '').toLowerCase().includes(query) ||
+        (v.metodo_pago || '').toLowerCase().includes(query) ||
+        (v.estado || '').toLowerCase().includes(query);
+      if (!hayMatch) return false;
+    }
+    return true;
+  });
+
+  renderVentasListFiltered(lista);
 }
 
 /* ─── TABLA CLIENTES (STANDALONE) ─── */
@@ -153,12 +220,12 @@ function renderClientesStandaloneListFiltered(lista) {
     return;
   }
   const tipoColors = {
-    'Pulpería':      { bg:'#FFF7ED', color:'#EA580C' },
-    'Supermercado':  { bg:'#EAF2FB', color:'#003C78' },
-    'Restaurante':   { bg:'#F5F3FF', color:'#7C3AED' },
-    'Empresa':       { bg:'#F0FDF4', color:'#15803D' },
-    'Distribuidor':  { bg:'#FEF3C7', color:'#D97706' },
-    'Particular':    { bg:'#F4F7FA', color:'#64748B' }
+    'Pulpería': { bg: '#FFF7ED', color: '#EA580C' },
+    'Supermercado': { bg: '#EAF2FB', color: '#003C78' },
+    'Restaurante': { bg: '#F5F3FF', color: '#7C3AED' },
+    'Empresa': { bg: '#F0FDF4', color: '#15803D' },
+    'Distribuidor': { bg: '#FEF3C7', color: '#D97706' },
+    'Particular': { bg: '#F4F7FA', color: '#64748B' }
   };
   tbody.innerHTML = lista.map(c => {
     const tc = tipoColors[c.tipo] || tipoColors['Particular'];
@@ -174,7 +241,7 @@ function renderClientesStandaloneListFiltered(lista) {
           style="background:#EAF2FB;color:#003C78;width:28px;height:28px;border-radius:6px;border:none;cursor:pointer;margin:0 2px">
           <i class="ri-edit-line"></i>
         </button>
-        <button class="btn-accion" onclick="desactivarCliente('${c.id}','${c.nombre.replace(/'/g,"\\'")}')" title="Desactivar cliente"
+        <button class="btn-accion" onclick="desactivarCliente('${c.id}','${c.nombre.replace(/'/g, "\\'")}')" title="Desactivar cliente"
           style="background:#FEE2E2;color:#DC2626;width:28px;height:28px;border-radius:6px;border:none;cursor:pointer;margin:0 2px">
           <i class="ri-forbid-line"></i>
         </button>
@@ -189,7 +256,7 @@ function filtrarClientesStand() {
     renderClientesStandaloneListFiltered(clientesData);
     return;
   }
-  const filtrados = clientesData.filter(c => 
+  const filtrados = clientesData.filter(c =>
     (c.nombre || '').toLowerCase().includes(query) ||
     (c.rtn || '').toLowerCase().includes(query) ||
     (c.direccion || '').toLowerCase().includes(query)
@@ -215,10 +282,10 @@ function editCliente(id) {
   if (!c) return toast('Cliente no encontrado', 'err');
   editCliId = id;
   if (el('tituloModalCliente')) el('tituloModalCliente').textContent = 'Editar Cliente';
-  el('cliNombre').value           = c.nombre    || '';
-  el('cliTelefono').value         = c.telefono  || '';
-  el('cliTipo').value             = c.tipo      || 'Particular';
-  el('cliRTN').value              = c.rtn       || '';
+  el('cliNombre').value = c.nombre || '';
+  el('cliTelefono').value = c.telefono || '';
+  el('cliTipo').value = c.tipo || 'Particular';
+  el('cliRTN').value = c.rtn || '';
   if (el('cliDireccion')) el('cliDireccion').value = c.direccion || '';
   el('modalCliente').style.display = 'flex';
 }
@@ -229,21 +296,21 @@ async function saveCliente() {
 
   const body = {
     nombre,
-    rtn:       el('cliRTN')?.value.trim()       || '',
-    telefono:  el('cliTelefono')?.value.trim()  || '',
-    tipo:      el('cliTipo')?.value              || 'Particular',
+    rtn: el('cliRTN')?.value.trim() || '',
+    telefono: el('cliTelefono')?.value.trim() || '',
+    tipo: el('cliTipo')?.value || 'Particular',
     direccion: el('cliDireccion')?.value.trim() || '',
-    email:     ''
+    email: ''
   };
 
   try {
     const method = editCliId ? 'PUT' : 'POST';
-    const url    = editCliId ? `/clientes/${editCliId}` : '/clientes';
+    const url = editCliId ? `/clientes/${editCliId}` : '/clientes';
     await req(method, url, body);
     toast(editCliId ? `Cliente "${nombre}" actualizado ✅` : `Cliente "${nombre}" registrado ✅`);
     closeModalCliente();
     reloadComercialData();
-  } catch(e) { toast('Error: ' + e.message, 'err'); }
+  } catch (e) { toast('Error: ' + e.message, 'err'); }
 }
 
 async function desactivarCliente(id, nombre) {
@@ -252,7 +319,7 @@ async function desactivarCliente(id, nombre) {
     await req('DELETE', `/clientes/${id}`);
     toast(`Cliente "${nombre}" desactivado`);
     reloadComercialData();
-  } catch(e) { toast('Error: ' + e.message, 'err'); }
+  } catch (e) { toast('Error: ' + e.message, 'err'); }
 }
 
 // Alias para compatibilidad
@@ -332,13 +399,13 @@ async function openNuevaVenta() {
 function closeModalVenta() { el('modalVenta').style.display = 'none'; }
 
 function agregarItemVenta() {
-  const sel  = el('vtaProductoSel');
+  const sel = el('vtaProductoSel');
   const cant = parseFloat(el('vtaCantItem')?.value) || 1;
   if (!sel?.value) return toast('Seleccione un producto', 'err');
 
-  const opt   = sel.options[sel.selectedIndex];
-  const precio= parseFloat(opt.dataset.precio) || 0;
-  const stock = parseFloat(opt.dataset.stock)  || 0;
+  const opt = sel.options[sel.selectedIndex];
+  const precio = parseFloat(opt.dataset.precio) || 0;
+  const stock = parseFloat(opt.dataset.stock) || 0;
 
   if (cant > stock) return toast(`Stock insuficiente. Disponible: ${stock}`, 'err');
 
@@ -346,14 +413,14 @@ function agregarItemVenta() {
   const existe = itemsVenta.find(i => i.producto_id === sel.value);
   if (existe) {
     existe.cantidad += cant;
-    existe.subtotal  = existe.cantidad * existe.precio;
+    existe.subtotal = existe.cantidad * existe.precio;
   } else {
     itemsVenta.push({
       producto_id: sel.value,
-      nombre:      opt.dataset.nombre,
-      cantidad:    cant,
+      nombre: opt.dataset.nombre,
+      cantidad: cant,
       precio,
-      subtotal:    cant * precio
+      subtotal: cant * precio
     });
   }
 
@@ -395,9 +462,9 @@ function renderItemsVenta() {
 async function saveVentaUnificada() {
   if (!itemsVenta.length) return toast('Agregue al menos un producto', 'err');
 
-  const clienteId   = el('vtaClienteId')?.value;
-  const metodoPago  = el('vtaFormaPago')?.value || 'Efectivo';
-  const estado      = el('vtaEstado')?.value    || 'Pagada';
+  const clienteId = el('vtaClienteId')?.value;
+  const metodoPago = el('vtaFormaPago')?.value || 'Efectivo';
+  const estado = el('vtaEstado')?.value || 'Pagada';
 
   let clienteNombre = 'Consumidor final';
   if (clienteId) {
@@ -418,10 +485,10 @@ async function saveVentaUnificada() {
     // Si se marcó generar factura
     if (el('vtaGenerarFactura')?.checked) {
       await req('POST', '/facturacion', {
-        venta_id:    nuevaVenta.id,
-        cliente_id:  clienteId || null,
+        venta_id: nuevaVenta.id,
+        cliente_id: clienteId || null,
         monto_total: nuevaVenta.total,
-        fecha:       new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10)
+        fecha: new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10)
       });
       toast('Venta y factura SAR generadas ✅');
       closeModalVenta();
@@ -433,7 +500,7 @@ async function saveVentaUnificada() {
       closeModalVenta();
       reloadComercialData();
     }
-  } catch(e) { toast('Error: ' + e.message, 'err'); }
+  } catch (e) { toast('Error: ' + e.message, 'err'); }
 }
 
 /* ─── MARCAR PAGADA / CANCELAR ─── */
@@ -442,7 +509,7 @@ async function marcarPagada(id) {
     await req('PUT', `/ventas/${id}`, { estado: 'Pagada' });
     toast('Venta marcada como pagada ✅');
     reloadComercialData();
-  } catch(e) { toast('Error: ' + e.message, 'err'); }
+  } catch (e) { toast('Error: ' + e.message, 'err'); }
 }
 
 async function cancelarVenta(id) {
@@ -451,7 +518,7 @@ async function cancelarVenta(id) {
     await req('DELETE', `/ventas/${id}`);
     toast('Venta cancelada');
     reloadComercialData();
-  } catch(e) { toast('Error: ' + e.message, 'err'); }
+  } catch (e) { toast('Error: ' + e.message, 'err'); }
 }
 
 /* ─── FACTURA SAR (Honduras) ─── */
@@ -463,7 +530,7 @@ async function imprimirFactura(ventaId) {
 
     // Intentar cargar factura asociada
     let facturas = [];
-    try { facturas = await req('GET', '/facturacion'); } catch(_) {}
+    try { facturas = await req('GET', '/facturacion'); } catch (_) { }
     const factura = facturas.find(f => f.venta_id === ventaId) || null;
 
     // Número de documento
@@ -471,23 +538,23 @@ async function imprimirFactura(ventaId) {
     const fechaDoc = (venta.fecha || '').slice(0, 10);
 
     // Rellenar encabezado
-    if (el('facNumero'))   el('facNumero').textContent   = numero;
-    if (el('facFecha'))    el('facFecha').textContent    = formatFecha(fechaDoc);
+    if (el('facNumero')) el('facNumero').textContent = numero;
+    if (el('facFecha')) el('facFecha').textContent = formatFecha(fechaDoc);
     if (el('facMetodoPago')) el('facMetodoPago').textContent = venta.metodo_pago || 'Efectivo';
 
     // Datos del cliente
     const clienteNombre = venta.cliente_nombre || 'Consumidor Final';
-    const clienteRTN    = venta.cliente_rtn    || '—';
-    const clienteTel    = venta.cliente_tel    || '';
+    const clienteRTN = venta.cliente_rtn || '—';
+    const clienteTel = venta.cliente_tel || '';
     if (el('facClienteNombre')) el('facClienteNombre').textContent = clienteNombre;
-    if (el('facClienteRTN'))    el('facClienteRTN').textContent    = clienteRTN;
-    if (el('facClienteTel'))    el('facClienteTel').textContent    = clienteTel ? `Tel: ${clienteTel}` : '';
+    if (el('facClienteRTN')) el('facClienteRTN').textContent = clienteRTN;
+    if (el('facClienteTel')) el('facClienteTel').textContent = clienteTel ? `Tel: ${clienteTel}` : '';
 
     // Items de la venta
     const items = venta.items || [];
     const subtotalSinISV = items.reduce((s, i) => s + (parseFloat(i.subtotal) || parseFloat(i.cantidad) * parseFloat(i.precio)), 0) / 1.15;
-    const isv            = subtotalSinISV * 0.15;
-    const totalConISV    = subtotalSinISV + isv;
+    const isv = subtotalSinISV * 0.15;
+    const totalConISV = subtotalSinISV + isv;
 
     const tbody = el('facItemsBody');
     if (tbody) {
@@ -495,7 +562,7 @@ async function imprimirFactura(ventaId) {
         tbody.innerHTML = items.map((i, idx) => {
           const sub = parseFloat(i.subtotal) || parseFloat(i.cantidad) * parseFloat(i.precio);
           const precioSinISV = parseFloat(i.precio) / 1.15;
-          const subSinISV    = sub / 1.15;
+          const subSinISV = sub / 1.15;
           const bg = idx % 2 === 0 ? '#fff' : '#F8FAFC';
           return `<tr style="background:${bg}">
             <td style="padding:7px 12px;border-bottom:1px solid #F1F5F9">${i.nombre || i.producto}</td>
@@ -509,16 +576,16 @@ async function imprimirFactura(ventaId) {
         tbody.innerHTML = `<tr>
           <td style="padding:7px 12px">Total de la venta</td>
           <td style="padding:7px 10px;text-align:center">1</td>
-          <td style="padding:7px 10px;text-align:right">L. ${(parseFloat(venta.total)/1.15).toFixed(2)}</td>
-          <td style="padding:7px 12px;text-align:right;font-weight:600">L. ${(parseFloat(venta.total)/1.15).toFixed(2)}</td>
+          <td style="padding:7px 10px;text-align:right">L. ${(parseFloat(venta.total) / 1.15).toFixed(2)}</td>
+          <td style="padding:7px 12px;text-align:right;font-weight:600">L. ${(parseFloat(venta.total) / 1.15).toFixed(2)}</td>
         </tr>`;
       }
     }
 
     // Totales con ISV
     if (el('facSubtotal')) el('facSubtotal').textContent = `L. ${subtotalSinISV.toFixed(2)}`;
-    if (el('facISV'))      el('facISV').textContent      = `L. ${isv.toFixed(2)}`;
-    if (el('facTotal'))    el('facTotal').textContent    = `L. ${totalConISV.toFixed(2)}`;
+    if (el('facISV')) el('facISV').textContent = `L. ${isv.toFixed(2)}`;
+    if (el('facTotal')) el('facTotal').textContent = `L. ${totalConISV.toFixed(2)}`;
 
     // Vendedor
     if (el('facVendedor') && Auth.user) {
@@ -528,7 +595,7 @@ async function imprimirFactura(ventaId) {
     // Mostrar modal
     el('modalFactura').style.display = 'flex';
 
-  } catch(e) {
+  } catch (e) {
     toast('Error cargando factura: ' + e.message, 'err');
   }
 }

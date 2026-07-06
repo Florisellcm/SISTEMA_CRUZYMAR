@@ -505,10 +505,10 @@ async function repD1() {
   const qs = _buildQS({ fecha: _filtros.f_desde, fechaFin: _filtros.f_hasta, estado: _filtros.f_estado });
   const d = await _rq('/reportes/detallado/produccion' + qs);
   const k = d.kpis || {};
- 
+
   const registros = d.registros || [];
   const conSubproducto = registros.filter(r => Number(r.salida_secundaria_cantidad) > 0).length;
- 
+
   const html = _header('d1') +
     _card('Detalle de lotes del período', 'ri-flask-line', _tbl([
       { lbl: 'N° Lote', key: 'numero_lote', style: 'width:13%' },
@@ -528,12 +528,12 @@ async function repD1() {
     ], registros), 'class="rep-card-detallado"') +
     _krow([
       { lbl: 'Litros procesados', val: _N(k.total_litros) + ' L', cls: 'grn' },
-    { lbl: 'Producción total de derivados (libras)', val: _N(k.total_libras) + ' Lbs', cls: 'grn' },
+      { lbl: 'Producción total de derivados (libras)', val: _N(k.total_libras) + ' Lbs', cls: 'grn' },
       { lbl: 'Lotes con subproducto', val: conSubproducto, cls: 'blu' },
       { lbl: 'Lotes completados', val: `${k.completados || 0} / ${k.total_lotes || 0}` },
     ]) +
     _firma();
- 
+
   _set('rep-content', html);
 }
 
@@ -863,34 +863,66 @@ async function repS2() {
   const k = d.kpis || {};
 
   const html = _header('s2') +
-    _card('Ingresos vs Egresos del mes', 'ri-bar-chart-2-line',
+
+    /* ── KPI CARDS ── */
+    _krow([
+      { lbl: 'Ingresos del período', val: _L(k.ingresos), cls: 'grn' },
+      { lbl: 'Egresos del período', val: _L(k.egresos), cls: 'red' },
+      { lbl: 'Ganancia neta', val: _L(k.utilidad), cls: (k.utilidad || 0) >= 0 ? 'grn' : 'red' },
+      { lbl: 'Margen', val: _P(k.margen), cls: (k.margen || 0) >= 15 ? 'grn' : (k.margen || 0) >= 5 ? 'amb' : 'red' },
+      { lbl: 'Por cobrar', val: _L(k.pendiente_cobro), cls: (k.pendiente_cobro || 0) > 0 ? 'amb' : '' },
+      { lbl: 'Ventas pendientes', val: k.ventas_pendientes || 0, cls: (k.ventas_pendientes || 0) > 0 ? 'amb' : '' },
+    ]) +
+
+    /* ── Gráficas principales ── */
+    _card('Ingresos vs Egresos del período', 'ri-bar-chart-2-line',
       `<div class="rep-chart-wrap" style="height:200px"><canvas id="cS2Cmp"></canvas></div>`) +
     `<div class="rep-row2">` +
-    _card('Ventas por semana del mes', 'ri-line-chart-line',
+    _card('Ingresos por día / semana', 'ri-line-chart-line',
       `<div class="rep-chart-wrap" style="height:200px"><canvas id="cS2Sem"></canvas></div>`) +
     _card('Egresos por categoría', 'ri-pie-chart-line',
       `<div style="display:flex;align-items:center;gap:0"><div style="flex:0 0 55%;height:240px;position:relative"><canvas id="cS2Cat"></canvas></div><div id="legS2Cat" style="flex:1;font-size:11px;padding-left:8px"></div></div>`) +
     `</div>` +
-    _card('Detalle de egresos por categoría', 'ri-list-check', _tbl([
-      { lbl: 'Categoría', key: 'categoria' },
-      { lbl: 'Monto', key: 'total', render: r => `<strong>${_L(r.total)}</strong>` },
-    ], d.gastosCategoria || [])) +
-    _krow([
-      { lbl: 'Ingresos', val: _L(k.ingresos), cls: 'grn' },
-      { lbl: 'Egresos', val: _L(k.egresos), cls: 'red' },
-      { lbl: 'Ganancia', val: _L(k.utilidad), cls: (k.utilidad || 0) >= 0 ? 'grn' : 'red' },
-      { lbl: 'Margen', val: _P(k.margen), cls: (k.margen || 0) >= 15 ? 'grn' : (k.margen || 0) >= 5 ? 'amb' : 'red' },
-    ]) +
+
+    /* ── Historial de ventas del período ── */
+    _card('Historial de ventas del período', 'ri-shopping-cart-line', _tbl([
+      { lbl: 'N° Venta', key: 'numero', style: 'width:10%', render: r => `<strong style="color:#003C78">${r.numero || '—'}</strong>` },
+      { lbl: 'Fecha', key: 'fecha', render: r => _fec(r.fecha) },
+      { lbl: 'Cliente', key: 'cliente_nombre', style: 'width:18%' },
+      { lbl: 'Productos', key: 'productos', style: 'width:28%', render: r => `<span style="font-size:11px;color:#64748B">${r.productos || '—'}</span>` },
+      { lbl: 'Total', key: 'total', render: r => `<strong>${_L(r.total)}</strong>` },
+      { lbl: 'Método', key: 'metodo_pago', render: r => `<span style="font-size:11px">${r.metodo_pago || '—'}</span>` },
+      { lbl: 'Estado', key: 'estado', render: r => r.estado === 'Pagada' ? _badge('Pagada', 'rb-ok') : r.estado === 'Pendiente' ? _badge('Pendiente', 'rb-pen') : _badge(r.estado || '—', 'rb-rej') },
+    ], d.historialVentas || []), 'class="rep-card-detallado"') +
+
+    /* ── Historial de egresos (gastos + compras) ── */
+    _card('Egresos del período (gastos y compras)', 'ri-arrow-down-circle-line', (() => {
+      const gastos = (d.historialGastos || []).map(g => ({ ...g, _tipo: 'Gasto' }));
+      const compras = (d.historialCompras || []).map(c => ({ ...c, concepto: c.concepto || c.numero, categoria: 'Compra', monto: c.monto, proveedor: c.proveedor_nombre, _tipo: 'Compra' }));
+      const todos = [...gastos, ...compras].sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+      return _tbl([
+        { lbl: 'Fecha', key: 'fecha', render: r => _fec(r.fecha) },
+        { lbl: 'Tipo', key: '_tipo', render: r => r._tipo === 'Gasto' ? _badge('Gasto', 'rb-pen') : _badge('Compra', 'rb-blu') },
+        { lbl: 'Concepto', key: 'concepto' },
+        { lbl: 'Categoría', key: 'categoria' },
+        { lbl: 'Proveedor', key: 'proveedor', render: r => r.proveedor || '—' },
+        { lbl: 'Monto', key: 'monto', render: r => `<strong style="color:#DC2626">${_L(r.monto)}</strong>` },
+      ], todos);
+    })(), 'class="rep-card-detallado"') +
+
     _firma();
 
   _set('rep-content', html);
   _loadChart(() => {
+    // Preferir datos diarios; si hay más de 15 días usar semanales
+    const dias = d.porDia || [];
     const sems = d.semanas || [];
+    const usarDias = dias.length > 0 && dias.length <= 31;
     const ingresosMes = Number(k.ingresos || 0);
     const egresosMes = Number(k.egresos || 0);
     const utilidad = ingresosMes - egresosMes;
 
-    // ── Chart 1: Comparativa REAL Ingresos vs Egresos vs Ganancia del mes ──
+    // ── Chart 1: Ingresos vs Egresos vs Ganancia ──
     _chart('cS2Cmp', {
       type: 'bar',
       data: {
@@ -898,9 +930,8 @@ async function repS2() {
         datasets: [{
           label: 'Monto (L.)',
           data: [ingresosMes, egresosMes, Math.max(utilidad, 0)],
-          backgroundColor: [C.navy, C.verde, C.navy2],
-          borderRadius: 6,
-          borderSkipped: false
+          backgroundColor: [C.verde, C.red, C.navy],
+          borderRadius: 6, borderSkipped: false
         }]
       },
       options: {
@@ -908,13 +939,7 @@ async function repS2() {
         plugins: {
           legend: { display: false },
           tooltip: { callbacks: { label: c => _L(c.raw) } },
-          datalabels: {
-            display: true,
-            color: '#fff',
-            anchor: 'center', align: 'center',
-            font: { weight: '700', size: 11 },
-            formatter: v => _L(v)
-          }
+          datalabels: { display: true, color: '#fff', anchor: 'center', align: 'center', font: { weight: '700', size: 11 }, formatter: v => _L(v) }
         },
         scales: {
           x: { ticks: { color: tickC, font: { size: 12, weight: '600' } }, grid: { display: false } },

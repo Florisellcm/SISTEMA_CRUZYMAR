@@ -384,6 +384,7 @@ exports.getSintetizadoFinanciero = async ({ mes, anio } = {}) => {
   const [[ingR]]  = await pool.query("SELECT COALESCE(SUM(total),0) AS v FROM ventas  WHERE fecha BETWEEN ? AND ? AND estado='Pagada'", [inicio, fin]);
   const [[egR]]   = await pool.query("SELECT COALESCE(SUM(monto),0) AS v FROM gastos  WHERE fecha BETWEEN ? AND ?", [inicio, fin]);
   const [[compR]] = await pool.query("SELECT COALESCE(SUM(monto),0) AS v FROM compras WHERE fecha BETWEEN ? AND ? AND estado='Recibida'", [inicio, fin]);
+  const [[pendR]] = await pool.query("SELECT COALESCE(SUM(total),0) AS v, COUNT(*) AS cnt FROM ventas WHERE fecha BETWEEN ? AND ? AND estado='Pendiente'", [inicio, fin]);
 
   const ingresos = Number(ingR.v);
   const egresos  = Number(egR.v) + Number(compR.v);
@@ -395,7 +396,16 @@ exports.getSintetizadoFinanciero = async ({ mes, anio } = {}) => {
     GROUP BY WEEK(fecha,1) ORDER BY semana
   `, [inicio, fin]);
 
-  // Top productos del mes
+  // Ventas por día del período (para gráfica diaria)
+  const [porDia] = await pool.query(`
+    SELECT DATE(fecha) AS dia,
+           SUM(CASE WHEN estado='Pagada' THEN total ELSE 0 END) AS ingresos,
+           COUNT(*) AS num_ventas
+    FROM ventas WHERE fecha BETWEEN ? AND ?
+    GROUP BY DATE(fecha) ORDER BY dia ASC
+  `, [inicio, fin]);
+
+  // Top productos del período
   const [topProd] = await pool.query(`
     SELECT vd.nombre, SUM(vd.cantidad) AS vendidos, SUM(vd.subtotal) AS ingresos
     FROM ventas_detalle vd JOIN ventas v ON v.id = vd.venta_id
@@ -409,15 +419,51 @@ exports.getSintetizadoFinanciero = async ({ mes, anio } = {}) => {
     WHERE fecha BETWEEN ? AND ? GROUP BY categoria ORDER BY total DESC
   `, [inicio, fin]);
 
+  // Historial detallado de ventas del período
+  const [historialVentas] = await pool.query(`
+    SELECT v.numero, v.fecha, v.cliente_nombre, v.total, v.estado,
+           v.metodo_pago,
+           u.nombre AS vendedor_nombre,
+           COALESCE(GROUP_CONCAT(vd.nombre ORDER BY vd.subtotal DESC SEPARATOR ', '), '—') AS productos
+    FROM ventas v
+    LEFT JOIN usuarios u ON u.id = v.vendedor_id
+    LEFT JOIN ventas_detalle vd ON vd.venta_id = v.id
+    WHERE v.fecha BETWEEN ? AND ?
+    GROUP BY v.id, v.numero, v.fecha, v.cliente_nombre, v.total, v.estado, v.metodo_pago, u.nombre
+    ORDER BY v.fecha DESC, v.creado_en DESC
+  `, [inicio, fin]);
+
+  // Historial de gastos del período
+  const [historialGastos] = await pool.query(`
+    SELECT g.fecha, g.concepto, g.categoria, g.monto, g.proveedor
+    FROM gastos g
+    WHERE g.fecha BETWEEN ? AND ?
+    ORDER BY g.fecha DESC, g.creado_en DESC
+  `, [inicio, fin]);
+
+  // Historial de compras recibidas del período
+  const [historialCompras] = await pool.query(`
+    SELECT c.fecha, c.numero, c.concepto, c.proveedor_nombre, c.monto
+    FROM compras c
+    WHERE c.fecha BETWEEN ? AND ? AND c.estado = 'Recibida'
+    ORDER BY c.fecha DESC, c.creado_en DESC
+  `, [inicio, fin]);
+
   return {
     periodo: { mes: mes === 'todos' ? String(a) : `${a}-${m}`, inicio, fin },
     kpis: {
       ingresos, egresos, utilidad: ingresos - egresos,
-      margen: ingresos > 0 ? parseFloat(((ingresos - egresos) / ingresos * 100).toFixed(1)) : 0
+      margen: ingresos > 0 ? parseFloat(((ingresos - egresos) / ingresos * 100).toFixed(1)) : 0,
+      pendiente_cobro: Number(pendR.v),
+      ventas_pendientes: Number(pendR.cnt)
     },
     semanas: semanas.map((s, i) => ({ semana: `Sem ${i+1}`, total: Number(s.total) })),
+    porDia: porDia.map(d => ({ dia: d.dia, ingresos: Number(d.ingresos), num_ventas: Number(d.num_ventas) })),
     topProductos: topProd,
-    gastosCategoria: gastosCateg
+    gastosCategoria: gastosCateg,
+    historialVentas,
+    historialGastos,
+    historialCompras
   };
 };
 

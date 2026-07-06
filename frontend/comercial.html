@@ -43,10 +43,26 @@
 
   <!-- LISTA DE VENTAS (ANCHO COMPLETO) -->
   <div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,60,120,.06);border:1px solid #E0E9F2;overflow:hidden;margin-bottom:24px">
-    <div style="padding:16px 20px;border-bottom:1px solid #E0E9F2;background:#F8FAFC;display:flex;justify-content:space-between;align-items:center">
+    <div style="padding:14px 20px;border-bottom:1px solid #E0E9F2;background:#F8FAFC;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
       <span style="font-size:13px;font-weight:700;color:#003C78"><i class="ri-list-check-2"></i> Historial General de Ventas y Facturas Emitidas</span>
-      <input id="buscarVentaStand" oninput="filtrarVentasStand()" placeholder="🔍 Buscar por número o cliente..." 
-        style="padding:8px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:12px;outline:none;width:240px">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <!-- Filtros de período -->
+        <div style="display:flex;gap:4px;background:#EAF2FB;border-radius:8px;padding:3px">
+          <button id="filtroVtaHoy" onclick="filtrarVentasPeriodo('hoy')" style="padding:5px 12px;border-radius:6px;border:none;font-size:11px;font-weight:700;cursor:pointer;background:#003C78;color:#fff">Hoy</button>
+          <button id="filtroVtaSemana" onclick="filtrarVentasPeriodo('semana')" style="padding:5px 12px;border-radius:6px;border:none;font-size:11px;font-weight:700;cursor:pointer;background:transparent;color:#003C78">Semana</button>
+          <button id="filtroVtaMes" onclick="filtrarVentasPeriodo('mes')" style="padding:5px 12px;border-radius:6px;border:none;font-size:11px;font-weight:700;cursor:pointer;background:transparent;color:#003C78">Mes</button>
+          <button id="filtroVtaTodo" onclick="filtrarVentasPeriodo('todo')" style="padding:5px 12px;border-radius:6px;border:none;font-size:11px;font-weight:700;cursor:pointer;background:transparent;color:#003C78">Todo</button>
+        </div>
+        <!-- Filtro estado -->
+        <select id="filtroVtaEstado" onchange="filtrarVentasStand()" style="padding:6px 10px;border:1.5px solid #E0E9F2;border-radius:7px;font-size:12px;outline:none;background:#fff">
+          <option value="">Todos los estados</option>
+          <option value="pagada">Pagada</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="cancelada">Cancelada</option>
+        </select>
+        <input id="buscarVentaStand" oninput="filtrarVentasStand()" placeholder="🔍 Buscar número o cliente..."
+          style="padding:7px 12px;border:1.5px solid #E0E9F2;border-radius:7px;font-size:12px;outline:none;width:210px">
+      </div>
     </div>
     <div style="overflow-x:auto">
       <table style="width:100%;border-collapse:collapse">
