@@ -2,7 +2,7 @@
    CRUZYMAR · models/pedidosModel.js — MySQL
 ═══════════════════════════════════════ */
 const pool = require('../database');
-const { v4: uuid } = require('uuid');
+const { generarIdSecuencial } = require('../utils/idGenerator');
 
 exports.findAll = async ({ estado, cliente_id } = {}) => {
   let sql = `
@@ -28,7 +28,7 @@ exports.findById = async (id) => {
 };
 
 exports.create = async (data) => {
-  const id = uuid();
+  const id = await generarIdSecuencial('pedidos', 'ped');
   const fecha = data.fecha || new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   await pool.query(
     `INSERT INTO pedidos (id, cliente_id, cliente_nombre, total, estado, fecha, observaciones)

@@ -236,60 +236,84 @@ const META = {
   d1: {
     titulo: 'Reporte de Producción Diaria',
     sub: 'Departamento de Producción — Lotes, leche procesada y rendimiento',
-    resp: 'Supervisor de Producción · Jefe de Planta · Gerencia',
-    frec: 'Diario', icon: 'ri-flask-line', iconCls: ''
+    resp: 'Jefe de Planta · Gerencia',
+    frec: 'Diario',
+    icon: 'ri-flask-line',
+    iconCls: ''
   },
+
   d2: {
     titulo: 'Reporte de Control de Calidad',
     sub: 'Departamento de Control de Calidad — Inocuidad y estándares',
-    resp: 'Jefe de Calidad · Supervisor de Calidad · Gerencia',
-    frec: 'Diario', icon: 'ri-drop-line', iconCls: 'verde'
+    resp: 'Jefe de Calidad · Gerencia',
+    frec: 'Diario',
+    icon: 'ri-drop-line',
+    iconCls: 'verde'
   },
+
   d3: {
     titulo: 'Reporte de Distribución',
     sub: 'Departamento de Distribución — Productos entregados y clientes',
-    resp: 'Encargado de Distribución',
-    frec: 'Diario', icon: 'ri-truck-line', iconCls: ''
+    resp: 'Encargado de Distribución · Gerencia',
+    frec: 'Diario',
+    icon: 'ri-truck-line',
+    iconCls: ''
   },
+
   d4: {
     titulo: 'Reporte de Inventario',
     sub: 'Supervisor de Almacén — Control de existencias de productos',
-    resp: 'Supervisor de Almacén e Inventario',
-    frec: 'Semanal', icon: 'ri-archive-line', iconCls: 'verde'
+    resp: 'Supervisor de Almacén e Inventario · Gerencia',
+    frec: 'Semanal',
+    icon: 'ri-archive-line',
+    iconCls: 'verde'
   },
+
   s1: {
     titulo: 'Desempeño de Proveedores',
     sub: 'Recepción de Leche y Compras — Entregas, volumen suministrado, aceptación y rechazos',
-    resp: 'Encargado de Compras · Supervisor de Producción · Gerencia',
-    frec: 'Mensual', icon: 'ri-team-line', iconCls: ''
+    resp: 'Encargado de Compras · Jefe de Planta · Gerencia',
+    frec: 'Mensual',
+    icon: 'ri-team-line',
+    iconCls: ''
   },
+
   s2: {
-    titulo: 'Estados Financieros ',
+    titulo: 'Estados Financieros',
     sub: 'Departamento de Contabilidad — Situación económica de la empresa',
-    resp: 'Departamento de Contabilidad',
-    frec: 'Mensual / Anual', icon: 'ri-bank-line', iconCls: ''
+    resp: 'Contabilidad · Gerencia',
+    frec: 'Mensual / Anual',
+    icon: 'ri-bank-line',
+    iconCls: ''
   },
+
   s3: {
     titulo: 'Reporte de Ventas de Productos Lácteos',
     sub: 'Departamento de Ventas — Ingresos, tendencia y top productos',
-    resp: 'Departamento de Ventas · Gerencia',
-    frec: 'Mensual', icon: 'ri-shopping-cart-line', iconCls: 'verde'
+    resp: 'Ventas · Gerencia',
+    frec: 'Mensual',
+    icon: 'ri-shopping-cart-line',
+    iconCls: 'verde'
   },
+
   s4: {
     titulo: 'Reporte de Producto Comprado por Cliente',
     sub: 'Departamento de Ventas — Análisis de comportamiento de compra',
-    resp: 'Departamento de Ventas · Gerencia',
-    frec: 'Mensual', icon: 'ri-user-heart-line', iconCls: ''
+    resp: 'Ventas · Gerencia',
+    frec: 'Mensual',
+    icon: 'ri-user-heart-line',
+    iconCls: ''
   },
+
   e1: {
     titulo: 'Reporte: Leche No Apta para Procesamiento',
     sub: 'Control de Calidad — Alertas y registro de materia prima rechazada',
-    resp: 'Analista de Calidad · Proveedor',
-    frec: 'Eventual', icon: 'ri-close-circle-line', iconCls: 'rojo'
+    resp: 'Analista de Calidad · Jefe de Planta · Gerencia',
+    frec: 'Eventual',
+    icon: 'ri-close-circle-line',
+    iconCls: 'rojo'
   },
-
 };
-
 /* ══════════════════════════════════════
    FILTROS por tipo de reporte
 ══════════════════════════════════════ */
@@ -461,10 +485,40 @@ function _header(rep) {
 }
 
 function _krow(cards) {
-  return `<div class="rep-krow">${cards.map(c => {
-    const kcls = c.cls === 'grn' ? 'k-grn' : c.cls === 'red' ? 'k-red' : c.cls === 'amb' ? 'k-amb' : c.cls === 'blu' ? 'k-blu' : '';
-    return `<div class="rep-kcard ${kcls}"><div class="lbl">${c.lbl}</div><div class="val ${c.cls || ''}">${c.val}</div></div>`;
-  }).join('')}</div>`;
+  const palette = {
+    blue: ['k-blu', 'k-blu2', 'k-blu3'],
+    green: ['k-grn', 'k-grn2', 'k-grn3']
+  };
+
+  return `
+    <div class="rep-krow">
+      ${cards.map(c => {
+
+        const val = Number(c.val) || 0;
+
+        // 🔵 tipo automático
+        const isInfo =
+          /total|valor|pagado|entregas|productos/i.test(c.lbl);
+
+        const type = isInfo ? 'blue' : 'green';
+
+        // 📊 intensidad automática según valor
+        let level = 0;
+        if (val > 0 && val < 50) level = 0;
+        else if (val < 200) level = 1;
+        else level = 2;
+
+        const cls = palette[type][level];
+
+        return `
+          <div class="rep-kcard ${cls}">
+            <div class="lbl">${c.lbl}</div>
+            <div class="val">${c.val}</div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
 }
 
 function _card(title, icon, body, extra = '') {
@@ -511,11 +565,21 @@ async function repD1() {
  
   const html = _header('d1') +
     _card('Detalle de lotes del período', 'ri-flask-line', _tbl([
-      { lbl: 'N° Lote', key: 'numero_lote', style: 'width:13%' },
+      {
+        lbl: 'N° Lote', key: 'numero_lote', style: 'width:13%',
+        render: r => `<strong style="color:#003C78">${r.numero_lote || '—'}</strong>` +
+          (r.lote_padre_numero
+            ? `<div style="font-size:10.5px;color:#94A3B8;margin-top:2px">↳ de <strong>${r.lote_padre_numero}</strong></div>`
+            : '')
+      },
       { lbl: 'Producto', key: 'producto_nombre', style: 'width:18%' },
       { lbl: 'Leche (L)', key: 'leche_usada', render: r => _N(r.leche_usada) + ' L' },
       { lbl: 'Obtenido', key: 'cantidad_obtenida', render: r => r.cantidad_obtenida > 0 ? _N(r.cantidad_obtenida) + (r.unidad === 'litros' ? ' L' : ' Lbs') : '—' },
-      { lbl: 'Rendimiento', key: 'rendimiento', render: r => r.rendimiento > 0 ? _P(r.rendimiento) : '—' },
+      {
+  lbl: 'Indicador',
+  key: 'indicador',
+  render: r => r.indicador || '—'
+},
       {
         lbl: 'Subproducto', key: 'salida_secundaria', tdStyle: 'min-width:110px',
         render: r => Number(r.salida_secundaria_cantidad) > 0
@@ -538,29 +602,35 @@ async function repD1() {
 }
 
 /* ══════════════════════════════════════
-   D2 — CONTROL DE CALIDAD (solo detalle, sin gráficas)
+   D2 — CONTROL DE CALIDAD (recepción + lotes de producción)
 ══════════════════════════════════════ */
 async function repD2() {
   const qs = _buildQS({ fecha: _filtros.f_desde, fechaFin: _filtros.f_hasta, resultado: _filtros.f_resultado });
   const d = await _rq('/reportes/detallado/calidad' + qs);
   const k = d.kpis || {};
   const registros = d.recepcionLeche || [];
+  const lotes = d.lotesProduccion || [];
 
-  // Las pruebas de campo tienen 3 resultados posibles: Aprobado, Rechazado u Observación.
-  // Se calculan aquí desde los registros para garantizar que los KPI siempre sumen el
-  // total real (independiente de lo que devuelva el backend en `kpis`).
-  const totalPruebas = registros.length || k.total_pruebas || 0;
-  const aprobados = registros.length ? registros.filter(r => r.resultado === 'Aprobado').length : (k.aprobados || 0);
-  const rechazados = registros.length ? registros.filter(r => r.resultado === 'Rechazado').length : (k.rechazados || 0);
-  const observacion = registros.length ? registros.filter(r => r.resultado === 'Observación').length : (k.observacion || 0);
+  // Combinar ambas fuentes para que los KPIs reflejen el total real
+  // (recepción de leche + control de calidad de lotes terminados)
+  const todos = [
+    ...registros.map(r => ({ resultado: r.resultado })),
+    ...lotes.map(l => ({ resultado: l.resultado }))
+  ];
+
+  const totalPruebas = todos.length || k.total_pruebas || 0;
+  const aprobados = todos.length ? todos.filter(r => r.resultado === 'Aprobado').length : (k.aprobados || 0);
+  const rechazados = todos.length ? todos.filter(r => r.resultado === 'Rechazado').length : (k.rechazados || 0);
+  const observacion = todos.length ? todos.filter(r => r.resultado === 'Observación').length : (k.observacion || 0);
   const alcoholPositivo = registros.length ? registros.filter(r => r.prueba_alcohol && r.prueba_alcohol !== 'Negativa').length : (k.alcohol_positivo || 0);
   const tasaAprobacion = totalPruebas > 0 ? (aprobados / totalPruebas * 100) : (k.tasa_aprobacion || 0);
 
   const resBadge = r => r.resultado === 'Aprobado' ? _badge('Aprobado', 'rb-ok') : r.resultado === 'Rechazado' ? _badge('Rechazado', 'rb-rej') : _badge('Observación', 'rb-obs');
 
   const html = _header('d2') +
-    _card('Registros de pruebas de campo', 'ri-test-tube-line', _tbl([
-      { lbl: 'Proveedor', key: 'proveedor_nombre', style: 'width:18%' },
+
+    _card('Pruebas de campo — Recepción de leche', 'ri-test-tube-line', _tbl([
+      { lbl: 'Proveedor', key: 'proveedor_nombre', style: 'width:16%' },
       { lbl: 'Litros', key: 'litros_acopio', render: r => _N(r.litros_acopio) + ' L' },
       { lbl: 'Olor', key: 'olor', render: r => r.olor === 'Normal' ? _badge('Normal', 'rb-ok') : _badge('Anormal', 'rb-rej') },
       { lbl: 'Color', key: 'color', render: r => r.color === 'Normal' ? _badge('Normal', 'rb-ok') : _badge('Anormal', 'rb-rej') },
@@ -568,11 +638,29 @@ async function repD2() {
       { lbl: 'Alcohol', key: 'prueba_alcohol', render: r => r.prueba_alcohol === 'Negativa' ? _badge('Negativa', 'rb-ok') : _badge('Positiva', 'rb-rej') },
       { lbl: 'Densidad', key: 'densidad', render: r => r.densidad ? Number(r.densidad).toFixed(3) : '—' },
       { lbl: 'Resultado', key: 'resultado', render: resBadge },
-      { lbl: 'Analista', key: 'analista_nombre', style: 'width:13%' },
+      { lbl: 'Analista', key: 'analista_nombre', style: 'width:12%' },
       { lbl: 'Fecha', key: 'fecha', render: r => _fec(r.fecha) },
     ], registros), 'class="rep-card-detallado"') +
+
+    _card('Control de calidad — Lotes de producción', 'ri-flask-line', _tbl([
+      { lbl: 'N° Lote', key: 'numero_lote', style: 'width:13%', render: r => `<strong style="color:#003C78">${r.numero_lote || '—'}</strong>` },
+      { lbl: 'Producto', key: 'producto_nombre', style: 'width:18%' },
+      { lbl: 'Cantidad', key: 'cantidad_obtenida', render: r => r.cantidad_obtenida ? _N(r.cantidad_obtenida) + (r.unidad === 'litros' ? ' L' : ' Lbs') : '—' },
+      { lbl: 'Turno', key: 'turno' },
+      { lbl: 'Fecha', key: 'fecha_produccion', render: r => _fec(r.fecha_produccion) },
+      { lbl: 'Resultado', key: 'resultado', render: resBadge },
+      {
+        lbl: 'Observaciones', key: 'observaciones',
+        render: r => r.observaciones
+          ? `<span style="font-size:11px;color:#64748B">${r.observaciones}</span>`
+          : '<span style="color:#94A3B8">—</span>'
+      },
+    ], lotes), 'class="rep-card-detallado"') +
+
     _krow([
       { lbl: 'Total pruebas', val: totalPruebas },
+      { lbl: 'Recepción leche', val: registros.length, cls: 'blu' },
+      { lbl: 'Lotes producción', val: lotes.length, cls: 'blu' },
       { lbl: 'Aprobados', val: aprobados, cls: 'grn' },
       { lbl: 'En observación', val: observacion, cls: observacion > 0 ? 'amb' : '' },
       { lbl: 'Rechazados', val: rechazados, cls: rechazados > 0 ? 'red' : '' },
@@ -582,9 +670,8 @@ async function repD2() {
 
   _set('rep-content', html);
 }
-
 /* ══════════════════════════════════════
-   D3 — DISTRIBUCIÓN (solo detalle, sin gráficas)
+   D3 — DISTRIBUCIÓN (solo tablas, sin gráficos)
 ══════════════════════════════════════ */
 async function repD3() {
   const qs = _buildQS({ fecha: _filtros.f_desde, fechaFin: _filtros.f_hasta, estado: _filtros.f_estado });
@@ -596,18 +683,39 @@ async function repD3() {
   const html = _header('d3') +
 
     _card('Ventas / despachos del período', 'ri-truck-line', _tbl([
-      { lbl: 'N°', key: 'numero', style: 'width:11%' },
+      { lbl: 'N°', key: 'numero', style: 'width:9%' },
       { lbl: 'Fecha', key: 'fecha', render: r => _fec(r.fecha) },
-      { lbl: 'Cliente', key: 'cliente_nombre', style: 'width:20%' },
+      { lbl: 'Cliente', key: 'cliente_nombre', style: 'width:16%' },
+      { lbl: 'Zona', key: 'zona', render: r => r.zona || '<span style="color:#94A3B8">—</span>' },
+      { lbl: 'Transportista', key: 'transportista', render: r => r.transportista || '<span style="color:#94A3B8">—</span>' },
       { lbl: 'Total', key: 'total', render: r => `<strong>${_L(r.total)}</strong>` },
       { lbl: 'Pago', key: 'metodo_pago' },
       { lbl: 'Estado', key: 'estado', render: r => estBadge(r.estado) },
     ], d.registros), 'class="rep-card-detallado"') +
+
+    _card('Resumen por zona / ruta', 'ri-map-pin-line', _tbl([
+      { lbl: 'Zona', key: 'zona' },
+      { lbl: 'Entregas', key: 'entregas' },
+      { lbl: 'Facturado', key: 'facturado', render: r => _L(r.facturado) },
+      { lbl: 'Pendiente', key: 'pendiente', render: r => Number(r.pendiente) > 0 ? `<span style="color:#DC2626;font-weight:700">${_L(r.pendiente)}</span>` : _L(0) },
+      { lbl: 'Clientes', key: 'clientes' },
+    ], d.porZona || [])) +
+
+    _card('Desempeño por transportista', 'ri-truck-line', _tbl([
+      { lbl: 'Transportista', key: 'transportista' },
+      { lbl: 'Entregas', key: 'entregas' },
+      { lbl: 'Total repartido', key: 'total_repartido', render: r => _L(r.total_repartido) },
+      { lbl: 'Pendientes', key: 'pendientes', render: r => Number(r.pendientes) > 0 ? `<span style="color:#0A6BC4;font-weight:700">${r.pendientes}</span>` : '0' },
+      { lbl: 'Zonas', key: 'zonas_atendidas' },
+    ], d.porTransportista || [])) +
+
     _krow([
       { lbl: 'Total ventas', val: k.total_facturas || 0 },
       { lbl: 'Total facturado', val: _L(k.total_facturado), cls: 'grn' },
       { lbl: 'Pendiente de cobro', val: _L(k.pendiente_cobro), cls: (k.pendiente_cobro || 0) > 0 ? 'amb' : '' },
       { lbl: 'Clientes atendidos', val: k.clientes_atendidos || 0, cls: 'blu' },
+      { lbl: 'Zonas cubiertas', val: k.zonas_cubiertas || 0, cls: 'blu' },
+      { lbl: 'Transportistas activos', val: k.transportistas_activos || 0 },
       { lbl: 'Venta promedio', val: _L(k.ticket_promedio) },
     ]) + _firma();
 
@@ -620,9 +728,12 @@ async function repD3() {
 async function repD4() {
   const d = await _rq('/reportes/sintetizado/inventario');
   const k = d.kpis || {};
-
+const color = p => {
+  if (p === 0) return '#CBD5E1';      // Gris (sin existencias)
+  if (p < 100) return '#0A6BC4';      // Azul (por debajo del mínimo)
+  return '#468C28';                   // Verde (stock suficiente)
+};
   const stBadge = (p) => Number(p.stock) <= Number(p.stock_minimo) ? _badge('Bajo stock', 'rb-rej') : Number(p.stock) < Number(p.stock_minimo) * 1.2 ? _badge('Alerta', 'rb-pen') : _badge('Normal', 'rb-ok');
-  const pct = p => p.stock_minimo > 0 ? Math.min(100, Math.round(p.stock / p.stock_minimo * 100)) : 100;
 
   const html = _header('d4') +
 
@@ -631,19 +742,27 @@ async function repD4() {
       { lbl: 'Categoría', key: 'categoria' },
       { lbl: 'Existencias', key: 'stock', render: r => `<strong>${_N(r.stock)}</strong> ${r.unidad || 'u.'}` },
       { lbl: 'Mínimo', key: 'stock_minimo', render: r => `${_N(r.stock_minimo)} ${r.unidad || 'u.'}` },
-      {
-        lbl: 'Cobertura', key: '_cob',
-        render: r => {
-          const p = pct(r);
-          const c = p < 100 ? '#DC2626' : p < 120 ? '#0A6BC4' : '#468C28';
-          return `<div style="display:flex;align-items:center;gap:6px">
-            <div style="flex:1;height:6px;background:#F1F5F9;border-radius:3px;overflow:hidden">
-              <div style="width:${Math.min(p, 100)}%;height:100%;background:${c};border-radius:3px"></div>
-            </div>
-            <span style="font-size:11px;color:${c};font-weight:700;min-width:35px">${p}%</span>
-          </div>`;
-        }
-      },
+{
+  lbl: 'Disponibilidad',
+  key: '_disp',
+  render: r => {
+    const stock = Number(r.stock) || 0;
+
+    const disponible = stock > 0;
+
+    return `
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="
+          font-weight:700;
+          color:${disponible ? '#0A6BC4' : '#CBD5E1'};
+        ">
+          ${disponible ? 'SI' : 'NO'}
+        </span>
+
+      </div>
+    `;
+  }
+},
       { lbl: 'Estado', key: '_st', render: stBadge },
       { lbl: 'Precio', key: 'precio', render: r => _L(r.precio) },
     ], d.productos || []), 'class="rep-card-detallado"') +
@@ -842,6 +961,7 @@ async function repS1() {
           : `<span style="color:#94A3B8">—</span>`
       },
     ], reg), 'class="rep-card-detallado"') +
+ 
     /* ── KPI CARDS ── */
     _krow([
       { lbl: 'Total Entregas', val: _N(k.total_entregas), cls: 'blu' },
@@ -851,8 +971,8 @@ async function repS1() {
       { lbl: 'Litros Rechazados', val: _N(k.litros_rechazados) + ' L', cls: Number(k.litros_rechazados || 0) > 0 ? 'red' : '' },
       { lbl: 'Total Pagado', val: _L(k.total_pagado), cls: 'grn' },
     ]) +
-
     _firma();
+   
 
   _set('rep-content', html);
 
@@ -1296,7 +1416,7 @@ function repImprimir() {
   const u = _el('rph-usuario-imp'); if (u) u.textContent = `Generado por: ${usuario}`;
   const t = _el('rph-titulo-imp'); if (t) t.textContent = m.titulo || 'Reporte CRUZYMAR';
   const r = _el('rph-resp-imp'); if (r) r.textContent = `Responsables: ${m.resp || '—'} · Frecuencia: ${m.frec || '—'} · Retención: 5 años`;
-  const s = _el('rph-sub-imp'); if (s) s.textContent = m.sub || '';
+ // const s = _el('rph-sub-imp'); if (s) s.textContent = m.sub || '';
 
   // Mostrar header para el print
   const ph = _el('rep-print-header');

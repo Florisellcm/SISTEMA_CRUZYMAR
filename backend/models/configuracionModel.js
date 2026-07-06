@@ -6,7 +6,6 @@
 
 const db = require('../data/db');
 const bcrypt = require('bcryptjs');
-const { v4: uuidv4 } = require('uuid');
 
 // ── Inicialización de datos en memoria ──────────────────
 
@@ -136,8 +135,14 @@ exports.usuarios = {
 
   create: async ({ username, nombre, email, password, rol, estado, telefono }) => {
     const hash = await bcrypt.hash(password, 10);
+    const maxNum = db.usuarios.reduce((max, u) => {
+      const parts = u.id.split('-');
+      const num = parseInt(parts[parts.length - 1], 10);
+      return (!isNaN(num) && num > max) ? num : max;
+    }, 0);
+    const nuevoId = `usr-${String(maxNum + 1).padStart(3, '0')}`;
     const nuevo = {
-      id:            uuidv4(),
+      id:            nuevoId,
       username:      username.toLowerCase().trim(),
       nombre:        nombre.trim(),
       email:         email.toLowerCase().trim(),
@@ -196,8 +201,14 @@ exports.roles = {
   },
 
   create: ({ nombre, descripcion, permisos }) => {
+    const maxNum = db.roles.reduce((max, r) => {
+      const parts = r.id.split('-');
+      const num = parseInt(parts[parts.length - 1], 10);
+      return (!isNaN(num) && num > max) ? num : max;
+    }, 0);
+    const nuevoId = `rol-${String(maxNum + 1).padStart(3, '0')}`;
     const nuevo = {
-      id:          uuidv4(),
+      id:          nuevoId,
       nombre:      nombre.toLowerCase().trim(),
       descripcion: descripcion || '',
       es_sistema:  false,
@@ -250,8 +261,14 @@ exports.productos = {
 
   create: (data) => {
     const { codigo, nombre, categoria, unidad, precio_costo, precio_venta, isv, stock_minimo, descripcion } = data;
+    const maxNum = db.catalogo.reduce((max, p) => {
+      const parts = p.id.split('-');
+      const num = parseInt(parts[parts.length - 1], 10);
+      return (!isNaN(num) && num > max) ? num : max;
+    }, 0);
+    const nuevoId = `cat-${String(maxNum + 1).padStart(3, '0')}`;
     const nuevo = {
-      id:           uuidv4(),
+      id:           nuevoId,
       codigo:       codigo.toUpperCase().trim(),
       nombre:       nombre.trim(),
       categoria:    categoria    || 'Otro',

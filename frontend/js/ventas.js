@@ -11,13 +11,22 @@ let inventarioLista = [];
 let itemsVenta      = [];   // carrito de la venta actual
 let editCliId       = null; // ID del cliente en edición
 
-/* ─── CARGAR DATOS (llamado desde app.js: PAGES.comercial.loader) ───
+/* ─── CARGAR DATOS GENERALES (Compatibilidad) ───
    Nota: _currentPage (con guion bajo) es la variable global real que
-   define app.js. "clientes" ya tiene su propio loader dedicado
-   (PAGES.clientes.loader → loadClientesStandalone), así que esta
-   función solo necesita encargarse de la vista de Ventas. */
+   declara app.js. Usar "currentPage" (sin guion bajo) revienta con un
+   ReferenceError apenas se evalúa, y la tabla se queda pegada para
+   siempre en "Cargando..." porque la función nunca llega a ejecutar
+   loadVentasStandalone(). */
 async function loadVentas() {
-  await loadVentasStandalone();
+  try {
+    if (_currentPage === 'clientes') {
+      await loadClientesStandalone();
+    } else {
+      await loadVentasStandalone();
+    }
+  } catch (e) {
+    toast('Error cargando el módulo: ' + e.message, 'err');
+  }
 }
 
 /* ─── CARGAR VENTAS (STANDALONE) ─── */
@@ -75,14 +84,12 @@ function actualizarTarjetasClientes() {
 }
 
 /* ─── RELOAD ROUTER INTERNO ───
-   _currentPage es la variable real declarada en app.js (con guion
-   bajo). Usar "currentPage" aquí (sin guion bajo) es justo el bug
-   que dejaba la pantalla pegada en "Cargando...". */
+   Mismo fix: _currentPage (con guion bajo), no currentPage. */
 function reloadComercialData() {
-  if (typeof _currentPage !== 'undefined' && _currentPage === 'clientes') {
-    loadClientesStandalone();
-  } else {
+  if (_currentPage === 'comercial') {
     loadVentasStandalone();
+  } else if (_currentPage === 'clientes') {
+    loadClientesStandalone();
   }
 }
 
@@ -109,7 +116,7 @@ function renderVentasListFiltered(lista) {
       <td>
         <strong>${v.cliente_nombre || 'Consumidor final'}</strong><br>
         <span style="font-size:10px;font-weight:700;color:${esReparto ? '#0A6BC4' : '#94A3B8'}">
-          ${esReparto ? '🚚 Reparto' : '🏪 Local'}
+          ${esReparto ? 'Reparto' : 'Local'}
         </span>
       </td>
       <td><span style="font-size:12px;color:#64748B">${v.metodo_pago || '—'}</span></td>
@@ -158,7 +165,7 @@ function renderClientesStandaloneListFiltered(lista) {
   const tbody = el('clientesStandaloneTableBody');
   if (!tbody) return;
   if (!lista.length) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#64748B">Sin clientes registrados que coincidan</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:#64748B">Sin clientes registrados que coincidan</td></tr>`;
     return;
   }
   const tipoColors = {
@@ -169,14 +176,27 @@ function renderClientesStandaloneListFiltered(lista) {
     'Distribuidor':  { bg:'#FEF3C7', color:'#D97706' },
     'Particular':    { bg:'#F4F7FA', color:'#64748B' }
   };
+  /* Zonas de reparto reales de CRUZYMAR:
+     - Local: Victoria, Yoro y alrededores cercanos
+     - Aldea: aldeas rurales alrededor de Victoria
+     - Yoro:  resto del departamento de Yoro
+     - Norte: zona norte del país (San Pedro Sula y alrededores) */
+  const zonaColors = {
+    'Local':  { bg:'#EAF2FB', color:'#003C78' },
+    'Aldea':  { bg:'#F0FDF4', color:'#15803D' },
+    'Yoro':   { bg:'#FEF3C7', color:'#D97706' },
+    'Norte':  { bg:'#F5F3FF', color:'#7C3AED' }
+  };
   tbody.innerHTML = lista.map(c => {
     const tc = tipoColors[c.tipo] || tipoColors['Particular'];
+    const zc = zonaColors[c.zona] || zonaColors['Local'];
     return `
     <tr>
       <td><strong style="color:#1E293B">${c.nombre}</strong></td>
       <td><span style="font-family:monospace;font-size:12px">${c.rtn || '—'}</span></td>
       <td>${c.telefono || '—'}</td>
       <td><span style="font-size:11px;font-weight:700;color:${tc.color};background:${tc.bg};padding:3px 8px;border-radius:4px">${c.tipo || 'Particular'}</span></td>
+      <td><span style="font-size:11px;font-weight:700;color:${zc.color};background:${zc.bg};padding:3px 8px;border-radius:4px">${c.zona || 'Local'}</span></td>
       <td><span style="font-size:12.5px;color:#475569">${c.direccion || '—'}</span></td>
       <td style="text-align:center;white-space:nowrap">
         <button class="btn-accion" onclick="editCliente('${c.id}')" title="Editar cliente"
@@ -201,7 +221,8 @@ function filtrarClientesStand() {
   const filtrados = clientesData.filter(c => 
     (c.nombre || '').toLowerCase().includes(query) ||
     (c.rtn || '').toLowerCase().includes(query) ||
-    (c.direccion || '').toLowerCase().includes(query)
+    (c.direccion || '').toLowerCase().includes(query) ||
+    (c.zona || '').toLowerCase().includes(query)
   );
   renderClientesStandaloneListFiltered(filtrados);
 }
@@ -211,6 +232,7 @@ function openNuevoCliente() {
   editCliId = null;
   el('formCliente').reset();
   if (el('tituloModalCliente')) el('tituloModalCliente').textContent = 'Nuevo Cliente';
+  if (el('cliZona')) el('cliZona').value = 'Local'; // valor por defecto
   el('modalCliente').style.display = 'flex';
 }
 
@@ -229,6 +251,7 @@ function editCliente(id) {
   el('cliTipo').value             = c.tipo      || 'Particular';
   el('cliRTN').value              = c.rtn       || '';
   if (el('cliDireccion')) el('cliDireccion').value = c.direccion || '';
+  if (el('cliZona'))      el('cliZona').value      = c.zona      || 'Local';
   el('modalCliente').style.display = 'flex';
 }
 
@@ -242,6 +265,7 @@ async function saveCliente() {
     telefono:  el('cliTelefono')?.value.trim()  || '',
     tipo:      el('cliTipo')?.value              || 'Particular',
     direccion: el('cliDireccion')?.value.trim() || '',
+    zona:      el('cliZona')?.value              || 'Local',
     email:     ''
   };
 
@@ -267,6 +291,51 @@ async function desactivarCliente(id, nombre) {
 // Alias para compatibilidad
 function deleteCliente(id) { desactivarCliente(id, 'este cliente'); }
 
+/* ─── ZONA AUTOMÁTICA AL ELEGIR "REPARTO" ───
+   Cuando el vendedor marca tipo_entrega = 'Reparto', se muestra la
+   zona del cliente seleccionado (tomada de clientesData, la misma
+   que usa distribucionModel.js para separar la hoja de ruta). Si no
+   hay cliente elegido (venta a "Consumidor final"), se avisa que se
+   asumirá "Local" por defecto. La zona NO se guarda en la venta: se
+   sigue leyendo del cliente al momento de generar la hoja de ruta. */
+function actualizarZonaEntrega() {
+  const tipoEntrega = el('vtaTipoEntrega')?.value;
+  const infoBox = el('vtaZonaInfo');
+  if (!infoBox) return;
+
+  if (tipoEntrega !== 'Reparto') {
+    infoBox.style.display = 'none';
+    infoBox.innerHTML = '';
+    return;
+  }
+
+  const clienteId = el('vtaClienteId')?.value;
+  const cliente = clientesData.find(c => c.id === clienteId);
+  const zonaColors = {
+    Local: { bg:'#EAF2FB', color:'#003C78' },
+    Aldea: { bg:'#F0FDF4', color:'#15803D' },
+    Yoro:  { bg:'#FEF3C7', color:'#D97706' },
+    Norte: { bg:'#F5F3FF', color:'#7C3AED' }
+  };
+
+  infoBox.style.display = 'block';
+
+  if (!cliente) {
+    infoBox.innerHTML = `
+      <div style="background:#FEF3C7;color:#92400E;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600">
+        <i class="ri-alert-line"></i> Seleccioná un cliente registrado para conocer su zona (si no, se asume "Local").
+      </div>`;
+    return;
+  }
+
+  const zona = cliente.zona || 'Local';
+  const zc = zonaColors[zona] || zonaColors.Local;
+  infoBox.innerHTML = `
+    <div style="background:${zc.bg};color:${zc.color};padding:8px 12px;border-radius:8px;font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:6px">
+      <i class="ri-map-pin-line"></i> Zona de reparto: ${zona}
+    </div>`;
+}
+
 /* ─── MODAL VENTA ─── */
 function openNuevaVenta() {
   itemsVenta = [];
@@ -278,7 +347,9 @@ function openNuevaVenta() {
   if (sel) {
     sel.innerHTML = '<option value="">— Consumidor final (contado) —</option>' +
       clientesData.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+    sel.onchange = actualizarZonaEntrega;
   }
+  if (el('vtaTipoEntrega')) el('vtaTipoEntrega').onchange = actualizarZonaEntrega;
 
   // Poblar productos del inventario
   const selProd = el('vtaProductoSel');
@@ -291,6 +362,7 @@ function openNuevaVenta() {
   }
 
   renderItemsVenta();
+  actualizarZonaEntrega();
   el('modalVenta').style.display = 'flex';
 }
 function closeModalVenta() { el('modalVenta').style.display = 'none'; }
@@ -424,20 +496,39 @@ async function cancelarVenta(id) {
   } catch(e) { toast('Error: ' + e.message, 'err'); }
 }
 
-/* ─── FACTURA SAR (Honduras) ─── */
+/* ─── FACTURA SAR (Honduras) ───
+   IMPORTANTE: si la venta se registró SIN marcar "Generar factura SAR
+   automáticamente", todavía no existe ninguna fila en `facturacion` para
+   ella. Antes, en ese caso, esta función caía en un fallback que mostraba
+   el NÚMERO DE LA VENTA (ej. "VTA-0007") como si fuera el número de
+   factura. Ahora, si no existe factura todavía, se genera aquí mismo
+   contra POST /facturacion, que le asigna su propio ID y su propio
+   número secuencial (FAC-000N) de la tabla `facturacion` — nunca
+   reutiliza el de la venta. */
 async function imprimirFactura(ventaId) {
   try {
     // Cargar detalle de la venta (incluye items)
     const venta = await req('GET', `/ventas/${ventaId}`);
     if (!venta) return toast('Venta no encontrada', 'err');
 
-    // Intentar cargar factura asociada
+    // Intentar cargar factura ya asociada a esta venta
     let facturas = [];
     try { facturas = await req('GET', '/facturacion'); } catch(_) {}
-    const factura = facturas.find(f => f.venta_id === ventaId) || null;
+    let factura = facturas.find(f => f.venta_id === ventaId) || null;
 
-    // Número de documento
-    const numero = factura?.numero || venta.numero || '—';
+    // Si aún no tiene factura, la generamos ahora con su propio ID/número
+    if (!factura) {
+      factura = await req('POST', '/facturacion', {
+        venta_id:    venta.id,
+        cliente_id:  venta.cliente_id || null,
+        monto_total: venta.total,
+        fecha:       (venta.fecha || '').slice(0, 10)
+      });
+      toast('Factura SAR generada ✅');
+    }
+
+    // Número de documento — SIEMPRE el propio de la factura, nunca el de la venta
+    const numero = factura.numero || '—';
     const fechaDoc = (venta.fecha || '').slice(0, 10);
 
     // Rellenar encabezado
@@ -475,6 +566,7 @@ async function imprimirFactura(ventaId) {
           </tr>`;
         }).join('');
       } else {
+        // Fallback si no hay items detallados
         tbody.innerHTML = `<tr>
           <td style="padding:7px 12px">Total de la venta</td>
           <td style="padding:7px 10px;text-align:center">1</td>
@@ -484,22 +576,22 @@ async function imprimirFactura(ventaId) {
       }
     }
 
+    // Totales con ISV
     if (el('facSubtotal')) el('facSubtotal').textContent = `L. ${subtotalSinISV.toFixed(2)}`;
     if (el('facISV'))      el('facISV').textContent      = `L. ${isv.toFixed(2)}`;
     if (el('facTotal'))    el('facTotal').textContent    = `L. ${totalConISV.toFixed(2)}`;
 
-    // Vendedor — el app.js real guarda el usuario en localStorage('user'),
-    // no en un objeto global "Auth" (ese ya no existe).
-    if (el('facVendedor')) {
-      try {
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        el('facVendedor').textContent = `Atendido por: ${user.nombre || user.name || 'Vendedor'}`;
-      } catch(_) {
-        el('facVendedor').textContent = '';
-      }
-    }
+    // Vendedor
+  // Vendedor (temporal)
+if (el('facVendedor')) {
+  el('facVendedor').textContent = 'Atendido por: Vendedor';
+}
 
+    // Mostrar modal
     el('modalFactura').style.display = 'flex';
+
+    // Refrescar el listado para reflejar la factura recién asociada
+    reloadComercialData();
 
   } catch(e) {
     toast('Error cargando factura: ' + e.message, 'err');
@@ -511,5 +603,9 @@ function closeModalFactura() {
   if (m) m.style.display = 'none';
 }
 
-/* Nota: formatFecha ya la define app.js — se quitó de aquí para no
-   tener dos funciones con el mismo nombre en el mismo scope global. */
+/* ─── UTILITARIOS ─── */
+function formatFecha(str) {
+  if (!str) return '—';
+  const [y, m, d] = str.split('-');
+  return `${d}/${m}/${y}`;
+}

@@ -4,7 +4,7 @@
 ═══════════════════════════════════════ */
 
 const pool = require('../database');
-const { v4: uuidv4 } = require('uuid');
+const { generarIdSecuencial } = require('../utils/idGenerator');
 
 exports.findAll = async ({ activo } = {}) => {
   let sql = 'SELECT * FROM recetas';
@@ -25,7 +25,7 @@ exports.findById = async (id) => {
 
 exports.create = async (data) => {
   const { producto, unidad_producto, litros_por_unidad, rendimiento_esperado, tiempo_estimado, descripcion } = data;
-  const id = uuidv4();
+  const id = await generarIdSecuencial('recetas', 'rec');
   await pool.query(
     `INSERT INTO recetas (id, producto, unidad_producto, litros_por_unidad, rendimiento_esperado, tiempo_estimado, descripcion)
      VALUES (?,?,?,?,?,?,?)`,

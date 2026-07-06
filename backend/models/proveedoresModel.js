@@ -4,7 +4,7 @@
 ═══════════════════════════════════════ */
 
 const pool = require('../database');
-const { v4: uuidv4 } = require('uuid');
+const { generarIdSecuencial } = require('../utils/idGenerator');
 
 exports.findAll = async (buscar) => {
   let sql  = 'SELECT * FROM proveedores WHERE activo = 1';
@@ -24,7 +24,7 @@ exports.findActiveById = async (id) => {
 };
 
 exports.create = async ({ nombre, telefono, email, direccion, tipo, rtn }) => {
-  const id = uuidv4();
+  const id = await generarIdSecuencial('proveedores', 'prov');
   await pool.query(
     'INSERT INTO proveedores (id, nombre, telefono, email, direccion, tipo, rtn) VALUES (?,?,?,?,?,?,?)',
     [id, nombre, telefono||'', email||'', direccion||'', tipo||'Local', rtn||'']

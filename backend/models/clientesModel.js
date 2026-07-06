@@ -4,7 +4,7 @@
 ═══════════════════════════════════════ */
 
 const pool = require('../database');
-const { v4: uuidv4 } = require('uuid');
+const { generarIdSecuencial } = require('../utils/idGenerator');
 
 exports.findAll = async (buscar) => {
   let sql    = 'SELECT * FROM clientes WHERE activo = 1';
@@ -20,18 +20,18 @@ exports.findById = async (id) => {
   return rows[0] || null;
 };
 
-exports.create = async ({ nombre, telefono, email, direccion, tipo, rtn }) => {
-  const id = uuidv4();
+exports.create = async ({ nombre, telefono, email, direccion, tipo, rtn, zona }) => {
+  const id = await generarIdSecuencial('clientes', 'cli');
   await pool.query(
-    'INSERT INTO clientes (id, nombre, telefono, email, direccion, tipo, rtn) VALUES (?,?,?,?,?,?,?)',
-    [id, nombre, telefono||'', email||'', direccion||'', tipo||'Particular', rtn||'']
+    'INSERT INTO clientes (id, nombre, telefono, email, direccion, tipo, rtn, zona) VALUES (?,?,?,?,?,?,?,?)',
+    [id, nombre, telefono||'', email||'', direccion||'', tipo||'Particular', rtn||'', zona||'Local']
   );
   const [rows] = await pool.query('SELECT * FROM clientes WHERE id = ?', [id]);
   return rows[0];
 };
 
 exports.update = async (id, data) => {
-  const campos = ['nombre','telefono','email','direccion','tipo','rtn'];
+  const campos = ['nombre','telefono','email','direccion','tipo','rtn','zona'];
   const sets   = campos.filter(c => data[c] !== undefined).map(c => `${c} = ?`);
   const vals   = campos.filter(c => data[c] !== undefined).map(c => data[c]);
   if (!sets.length) return null;

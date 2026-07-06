@@ -17,7 +17,7 @@
 ═══════════════════════════════════════ */
 
 const pool = require('../database');
-const { v4: uuidv4 } = require('uuid');
+const { generarIdSecuencial } = require('../utils/idGenerator');
 const Inventario = require('./inventarioModel');
 
 const hoy = () => new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10);
@@ -32,9 +32,9 @@ exports.findAll = async ({ fecha, proveedor_id, turno } = {}) => {
     WHERE 1=1
   `;
   const params = [];
-  if (fecha)        { sql += ' AND a.fecha = ?';        params.push(fecha); }
+  if (fecha) { sql += ' AND a.fecha = ?'; params.push(fecha); }
   if (proveedor_id) { sql += ' AND a.proveedor_id = ?'; params.push(proveedor_id); }
-  if (turno)        { sql += ' AND a.turno = ?';        params.push(turno); }
+  if (turno) { sql += ' AND a.turno = ?'; params.push(turno); }
   sql += ' ORDER BY a.creado_en DESC';
   const [rows] = await pool.query(sql, params);
   return rows;
@@ -69,9 +69,8 @@ exports.findProveedorActivo = async (id) => {
 
 /**
  * Crea una recepción de leche. Según el estado, en la misma
- * transacción se acredita el inventario + se registra el gasto de
- * pago al proveedor (Aceptada), o se registra la merma (Rechazada).
- * Si algo de esto falla, toda la operación se revierte.
+ * transacción se acredita el inventario (Aceptada) o se registra
+ * la merma (Rechazada). Si eso falla, toda la operación se revierte.
  */
 exports.create = async (data) => {
   const {
@@ -89,10 +88,10 @@ exports.create = async (data) => {
   if (estadoFinal === 'Rechazada' && !motivo_rechazo) throw new Error('Debe indicar el motivo del rechazo');
 
   const total_pagar = parseFloat((litrosN * precioN).toFixed(2));
-  const id = uuidv4();
   const fechaFinal = fecha || hoy();
 
   const conn = await pool.getConnection();
+  const id = await generarIdSecuencial('acopio_leche', 'aco', conn);
   try {
     await conn.beginTransaction();
 
@@ -115,27 +114,13 @@ exports.create = async (data) => {
         motivo: 'Recepción de leche (Acopio)',
         usuario, usuario_id
       });
-
-      // Pago al proveedor por la materia prima recibida. Se registra
-      // solo si hay proveedor y un monto real que cobrar.
-      if (proveedor_id && total_pagar > 0) {
-        const [[prov]] = await conn.query('SELECT nombre FROM proveedores WHERE id = ?', [proveedor_id]);
-        await conn.query(
-          `INSERT INTO gastos (id, concepto, categoria, monto, fecha, proveedor, acopio_id, usuario_id)
-           VALUES (?,?,?,?,?,?,?,?)`,
-          [uuidv4(),
-            `Compra de leche cruda — ${prov ? prov.nombre : 'Proveedor'} (${litrosN} L)`,
-            'Materia Prima', total_pagar, fechaFinal,
-            prov ? prov.nombre : '', id, usuario_id || null]
-        );
-      }
     } else if (estadoFinal === 'Rechazada') {
       const [prodInv] = await conn.query('SELECT nombre FROM inventario_productos WHERE id = ?', [inventario_id]);
       await conn.query(
         `INSERT INTO mermas (id, acopio_id, tipo, producto, cantidad, unidad, causa, fecha, responsable_id)
          VALUES (?,?,?,?,?,?,?,?,?)`,
-        [uuidv4(), id, 'Acopio',
-          `Leche cruda rechazada${prodInv[0] ? ' — ' + prodInv[0].nombre : ''}`,
+        [await generarIdSecuencial('mermas', 'mer', conn), id, 'Acopio',
+        `Leche cruda rechazada${prodInv[0] ? ' — ' + prodInv[0].nombre : ''}`,
           litrosN, 'Litros', motivo_rechazo || 'Rechazo en control de calidad',
           fechaFinal, usuario_id || null]
       );
@@ -170,7 +155,7 @@ exports.update = async (id, data) => {
 };
 
 // Nota: eliminar una recepción NO revierte automáticamente el
-// inventario, ni borra la merma o el gasto asociados. Si quieres ese
+// inventario ni borra la merma asociada. Si quieres ese
 // comportamiento simétrico al de Producción, dímelo y lo agrego.
 exports.remove = async (id) => {
   const [res] = await pool.query('DELETE FROM acopio_leche WHERE id = ?', [id]);

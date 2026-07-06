@@ -4,7 +4,7 @@
 ═══════════════════════════════════════ */
 
 const pool = require('../database');
-const { v4: uuid } = require('uuid');
+const { generarIdSecuencial } = require('../utils/idGenerator');
 
 exports.findAll = async ({ estado, proveedor_id } = {}) => {
   let sql = `
@@ -28,7 +28,7 @@ exports.findById = async (id) => {
 
 exports.create = async (data) => {
   const [[cnt]] = await pool.query("SELECT LPAD(COUNT(*)+1,4,'0') AS num FROM compras");
-  const id     = uuid();
+  const id     = await generarIdSecuencial('compras', 'com');
   const numero = `OC-${cnt.num}`;
   await pool.query(
     `INSERT INTO compras (id, numero, proveedor_id, proveedor_nombre, concepto, monto, estado, fecha, notas)

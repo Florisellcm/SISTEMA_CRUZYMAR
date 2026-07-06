@@ -24,10 +24,13 @@ exports.getDetalladoProduccion = async ({ fecha, fechaFin, estado } = {}) => {
       r.producto AS receta_nombre,
       r.rendimiento_esperado,
       u.nombre AS operario_nombre,
-      u.email AS operario_email
+      u.email AS operario_email,
+      padre.numero_lote AS lote_padre_numero,
+      padre.producto_nombre AS lote_padre_producto
     FROM produccion_lotes pl
     LEFT JOIN recetas r ON r.id = pl.receta_id
     LEFT JOIN usuarios u ON u.id = pl.operario_id
+    LEFT JOIN produccion_lotes padre ON padre.id = pl.lote_padre_id
     WHERE pl.fecha_produccion BETWEEN ? AND ?
   `;
 
@@ -41,6 +44,37 @@ exports.getDetalladoProduccion = async ({ fecha, fechaFin, estado } = {}) => {
   sql += ' ORDER BY pl.fecha_produccion DESC, pl.creado_en DESC';
 
   const [registros] = await pool.query(sql, params);
+
+
+// ============================
+// CALCULAR INDICADOR
+// ============================
+
+registros.forEach(r => {
+
+  const proceso = (r.proceso || '').toLowerCase();
+  const entrada = Number(r.leche_usada || 0);
+  const salida = Number(r.cantidad_obtenida || 0);
+
+  // No aplica para procesos intermedios
+  if (proceso === 'descremado') {
+    r.indicador = 'N/A';
+    return;
+  }
+
+  if (!entrada || !salida) {
+    r.indicador = '—';
+    return;
+  }
+
+  // Solo productos obtenidos en libras
+  if (String(r.unidad).toLowerCase().includes('libr')) {
+    r.indicador = `${(entrada / salida).toFixed(2)} L/lb`;
+  } else {
+    r.indicador = 'N/A';
+  }
+
+});
 
   // ============================
   // KPIs DEL REPORTE
@@ -185,27 +219,38 @@ exports.getDetalladoCalidad = async ({ fecha, fechaFin, resultado } = {}) => {
    Departamento de Distribución | Encargado Distribución
    Frecuencia: Diario | Almacenamiento: 5 años
 ────────────────────────────────────────────────────────────── */
-exports.getDetalladoDistribucion = async ({ fecha, fechaFin, estado } = {}) => {
+exports.getDetalladoDistribucion = async ({ fecha, fechaFin, estado, zona, transportista } = {}) => {
   const now = new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000);
   const primerDia = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
   const hoy   = fecha    || primerDia;
   const hasta = fechaFin || now.toISOString().slice(0, 10);
 
+  /* NOTA: zona vive en `clientes.zona` (no en `ventas`), y
+     transportista vive en `distribucion_rutas.transportista`,
+     enlazado por `ventas.ruta_id` (no existe columna v.transportista).
+     Este reporte es de DISTRIBUCIÓN, así que solo debe traer ventas
+     con tipo_entrega = 'Reparto'. */
   let sql = `
     SELECT v.*,
-           c.telefono AS cliente_tel,
-           c.rtn      AS cliente_rtn,
-           c.tipo     AS cliente_tipo,
-           c.direccion AS cliente_dir,
-           u.nombre   AS vendedor_nombre
+           c.telefono          AS cliente_tel,
+           c.rtn               AS cliente_rtn,
+           c.tipo              AS cliente_tipo,
+           c.direccion         AS cliente_dir,
+           COALESCE(c.zona, 'Local') AS zona,
+           dr.transportista    AS transportista,
+           u.nombre            AS vendedor_nombre
     FROM ventas v
-    LEFT JOIN clientes  c ON c.id = v.cliente_id
-    LEFT JOIN usuarios  u ON u.id = v.vendedor_id
+    LEFT JOIN clientes            c  ON c.id  = v.cliente_id
+    LEFT JOIN distribucion_rutas  dr ON dr.id = v.ruta_id
+    LEFT JOIN usuarios            u  ON u.id  = v.vendedor_id
     WHERE v.fecha BETWEEN ? AND ?
+      AND v.tipo_entrega = 'Reparto'
       AND (c.tipo IS NULL OR c.tipo != 'Particular')
   `;
   const params = [hoy, hasta];
-  if (estado) { sql += ' AND v.estado = ?'; params.push(estado); }
+  if (estado)        { sql += ' AND v.estado = ?';                       params.push(estado); }
+  if (zona)           { sql += ' AND COALESCE(c.zona, "Local") = ?';      params.push(zona); }
+  if (transportista)  { sql += ' AND dr.transportista = ?';               params.push(transportista); }
   sql += ' ORDER BY v.fecha DESC, v.creado_en DESC';
 
   const [ventasCab] = await pool.query(sql, params);
@@ -217,25 +262,72 @@ exports.getDetalladoDistribucion = async ({ fecha, fechaFin, estado } = {}) => {
     JOIN ventas v ON v.id = vd.venta_id
     LEFT JOIN clientes c ON c.id = v.cliente_id
     WHERE v.fecha BETWEEN ? AND ?
+      AND v.tipo_entrega = 'Reparto'
       AND (c.tipo IS NULL OR c.tipo != 'Particular')
     ORDER BY v.fecha DESC
   `, [hoy, hasta]);
 
   const [kpiRow] = await pool.query(`
     SELECT
-      COUNT(*)                                    AS total_facturas,
-      COALESCE(SUM(CASE WHEN v.estado='Pagada'   THEN v.total END), 0) AS total_facturado,
-      COALESCE(SUM(CASE WHEN v.estado='Pendiente'THEN v.total END), 0) AS pendiente_cobro,
-      SUM(v.estado = 'Pendiente')                   AS facturas_pendientes,
-      ROUND(AVG(v.total), 2)                        AS ticket_promedio,
-      COUNT(DISTINCT v.cliente_id)                  AS clientes_atendidos
+      COUNT(*)                                                          AS total_facturas,
+      COALESCE(SUM(CASE WHEN v.estado='Pagada'    THEN v.total END), 0) AS total_facturado,
+      COALESCE(SUM(CASE WHEN v.estado='Pendiente' THEN v.total END), 0) AS pendiente_cobro,
+      SUM(v.estado = 'Pendiente')                                       AS facturas_pendientes,
+      ROUND(AVG(v.total), 2)                                            AS ticket_promedio,
+      COUNT(DISTINCT v.cliente_id)                                      AS clientes_atendidos,
+      COUNT(DISTINCT COALESCE(c.zona, 'Local'))                         AS zonas_cubiertas,
+      COUNT(DISTINCT dr.transportista)                                  AS transportistas_activos
     FROM ventas v
-    LEFT JOIN clientes c ON c.id = v.cliente_id
+    LEFT JOIN clientes           c  ON c.id  = v.cliente_id
+    LEFT JOIN distribucion_rutas dr ON dr.id = v.ruta_id
     WHERE v.fecha BETWEEN ? AND ?
+      AND v.tipo_entrega = 'Reparto'
       AND (c.tipo IS NULL OR c.tipo != 'Particular')
   `, [hoy, hasta]);
 
-  return { periodo: { desde: hoy, hasta }, kpis: kpiRow[0], registros: ventasCab, detalle: items };
+  // Resumen por zona (para saber qué ruta genera más venta / cobro pendiente)
+  const [porZona] = await pool.query(`
+    SELECT
+      COALESCE(c.zona, 'Local') AS zona,
+      COUNT(*)                                                          AS entregas,
+      COALESCE(SUM(CASE WHEN v.estado='Pagada'    THEN v.total END), 0) AS facturado,
+      COALESCE(SUM(CASE WHEN v.estado='Pendiente' THEN v.total END), 0) AS pendiente,
+      COUNT(DISTINCT v.cliente_id)                                      AS clientes
+    FROM ventas v
+    LEFT JOIN clientes c ON c.id = v.cliente_id
+    WHERE v.fecha BETWEEN ? AND ?
+      AND v.tipo_entrega = 'Reparto'
+      AND (c.tipo IS NULL OR c.tipo != 'Particular')
+    GROUP BY zona
+    ORDER BY facturado DESC
+  `, [hoy, hasta]);
+
+  // Resumen por transportista (desempeño de reparto)
+  const [porTransportista] = await pool.query(`
+    SELECT
+      COALESCE(dr.transportista, 'Sin asignar') AS transportista,
+      COUNT(*)                                                          AS entregas,
+      COALESCE(SUM(v.total), 0)                                         AS total_repartido,
+      SUM(v.estado = 'Pendiente')                                       AS pendientes,
+      COUNT(DISTINCT COALESCE(c.zona, 'Local'))                         AS zonas_atendidas
+    FROM ventas v
+    LEFT JOIN clientes           c  ON c.id  = v.cliente_id
+    LEFT JOIN distribucion_rutas dr ON dr.id = v.ruta_id
+    WHERE v.fecha BETWEEN ? AND ?
+      AND v.tipo_entrega = 'Reparto'
+      AND (c.tipo IS NULL OR c.tipo != 'Particular')
+    GROUP BY transportista
+    ORDER BY entregas DESC
+  `, [hoy, hasta]);
+
+  return {
+    periodo: { desde: hoy, hasta },
+    kpis: kpiRow[0],
+    registros: ventasCab,
+    detalle: items,
+    porZona,
+    porTransportista
+  };
 };
 
 /* ──────────────────────────────────────────────────────────────
@@ -375,7 +467,6 @@ ORDER BY a.fecha DESC, a.creado_en DESC
     topRechazados
   };
 };
-
 /* ──────────────────────────────────────────────────────────────
    REPORTE 6 — Sintetizado Estados Financieros
    Departamento Contabilidad | Mensual/Anual | Victoria, Yoro
@@ -384,32 +475,132 @@ ORDER BY a.fecha DESC, a.creado_en DESC
 exports.getSintetizadoFinanciero = async ({ mes, anio } = {}) => {
   const now = new Date();
   const a   = anio || now.getFullYear();
+  const esAnual = mes === 'todos';
   let inicio, fin, m;
-  if (mes === 'todos') {
-    m = 'Todo el año';
+
+  if (esAnual) {
+    m = null;
     inicio = `${a}-01-01`;
     fin    = `${a}-12-31`;
   } else {
-    m = mes ? String(mes).padStart(2,'0') : String(now.getMonth()+1).padStart(2,'0');
+    m = mes ? String(mes).padStart(2, '0') : String(now.getMonth() + 1).padStart(2, '0');
     inicio = `${a}-${m}-01`;
     fin    = `${a}-${m}-31`;
   }
 
-  const [[ingR]]  = await pool.query("SELECT COALESCE(SUM(total),0) AS v FROM ventas  WHERE fecha BETWEEN ? AND ? AND estado='Pagada'", [inicio, fin]);
-  const [[egR]]   = await pool.query("SELECT COALESCE(SUM(monto),0) AS v FROM gastos  WHERE fecha BETWEEN ? AND ?", [inicio, fin]);
-  const [[compR]] = await pool.query("SELECT COALESCE(SUM(monto),0) AS v FROM compras WHERE fecha BETWEEN ? AND ? AND estado='Recibida'", [inicio, fin]);
+  /* ── Ingresos (ventas pagadas) ── */
+  const [[ingR]] = await pool.query(
+    "SELECT COALESCE(SUM(total),0) AS v FROM ventas WHERE fecha BETWEEN ? AND ? AND estado='Pagada'",
+    [inicio, fin]
+  );
 
-  const ingresos = Number(ingR.v);
-  const egresos  = Number(egR.v) + Number(compR.v);
+  /* ── Gastos operativos registrados manualmente (categoria != 'Materia Prima') ──
+     Se excluye 'Materia Prima' de esta tabla porque el costo real ya viene de
+     acopio_leche (recepciones aceptadas). Si alguien sigue registrando un gasto
+     manual con esa categoría por error, no se cuenta doble. */
+  const [[gastosOpR]] = await pool.query(
+    "SELECT COALESCE(SUM(monto),0) AS v FROM gastos WHERE fecha BETWEEN ? AND ? AND categoria <> 'Materia Prima'",
+    [inicio, fin]
+  );
 
-  // Ventas por semana del mes
-  const [semanas] = await pool.query(`
-    SELECT WEEK(fecha, 1) AS semana, SUM(total) AS total
-    FROM ventas WHERE fecha BETWEEN ? AND ? AND estado='Pagada'
-    GROUP BY WEEK(fecha,1) ORDER BY semana
-  `, [inicio, fin]);
+  /* ── Compras de insumos que NO son leche cruda (empaques, mantenimiento, etc.) ── */
+  const [[compR]] = await pool.query(
+    "SELECT COALESCE(SUM(monto),0) AS v FROM compras WHERE fecha BETWEEN ? AND ? AND estado='Recibida'",
+    [inicio, fin]
+  );
 
-  // Top productos del mes
+  /* ── Costo real de materia prima: leche aceptada en acopio_leche ── */
+  const [[acopioR]] = await pool.query(
+    "SELECT COALESCE(SUM(total_pagar),0) AS v FROM acopio_leche WHERE fecha BETWEEN ? AND ? AND estado='Aceptada'",
+    [inicio, fin]
+  );
+
+  const ingresos    = Number(ingR.v);
+  const gastosOp    = Number(gastosOpR.v);
+  const compras     = Number(compR.v);
+  const materiaPrima = Number(acopioR.v);
+  const egresos     = gastosOp + compras + materiaPrima;
+  const utilidad    = ingresos - egresos;
+
+  /* ── Serie de la gráfica: por MES si es "todo el año", por SEMANA si es un mes ── */
+  let serie = [];
+
+  if (esAnual) {
+    const [ventasMes] = await pool.query(`
+      SELECT MONTH(fecha) AS periodo, SUM(total) AS total
+      FROM ventas WHERE fecha BETWEEN ? AND ? AND estado='Pagada'
+      GROUP BY MONTH(fecha)
+    `, [inicio, fin]);
+    const [gastosMes] = await pool.query(`
+      SELECT MONTH(fecha) AS periodo, SUM(monto) AS total
+      FROM gastos WHERE fecha BETWEEN ? AND ? AND categoria <> 'Materia Prima'
+      GROUP BY MONTH(fecha)
+    `, [inicio, fin]);
+    const [comprasMes] = await pool.query(`
+      SELECT MONTH(fecha) AS periodo, SUM(monto) AS total
+      FROM compras WHERE fecha BETWEEN ? AND ? AND estado='Recibida'
+      GROUP BY MONTH(fecha)
+    `, [inicio, fin]);
+    const [acopioMes] = await pool.query(`
+      SELECT MONTH(fecha) AS periodo, SUM(total_pagar) AS total
+      FROM acopio_leche WHERE fecha BETWEEN ? AND ? AND estado='Aceptada'
+      GROUP BY MONTH(fecha)
+    `, [inicio, fin]);
+
+    const nombresMes = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const map = {};
+    for (let i = 1; i <= 12; i++) map[i] = { ingresos: 0, egresos: 0 };
+    ventasMes.forEach(r => { map[r.periodo].ingresos = Number(r.total); });
+    gastosMes.forEach(r => { map[r.periodo].egresos += Number(r.total); });
+    comprasMes.forEach(r => { map[r.periodo].egresos += Number(r.total); });
+    acopioMes.forEach(r => { map[r.periodo].egresos += Number(r.total); });
+
+    serie = Object.keys(map).map(k => ({
+      label: nombresMes[k - 1],
+      ingresos: map[k].ingresos,
+      egresos: map[k].egresos,
+      utilidad: map[k].ingresos - map[k].egresos
+    }));
+  } else {
+    // Semanas fijas por día del mes (1-7, 8-14, 15-21, 22-fin) — evita cortes
+    // raros de WEEK() en los bordes del mes, siempre da 4 barras consistentes.
+    const [ventasSem] = await pool.query(`
+      SELECT LEAST(CEIL(DAYOFMONTH(fecha)/7),4) AS periodo, SUM(total) AS total
+      FROM ventas WHERE fecha BETWEEN ? AND ? AND estado='Pagada'
+      GROUP BY periodo
+    `, [inicio, fin]);
+    const [gastosSem] = await pool.query(`
+      SELECT LEAST(CEIL(DAYOFMONTH(fecha)/7),4) AS periodo, SUM(monto) AS total
+      FROM gastos WHERE fecha BETWEEN ? AND ? AND categoria <> 'Materia Prima'
+      GROUP BY periodo
+    `, [inicio, fin]);
+    const [comprasSem] = await pool.query(`
+      SELECT LEAST(CEIL(DAYOFMONTH(fecha)/7),4) AS periodo, SUM(monto) AS total
+      FROM compras WHERE fecha BETWEEN ? AND ? AND estado='Recibida'
+      GROUP BY periodo
+    `, [inicio, fin]);
+    const [acopioSem] = await pool.query(`
+      SELECT LEAST(CEIL(DAYOFMONTH(fecha)/7),4) AS periodo, SUM(total_pagar) AS total
+      FROM acopio_leche WHERE fecha BETWEEN ? AND ? AND estado='Aceptada'
+      GROUP BY periodo
+    `, [inicio, fin]);
+
+    const map = {};
+    for (let i = 1; i <= 4; i++) map[i] = { ingresos: 0, egresos: 0 };
+    ventasSem.forEach(r => { map[r.periodo].ingresos = Number(r.total); });
+    gastosSem.forEach(r => { map[r.periodo].egresos += Number(r.total); });
+    comprasSem.forEach(r => { map[r.periodo].egresos += Number(r.total); });
+    acopioSem.forEach(r => { map[r.periodo].egresos += Number(r.total); });
+
+    serie = [1, 2, 3, 4].map(i => ({
+      label: `Sem ${i}`,
+      ingresos: map[i].ingresos,
+      egresos: map[i].egresos,
+      utilidad: map[i].ingresos - map[i].egresos
+    }));
+  }
+
+  /* ── Top productos del período ── */
   const [topProd] = await pool.query(`
     SELECT vd.nombre, SUM(vd.cantidad) AS vendidos, SUM(vd.subtotal) AS ingresos
     FROM ventas_detalle vd JOIN ventas v ON v.id = vd.venta_id
@@ -417,21 +608,66 @@ exports.getSintetizadoFinanciero = async ({ mes, anio } = {}) => {
     GROUP BY vd.nombre ORDER BY ingresos DESC LIMIT 8
   `, [inicio, fin]);
 
-  // Gastos por categoría
-  const [gastosCateg] = await pool.query(`
+  /* ── Egresos por categoría ──
+     Se toma 'gastos' (sin Materia Prima manual) + se agrega Materia Prima
+     real desde acopio_leche + Compras como categoría aparte, para que la
+     dona refleje el costo real, no lo que alguien tecleó a mano. */
+  const [gastosCategBase] = await pool.query(`
     SELECT categoria, SUM(monto) AS total FROM gastos
-    WHERE fecha BETWEEN ? AND ? GROUP BY categoria ORDER BY total DESC
+    WHERE fecha BETWEEN ? AND ? AND categoria <> 'Materia Prima'
+    GROUP BY categoria
   `, [inicio, fin]);
 
+  const gastosCategoria = [...gastosCategBase];
+  if (materiaPrima > 0) gastosCategoria.push({ categoria: 'Materia Prima', total: materiaPrima });
+  if (compras > 0) gastosCategoria.push({ categoria: 'Compras / Insumos', total: compras });
+  gastosCategoria.sort((x, y) => Number(y.total) - Number(x.total));
+
+  /* ── Comparativo vs mes anterior (solo vista mensual) ── */
+  let variacionIngresos = null;
+  let variacionUtilidad = null;
+
+  if (!esAnual) {
+    let mesAnt, anioAnt;
+    if (m === '01') { mesAnt = '12'; anioAnt = a - 1; }
+    else { mesAnt = String(Number(m) - 1).padStart(2, '0'); anioAnt = a; }
+
+    const inicioAnt = `${anioAnt}-${mesAnt}-01`;
+    const finAnt    = `${anioAnt}-${mesAnt}-31`;
+
+    const [[ingAntR]]    = await pool.query("SELECT COALESCE(SUM(total),0) AS v FROM ventas WHERE fecha BETWEEN ? AND ? AND estado='Pagada'", [inicioAnt, finAnt]);
+    const [[gastosAntR]] = await pool.query("SELECT COALESCE(SUM(monto),0) AS v FROM gastos WHERE fecha BETWEEN ? AND ? AND categoria <> 'Materia Prima'", [inicioAnt, finAnt]);
+    const [[compAntR]]   = await pool.query("SELECT COALESCE(SUM(monto),0) AS v FROM compras WHERE fecha BETWEEN ? AND ? AND estado='Recibida'", [inicioAnt, finAnt]);
+    const [[acopioAntR]] = await pool.query("SELECT COALESCE(SUM(total_pagar),0) AS v FROM acopio_leche WHERE fecha BETWEEN ? AND ? AND estado='Aceptada'", [inicioAnt, finAnt]);
+
+    const ingresosAnt = Number(ingAntR.v);
+    const egresosAnt  = Number(gastosAntR.v) + Number(compAntR.v) + Number(acopioAntR.v);
+    const utilidadAnt = ingresosAnt - egresosAnt;
+
+    variacionIngresos = ingresosAnt > 0
+      ? parseFloat(((ingresos - ingresosAnt) / ingresosAnt * 100).toFixed(1))
+      : null;
+
+    variacionUtilidad = utilidadAnt !== 0
+      ? parseFloat(((utilidad - utilidadAnt) / Math.abs(utilidadAnt) * 100).toFixed(1))
+      : null;
+  }
+
   return {
-    periodo: { mes: mes === 'todos' ? String(a) : `${a}-${m}`, inicio, fin },
+    periodo: { mes: esAnual ? String(a) : `${a}-${m}`, inicio, fin },
+    granularidad: esAnual ? 'mes' : 'semana',
     kpis: {
-      ingresos, egresos, utilidad: ingresos - egresos,
-      margen: ingresos > 0 ? parseFloat(((ingresos - egresos) / ingresos * 100).toFixed(1)) : 0
+      ingresos, egresos, utilidad,
+      margen: ingresos > 0 ? parseFloat((utilidad / ingresos * 100).toFixed(1)) : 0,
+      variacionIngresos,
+      variacionUtilidad,
+      materiaPrima,
+      gastosOperativos: gastosOp,
+      compras
     },
-    semanas: semanas.map((s, i) => ({ semana: `Sem ${i+1}`, total: Number(s.total) })),
+    serie,
     topProductos: topProd,
-    gastosCategoria: gastosCateg
+    gastosCategoria
   };
 };
 

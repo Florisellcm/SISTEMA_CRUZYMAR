@@ -4,7 +4,7 @@
 ═══════════════════════════════════════ */
 
 const pool = require('../database');
-const { v4: uuidv4 } = require('uuid');
+const { generarIdSecuencial } = require('../utils/idGenerator');
 
 const BASE_SQL = `
   SELECT c.*,
@@ -58,7 +58,7 @@ exports.getResumen = async (fecha) => {
 exports.create = async (data) => {
   const { acopio_id, olor, color, aspecto, prueba_alcohol, densidad,
           acidez, temperatura, resultado, motivo_rechazo, analista_id, fecha, observaciones } = data;
-  const id = uuidv4();
+  const id = await generarIdSecuencial('calidad_pruebas', 'cal');
   await pool.query(
     `INSERT INTO calidad_pruebas
       (id, acopio_id, olor, color, aspecto, prueba_alcohol, densidad, acidez, temperatura,
@@ -97,12 +97,13 @@ exports.create = async (data) => {
             [acopio.litros, prodLeche.id]
           );
           // Registrar movimiento
+          const movId = await generarIdSecuencial('inventario_movimientos', 'mov');
           await pool.query(`
             INSERT INTO inventario_movimientos
               (id, producto_id, tipo, cantidad, stock_resultante, motivo, usuario, fecha)
             SELECT ?, ?, 'Entrada', ?, stock, 'Ingreso por acopio de leche aprobado', 'Sistema', NOW()
             FROM inventario_productos WHERE id = ?`,
-            [uuidv4(), prodLeche.id, acopio.litros, prodLeche.id]
+            [movId, prodLeche.id, acopio.litros, prodLeche.id]
           );
         }
       }

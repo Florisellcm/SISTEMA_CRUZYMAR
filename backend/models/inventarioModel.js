@@ -10,7 +10,7 @@
 ═══════════════════════════════════════ */
 
 const pool = require('../database');
-const { v4: uuid } = require('uuid');
+const { generarIdSecuencial } = require('../utils/idGenerator');
 
 // ── Inventario General ──────────────────────
 exports.findAll = async ({ categoria, buscar } = {}) => {
@@ -29,7 +29,7 @@ exports.findById = async (id) => {
 };
 
 exports.create = async (data) => {
-  const id = uuid();
+  const id = await generarIdSecuencial('inventario_productos', 'inv');
   await pool.query(
     `INSERT INTO inventario_productos (id, nombre, categoria, stock, stock_minimo, unidad, precio, vencimiento)
      VALUES (?,?,?,?,?,?,?,?)`,
@@ -104,7 +104,7 @@ exports.registrarMovimientoTx = async (conn, { producto_id, tipo, cantidad, moti
 
   await conn.query('UPDATE inventario_productos SET stock = ? WHERE id = ?', [nuevoStock, producto_id]);
 
-  const id = uuid();
+  const id = await generarIdSecuencial('inventario_movimientos', 'mov', conn);
   await conn.query(
     `INSERT INTO inventario_movimientos (id, producto_id, tipo, cantidad, stock_resultante, motivo, usuario, usuario_id)
      VALUES (?,?,?,?,?,?,?,?)`,

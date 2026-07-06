@@ -1,4 +1,4 @@
-const m = require('../models/calidadLotesModel');
+const m = require('../models/calidadlotesModel');
 
 exports.getLotes   = async (req, res) => { try { res.json(await m.getLotes(req.query)); } catch(e){ res.status(500).json({error:e.message}); }};
 exports.getKpis    = async (req, res) => { try { res.json(await m.getKpis()); } catch(e){ res.status(500).json({error:e.message}); }};

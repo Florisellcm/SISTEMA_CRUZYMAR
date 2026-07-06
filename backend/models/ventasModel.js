@@ -8,7 +8,7 @@
 ═══════════════════════════════════════ */
 
 const pool = require('../database');
-const { v4: uuidv4 } = require('uuid');
+const { generarIdSecuencial } = require('../utils/idGenerator');
 const Inventario = require('./inventarioModel');
 
 const hoy = () => new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10);
@@ -62,11 +62,11 @@ exports.findPendientesReparto = async () => {
 
 exports.create = async ({ clienteId, clienteNombre, items, metodoPago, estado, observaciones, tipoEntrega, generarFactura, vendedor_id }) => {
   const total = (items || []).reduce((s, i) => s + parseFloat(i.cantidad) * parseFloat(i.precio), 0);
-  const id    = uuidv4();
   const fecha = hoy();
   const tipoEntregaFinal = tipoEntrega === 'Reparto' ? 'Reparto' : 'Local';
 
   const conn = await pool.getConnection();
+  const id    = await generarIdSecuencial('ventas', 'vta', conn);
   try {
     await conn.beginTransaction();
 
@@ -84,9 +84,10 @@ exports.create = async ({ clienteId, clienteNombre, items, metodoPago, estado, o
       const sub    = parseFloat(it.cantidad) * parseFloat(it.precio);
       const prodId = it.producto_id || it.id || null;
 
+      const detId = await generarIdSecuencial('ventas_detalle', 'dtl', conn);
       await conn.query(
         'INSERT INTO ventas_detalle (id, venta_id, producto_id, nombre, cantidad, precio, subtotal) VALUES (?,?,?,?,?,?,?)',
-        [uuidv4(), id, prodId, it.nombre || it.producto, it.cantidad, it.precio, sub]
+        [detId, id, prodId, it.nombre || it.producto, it.cantidad, it.precio, sub]
       );
 
       // Baja de inventario: SIEMPRE por Inventario.registrarMovimientoTx
@@ -106,7 +107,7 @@ exports.create = async ({ clienteId, clienteNombre, items, metodoPago, estado, o
     if (generarFactura) {
       const [[cntF]] = await conn.query("SELECT LPAD(COUNT(*)+1,4,'0') AS num FROM facturacion FOR UPDATE");
       const numeroFactura = `FAC-${cntF.num}`;
-      const facturaId = uuidv4();
+      const facturaId = await generarIdSecuencial('facturacion', 'fac', conn);
 
       await conn.query(
         `INSERT INTO facturacion (id, numero, cliente_id, venta_id, total, estado, fecha)

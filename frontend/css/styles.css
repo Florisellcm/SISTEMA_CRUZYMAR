@@ -864,3 +864,48 @@ body {
 .btn-accion.rojo  { background: #FEE2E2; color: #DC2626; }
 .btn-accion.rojo:hover  { background: #DC2626; color: #fff; }
 .btn-accion:disabled { opacity: .35; cursor: not-allowed; }
+
+.rep-krow{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+.rep-kcard{
+  flex:1;
+  min-width:140px;
+  padding:14px;
+  border-radius:14px;
+  background:#fff;
+  border:1px solid var(--gris-borde);
+  transition:all .2s ease;
+}
+
+.rep-kcard:hover{
+  transform:translateY(-3px);
+  box-shadow:var(--shadow-sm);
+}
+
+.rep-kcard .lbl{
+  font-size:11px;
+  color:var(--gris-txt);
+  margin-bottom:6px;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+}
+
+.rep-kcard .val{
+  font-size:20px;
+  font-weight:800;
+  color:var(--texto);
+}
+
+/* 🔵 AZULES (corporativo) */
+.k-blu  { background:var(--azul-pale); color:var(--azul); }
+.k-blu2 { background:#D6E8F7; color:var(--azul-med); }
+.k-blu3 { background:#C2DCF2; color:var(--azul); }
+
+/* 🟢 VERDES (corporativo) */
+.k-grn  { background:var(--verde-pale); color:var(--verde); }
+.k-grn2 { background:#D7EEDC; color:var(--verde-med); }
+.k-grn3 { background:#C3E2CB; color:var(--verde); }

@@ -62,12 +62,13 @@
             <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">RTN</th>
             <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Teléfono</th>
             <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Tipo</th>
+            <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Zona</th>
             <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase">Dirección</th>
             <th style="padding:12px 16px;text-align:center;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;width:120px">Acciones</th>
           </tr>
         </thead>
         <tbody id="clientesStandaloneTableBody">
-          <tr><td colspan="6" style="text-align:center;padding:40px;color:#64748B">Cargando directorio de clientes...</td></tr>
+          <tr><td colspan="7" style="text-align:center;padding:40px;color:#64748B">Cargando directorio de clientes...</td></tr>
         </tbody>
       </table>
     </div>
@@ -116,10 +117,21 @@
           <input id="cliRTN" type="text" placeholder="0000-0000-000000"
             style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
         </div>
-        <div>
-          <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px">Dirección / Aldea</label>
-          <input id="cliDireccion" type="text" placeholder="Ej: Bo. El Calvario, Victoria, Yoro"
-            style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px">Dirección / Aldea</label>
+            <input id="cliDireccion" type="text" placeholder="Ej: Bo. El Calvario"
+              style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box">
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:700;color:#1e2d42;margin-bottom:6px">Zona</label>
+            <select id="cliZona" style="width:100%;padding:10px 14px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none">
+              <option value="Local">Local (Victoria)</option>
+              <option value="Aldea">Aldea</option>
+              <option value="Yoro">Yoro (resto del depto.)</option>
+              <option value="Norte">Norte (SPS)</option>
+            </select>
+          </div>
         </div>
       </form>
     </div>

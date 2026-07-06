@@ -18,7 +18,7 @@
 ═══════════════════════════════════════ */
 
 const pool = require('../database');
-const { v4: uuidv4 } = require('uuid');
+const { generarIdSecuencial } = require('../utils/idGenerator');
 const Inventario = require('./inventarioModel');
 
 // Genera número de lote: YYYYMMDD-T-NNN sin duplicados.
@@ -128,7 +128,7 @@ exports.create = async (data) => {
     await conn.beginTransaction();
 
     const numLote = await genLote(conn, fechaProduccion, turno);
-    const id = uuidv4();
+    const id = await generarIdSecuencial('produccion_lotes', 'lot', conn);
     const fecha = fechaProduccion || new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 
     await conn.query(

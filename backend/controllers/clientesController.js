@@ -1,17 +1,17 @@
 /* ═══════════════════════════════════════
    CRUZYMAR · controllers/clientesController.js
-   CRUD de Clientes con soft-delete
 ═══════════════════════════════════════ */
 
 const ClientesModel = require('../models/clientesModel');
 
 exports.getAll = async (req, res) => {
   try {
-    const { buscar } = req.query;
-    const lista = await ClientesModel.findAll(buscar);
+    const { buscar, zona } = req.query;
+    const lista = await ClientesModel.findAll(buscar, zona);
     res.json(lista);
   } catch (e) { res.status(500).json({ error: e.message }); }
 };
+
 
 exports.getOne = async (req, res) => {
   try {
@@ -23,7 +23,7 @@ exports.getOne = async (req, res) => {
 
 exports.create = async (req, res) => {
   try {
-    if (!req.body.nombre) return res.status(400).json({ error: 'Nombre es obligatorio' });
+    if (!req.body.nombre) return res.status(400).json({ error: 'El nombre es obligatorio' });
     const nuevo = await ClientesModel.create(req.body);
     res.status(201).json(nuevo);
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -40,8 +40,7 @@ exports.update = async (req, res) => {
 exports.remove = async (req, res) => {
   try {
     const ok = await ClientesModel.softDelete(req.params.id);
-    ok
-      ? res.json({ message: 'Cliente desactivado' })
-      : res.status(404).json({ error: 'Cliente no encontrado' });
+    if (!ok) return res.status(404).json({ error: 'Cliente no encontrado' });
+    res.json({ message: 'Cliente desactivado' });
   } catch (e) { res.status(500).json({ error: e.message }); }
 };

@@ -4,7 +4,7 @@
 ═══════════════════════════════════════ */
 
 const pool = require('../database');
-const { v4: uuidv4 } = require('uuid');
+const { generarIdSecuencial } = require('../utils/idGenerator');
 
 exports.findAll = async (categoria) => {
   let sql = 'SELECT g.*, u.nombre AS usuario_nombre FROM gastos g LEFT JOIN usuarios u ON u.id = g.usuario_id WHERE 1=1';
@@ -21,7 +21,7 @@ exports.findById = async (id) => {
 };
 
 exports.create = async ({ concepto, categoria, monto, fecha, proveedor, comprobante, usuario_id }) => {
-  const id = uuidv4();
+  const id = await generarIdSecuencial('gastos', 'gas');
   await pool.query(
     'INSERT INTO gastos (id, concepto, categoria, monto, fecha, proveedor, comprobante, usuario_id) VALUES (?,?,?,?,?,?,?,?)',
     [id, concepto, categoria||'Otros', parseFloat(monto),

@@ -2,7 +2,7 @@
    CRUZYMAR · models/facturacionModel.js — MySQL
 ═══════════════════════════════════════ */
 const pool = require('../database');
-const { v4: uuidv4 } = require('uuid');
+const { generarIdSecuencial } = require('../utils/idGenerator');
 
 exports.findAll = async () => {
   const [rows] = await pool.query(`
@@ -26,7 +26,7 @@ exports.findById = async (id) => {
 exports.create = async (data) => {
   const [[cnt]] = await pool.query("SELECT LPAD(COUNT(*)+1,4,'0') AS num FROM facturacion");
   const numero  = `FAC-${cnt.num}`;
-  const id      = uuidv4();
+  const id      = await generarIdSecuencial('facturacion', 'fac');
   const fecha   = data.fecha || new Date(Date.now() - (new Date()).getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   const total   = parseFloat(data.monto_total || data.total || 0);
 

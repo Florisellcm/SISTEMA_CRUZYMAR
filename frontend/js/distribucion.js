@@ -1,31 +1,93 @@
 /* ══════════════════════════════════════════
    CRUZYMAR · distribucion.js
    Sub-módulo: Distribución — Hoja de Ruta
+   Ahora con pestañas por zona (cada zona = un repartidor distinto)
 ══════════════════════════════════════════ */
 
-let _distData = null;
+let _distData   = null;
+let _zonaActiva = null; // null = todas las zonas juntas
 
 async function loadDistribucion() {
   const fecha = el('distFecha')?.value;
   if (!fecha) return toast('Seleccioná una fecha de reparto', 'err');
 
   try {
-    _distData = await req('GET', `/distribucion?fecha=${fecha}`);
+    // Resumen de cuántos clientes/cuánto hay por cobrar en cada zona
+    const resumen = await req('GET', `/distribucion/resumen-zonas?fecha=${fecha}`);
+    _renderZonaTabs(resumen);
+
+    // Hoja de ruta: si hay zona activa, filtra solo esa; si no, trae todas
+    const qs = _zonaActiva
+      ? `?fecha=${fecha}&zona=${encodeURIComponent(_zonaActiva)}`
+      : `?fecha=${fecha}`;
+    _distData = await req('GET', `/distribucion${qs}`);
     _renderDistribucion(_distData);
   } catch(e) {
     toast('Error generando hoja de ruta: ' + e.message, 'err');
   }
 }
 
+/* ─── PESTAÑAS DE ZONA ───
+   Cada zona representa a un repartidor distinto. El nombre del
+   transportista se recuerda por zona (localStorage) para no tener
+   que reescribirlo cada vez que cambiás de pestaña. */
+function _renderZonaTabs(resumen) {
+  const cont = el('distZonaTabs');
+  if (!cont) return;
+
+  const zonas = ['Local','Aldea','Yoro','Norte'];
+  const totalGeneral = resumen.reduce((s,r) => s + Number(r.total_clientes), 0);
+
+  const chip = (zonaValor, label, count) => {
+    const activo = _zonaActiva === zonaValor;
+    return `
+      <button onclick="_seleccionarZona(${zonaValor === null ? 'null' : `'${zonaValor}'`})"
+        style="padding:8px 16px;border-radius:20px;border:2px solid ${activo ? '#003C78' : '#E0E9F2'};
+               background:${activo ? '#003C78' : '#fff'};color:${activo ? '#fff' : '#003C78'};
+               font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">
+        ${label}
+        <span style="background:${activo ? 'rgba(255,255,255,.25)' : '#EAF2FB'};padding:1px 8px;border-radius:10px;font-size:11px">${count}</span>
+      </button>`;
+  };
+
+  cont.innerHTML = chip(null, 'Todas las zonas', totalGeneral) +
+    zonas.map(z => {
+      const r = resumen.find(x => x.zona === z);
+      return chip(z, z, r ? r.total_clientes : 0);
+    }).join('');
+}
+
+function _seleccionarZona(zona) {
+  _zonaActiva = zona;
+
+  // Recupera (o sugiere) el nombre del transportista de esa zona
+  const key = 'dist_transportista_' + (zona || 'todas');
+  const guardado = localStorage.getItem(key);
+  if (el('distTransportista')) {
+    el('distTransportista').value = guardado || (zona ? `Repartidor ${zona}` : 'Repartidor');
+  }
+
+  loadDistribucion();
+}
+
+// Guarda el nombre del transportista de la zona activa cada vez que se edita
+document.addEventListener('change', (ev) => {
+  if (ev.target && ev.target.id === 'distTransportista') {
+    const key = 'dist_transportista_' + (_zonaActiva || 'todas');
+    localStorage.setItem(key, ev.target.value);
+  }
+});
+
 function _renderDistribucion(d) {
   const cont = el('distContenido');
   if (!cont) return;
 
   if (!d.entregas?.length) {
+    const msgZona = d.zona ? ` en la zona "${d.zona}"` : '';
     cont.innerHTML = `
       <div style="text-align:center;padding:60px;background:#fff;border-radius:13px;border:1.5px solid #E0E9F2">
         <i class="ri-truck-line" style="font-size:36px;color:#94A3B8;display:block;margin-bottom:10px"></i>
-        <p style="font-size:14px;font-weight:700;color:#64748B">Sin ventas registradas para el ${_fecCorta(d.fecha)}</p>
+        <p style="font-size:14px;font-weight:700;color:#64748B">Sin ventas registradas${msgZona} para el ${_fecCorta(d.fecha)}</p>
         <p style="font-size:12px;color:#94A3B8;margin-top:4px">Registrá ventas en el módulo Comercial para generar la hoja de ruta.</p>
       </div>`;
     return;
@@ -59,7 +121,7 @@ function _renderDistribucion(d) {
 
   const cargaCard = `
     <div class="dist-card">
-      <div class="dist-card-header"><i class="ri-archive-line"></i> 1. Resumen de Carga para Bodega</div>
+      <div class="dist-card-header"><i class="ri-archive-line"></i> 1. Resumen de Carga para Bodega${d.zona ? ` — Zona ${d.zona}` : ''}</div>
       <table class="dist-table">
         <thead><tr>
           <th>Producto</th><th>Cantidad a cargar</th><th>Unidad</th><th style="text-align:center">✓ Verificado</th>
@@ -90,7 +152,7 @@ function _renderDistribucion(d) {
 
   const rutaCard = `
     <div class="dist-card">
-      <div class="dist-card-header"><i class="ri-route-line"></i> 2. Hoja de Ruta para el Repartidor — ${_fecCorta(d.fecha)}</div>
+      <div class="dist-card-header"><i class="ri-route-line"></i> 2. Hoja de Ruta para el Repartidor${d.zona ? ` — Zona ${d.zona}` : ''} — ${_fecCorta(d.fecha)}</div>
       <div style="overflow-x:auto">
         <table class="dist-table" style="min-width:900px">
           <thead><tr>
@@ -115,8 +177,9 @@ function distImprimir() {
   const fecha = el('distFecha')?.value || '';
   const transp = el('distTransportista')?.value || 'Repartidor';
   const ahora  = new Date().toLocaleString('es-HN', { dateStyle:'short', timeStyle:'short' });
+  const zonaTxt = d.zona ? ` · Zona: ${d.zona}` : ' · Todas las zonas';
 
-  if (el('distPrintFecha')) el('distPrintFecha').textContent = `Fecha: ${_fecCorta(fecha)}`;
+  if (el('distPrintFecha')) el('distPrintFecha').textContent = `Fecha: ${_fecCorta(fecha)}${zonaTxt}`;
   if (el('distPrintTransp')) el('distPrintTransp').textContent = `Transportista: ${transp} · Generado: ${ahora}`;
 
   /* Carga */
