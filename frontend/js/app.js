@@ -152,7 +152,14 @@ const PAGES = {
   calidadLotes: { titulo: 'Control de Calidad',      subtitulo: 'Inspección de lotes producidos',   htmlFile: 'calidadlotes.html', loader: () => { if (typeof _initCQFechas === 'function') _initCQFechas(); if (typeof loadCalidadLotes === 'function') loadCalidadLotes(); } },
   inventario:   { titulo: 'Gestión de Inventario',   subtitulo: 'Stock de productos y materias',    htmlFile: 'inventario.html',   loader: () => typeof loadInventario === 'function' && loadInventario() },
   comercial:    { titulo: 'Ventas y Facturas',        subtitulo: 'Gestión comercial',                htmlFile: 'comercial.html',    loader: () => typeof loadVentas === 'function' && loadVentas() },
-  distribucion: { titulo: 'Distribución',             subtitulo: 'Hoja de ruta del día',             htmlFile: 'distribucion.html', loader: null },
+  distribucion: { titulo: 'Distribución',             subtitulo: 'Hoja de ruta del día',             htmlFile: 'distribucion.html', loader: () => {
+    // Poner fecha de hoy si el campo está vacío, luego cargar
+    setTimeout(() => {
+      const inp = document.getElementById('distFecha');
+      if (inp && !inp.value) inp.value = new Date().toISOString().slice(0, 10);
+      if (typeof loadDistribucion === 'function') loadDistribucion();
+    }, 80);
+  } },
   clientes:     { titulo: 'Clientes',                 subtitulo: 'Directorio de clientes',           htmlFile: 'clientes.html',     loader: () => typeof loadClientesStandalone === 'function' && loadClientesStandalone() },
   compras:      { titulo: 'Compras y Gastos',         subtitulo: 'Registro de gastos',               htmlFile: 'compras.html',      loader: () => typeof loadGastos === 'function' && loadGastos() },
   proveedores:  { titulo: 'Proveedores',              subtitulo: 'Directorio de proveedores',        htmlFile: 'proveedores.html',  loader: () => typeof loadProveedoresStandalone === 'function' && loadProveedoresStandalone() },

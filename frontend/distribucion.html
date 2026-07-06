@@ -20,8 +20,19 @@
     </div>
     <div style="display:flex;align-items:center;gap:8px">
       <label style="font-size:13px;font-weight:700;color:#003C78">Transportista:</label>
-      <input type="text" id="distTransportista" placeholder="Nombre del repartidor" value="Repartidor"
-        style="padding:9px 13px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;width:200px">
+      <select id="distTransportista"
+        style="padding:9px 13px;border:2px solid #E0E9F2;border-radius:8px;font-size:13px;outline:none;width:220px;font-weight:600;color:#1E293B">
+        <option value="José Santos López">José Santos López (Local)</option>
+        <option value="Miguel Ángel Pineda">Miguel Ángel Pineda (Local)</option>
+        <option value="Juan Ramón Martínez">Juan Ramón Martínez (Aldeas)</option>
+        <option value="Pedro Pablo García">Pedro Pablo García (Aldeas)</option>
+        <option value="Santos Mejía">Santos Mejía (Aldeas)</option>
+        <option value="Mario López Hernández">Mario López Hernández (Yoro)</option>
+        <option value="Carlos Alberto Banegas">Carlos Alberto Banegas (Yoro)</option>
+        <option value="Luis Enrique Flores">Luis Enrique Flores (Norte)</option>
+        <option value="Domingo Rivera">Domingo Rivera (Norte)</option>
+        <option value="Wilmer López">Wilmer López (Norte)</option>
+      </select>
     </div>
     <div style="display:flex;gap:8px;margin-left:auto">
       <button onclick="loadDistribucion()"
@@ -33,6 +44,11 @@
         <i class="ri-printer-line"></i> Imprimir / PDF
       </button>
     </div>
+  </div>
+
+  <!-- PESTAÑAS DE ZONA -->
+  <div id="distZonaTabs"
+    style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
   </div>
 
   <!-- CONTENIDO GENERADO -->

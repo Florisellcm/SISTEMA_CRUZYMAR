@@ -237,7 +237,15 @@ exports.getDetalladoDistribucion = async ({ fecha, fechaFin, estado, zona, trans
            c.tipo              AS cliente_tipo,
            c.direccion         AS cliente_dir,
            COALESCE(c.zona, 'Local') AS zona,
-           dr.transportista    AS transportista,
+           COALESCE(dr.conductor, 
+             CASE COALESCE(c.zona, 'Local')
+               WHEN 'Local' THEN 'José Santos López'
+               WHEN 'Aldea' THEN 'Juan Ramón Martínez'
+               WHEN 'Yoro'  THEN 'Mario López Hernández'
+               WHEN 'Norte' THEN 'Luis Enrique Flores'
+               ELSE 'José Santos López'
+             END
+           ) AS transportista,
            u.nombre            AS vendedor_nombre
     FROM ventas v
     LEFT JOIN clientes            c  ON c.id  = v.cliente_id
@@ -245,12 +253,11 @@ exports.getDetalladoDistribucion = async ({ fecha, fechaFin, estado, zona, trans
     LEFT JOIN usuarios            u  ON u.id  = v.vendedor_id
     WHERE v.fecha BETWEEN ? AND ?
       AND v.tipo_entrega = 'Reparto'
-      AND (c.tipo IS NULL OR c.tipo != 'Particular')
   `;
   const params = [hoy, hasta];
   if (estado)        { sql += ' AND v.estado = ?';                       params.push(estado); }
   if (zona)           { sql += ' AND COALESCE(c.zona, "Local") = ?';      params.push(zona); }
-  if (transportista)  { sql += ' AND dr.transportista = ?';               params.push(transportista); }
+  if (transportista)  { sql += ' AND dr.conductor = ?';                   params.push(transportista); }
   sql += ' ORDER BY v.fecha DESC, v.creado_en DESC';
 
   const [ventasCab] = await pool.query(sql, params);
@@ -263,7 +270,6 @@ exports.getDetalladoDistribucion = async ({ fecha, fechaFin, estado, zona, trans
     LEFT JOIN clientes c ON c.id = v.cliente_id
     WHERE v.fecha BETWEEN ? AND ?
       AND v.tipo_entrega = 'Reparto'
-      AND (c.tipo IS NULL OR c.tipo != 'Particular')
     ORDER BY v.fecha DESC
   `, [hoy, hasta]);
 
@@ -276,13 +282,20 @@ exports.getDetalladoDistribucion = async ({ fecha, fechaFin, estado, zona, trans
       ROUND(AVG(v.total), 2)                                            AS ticket_promedio,
       COUNT(DISTINCT v.cliente_id)                                      AS clientes_atendidos,
       COUNT(DISTINCT COALESCE(c.zona, 'Local'))                         AS zonas_cubiertas,
-      COUNT(DISTINCT dr.transportista)                                  AS transportistas_activos
+      COUNT(DISTINCT COALESCE(dr.conductor, 
+        CASE COALESCE(c.zona, 'Local')
+          WHEN 'Local' THEN 'José Santos López'
+          WHEN 'Aldea' THEN 'Juan Ramón Martínez'
+          WHEN 'Yoro'  THEN 'Mario López Hernández'
+          WHEN 'Norte' THEN 'Luis Enrique Flores'
+          ELSE 'José Santos López'
+        END
+      )) AS transportistas_activos
     FROM ventas v
     LEFT JOIN clientes           c  ON c.id  = v.cliente_id
     LEFT JOIN distribucion_rutas dr ON dr.id = v.ruta_id
     WHERE v.fecha BETWEEN ? AND ?
       AND v.tipo_entrega = 'Reparto'
-      AND (c.tipo IS NULL OR c.tipo != 'Particular')
   `, [hoy, hasta]);
 
   // Resumen por zona (para saber qué ruta genera más venta / cobro pendiente)
@@ -297,7 +310,6 @@ exports.getDetalladoDistribucion = async ({ fecha, fechaFin, estado, zona, trans
     LEFT JOIN clientes c ON c.id = v.cliente_id
     WHERE v.fecha BETWEEN ? AND ?
       AND v.tipo_entrega = 'Reparto'
-      AND (c.tipo IS NULL OR c.tipo != 'Particular')
     GROUP BY zona
     ORDER BY facturado DESC
   `, [hoy, hasta]);
@@ -305,7 +317,15 @@ exports.getDetalladoDistribucion = async ({ fecha, fechaFin, estado, zona, trans
   // Resumen por transportista (desempeño de reparto)
   const [porTransportista] = await pool.query(`
     SELECT
-      COALESCE(dr.transportista, 'Sin asignar') AS transportista,
+      COALESCE(dr.conductor, 
+        CASE COALESCE(c.zona, 'Local')
+          WHEN 'Local' THEN 'José Santos López'
+          WHEN 'Aldea' THEN 'Juan Ramón Martínez'
+          WHEN 'Yoro'  THEN 'Mario López Hernández'
+          WHEN 'Norte' THEN 'Luis Enrique Flores'
+          ELSE 'José Santos López'
+        END
+      ) AS transportista,
       COUNT(*)                                                          AS entregas,
       COALESCE(SUM(v.total), 0)                                         AS total_repartido,
       SUM(v.estado = 'Pendiente')                                       AS pendientes,
@@ -315,7 +335,6 @@ exports.getDetalladoDistribucion = async ({ fecha, fechaFin, estado, zona, trans
     LEFT JOIN distribucion_rutas dr ON dr.id = v.ruta_id
     WHERE v.fecha BETWEEN ? AND ?
       AND v.tipo_entrega = 'Reparto'
-      AND (c.tipo IS NULL OR c.tipo != 'Particular')
     GROUP BY transportista
     ORDER BY entregas DESC
   `, [hoy, hasta]);

@@ -352,35 +352,20 @@ INSERT IGNORE INTO clientes (id, nombre, telefono, email, direccion, tipo, rtn) 
 ('cli-005','Mini Super Las Brisas',  '9811-2222','',                   'Col. Las Brisas, Yoro',          'Minorista',  ''),
 ('cli-006','Consumidor Final',       '',         '',                   '',                                'Particular', '');
 
--- ── Recetas ───────────────────────────────────────────────────
-INSERT IGNORE INTO recetas (id, producto, unidad_producto, litros_por_unidad, rendimiento_esperado, tiempo_estimado, descripcion) VALUES
-('rec-001','Queso Fresco 500g',  'unidades', 8.00, 12.50, '180 min', 'Queso fresco tradicional hondureño, 500g por unidad'),
-('rec-002','Leche Entera 1L',    'litros',   1.00, 98.00, '60 min',  'Leche pasteurizada entera, presentación de 1 litro'),
-('rec-003','Yogur Natural 500g', 'unidades', 1.10, 90.00, '120 min', 'Yogur natural sin saborizantes, fermentación controlada'),
-('rec-004','Mantequilla 250g',   'unidades', 3.00, 33.00, '150 min', 'Mantequilla sin sal, 250g por unidad'),
-('rec-005','Crema de Leche',     'litros',   2.00, 50.00, '90 min',  'Crema de leche natural, 30% de grasa'),
-('rec-006','Quesillo Especial 1lb','unidades',5.00, 20.00, '200 min','Quesillo artesanal especial, 1 libra');
 
 -- ── Inventario Inicial ────────────────────────────────────────
-INSERT IGNORE INTO inventario_productos (id, nombre, categoria, stock, stock_minimo, unidad, precio) VALUES
-('inv-001','Queso Crema 1lb',     'Queso',       120, 20,  'Libras',   65.00),
-('inv-002','Leche Entera 1L',       'Leche',       350, 50,  'Litros',   28.00),
-('inv-003','Mantequilla 1lb',      'Mantequilla', 85,  15,  'Libras',   50.00),
-('inv-004','Quesillo 1lb',         'Queso',       60,  10,  'Libras',   70.00),
-('inv-005','Queso Semicheco 1lb',  'Queso',       95,  15,  'Libras',   75.00),
-('inv-006','Queso con Chile 1lb',  'Queso',       40,  10,  'Libras',   68.00),
-('inv-007','Requesón 1lb',         'Requesón',    85,  20,  'Libras',   45.00),
-('inv-008','Suero 1L',             'Suero',       30,  10,  'Litros',   10.00),
-('inv-009','Leche Entera 500ml',   'Leche',       100, 15,  'Litros',   15.00),
-('inv-010','Queso Crema 0.5lb',    'Queso',       60,  10,  'Libras',   33.00),
-('inv-011','Queso Frijolero 1lb',  'Queso',       90,  10,  'Libras',   60.00),
-('inv-012','Queso Frijolero 0.5lb','Queso',       70,  10,  'Libras',   31.00),
-('inv-013','Queso Semi-seco 0.5lb','Queso',       85,  10,  'Libras',   38.00),
-('inv-014','Quesillo 0.5lb',       'Queso',       95,  10,  'Libras',   36.00),
-('inv-015','Suero 500ml',          'Suero',       150, 20,  'Litros',   6.00),
-('inv-016','Requesón 0.5lb',       'Requesón',    30,  5,   'Libras',   23.00),
-('inv-017','Mantequilla 0.5lb',    'Mantequilla', 90,  10,  'Libras',   26.00),
-('inv-018','Queso con Chile 0.5lb','Queso',       35,  5,   'Libras',   35.00);
+INSERT IGNORE INTO inventario_productos
+(id, nombre, categoria, stock, stock_minimo, unidad, precio)
+VALUES
+('inv-001','Queso Crema','Queso',120,20,'Libras',65.00),
+('inv-002','Leche Entera','Leche',350,50,'Litros',28.00),
+('inv-003','Mantequilla','Mantequilla',85,15,'Libras',50.00),
+('inv-004','Quesillo','Queso',60,10,'Libras',70.00),
+('inv-005','Queso Semiseco','Queso',95,15,'Libras',75.00),
+('inv-006','Queso con Chile','Queso',40,10,'Libras',68.00),
+('inv-007','Requesón','Requesón',85,20,'Libras',45.00),
+('inv-008','Suero','Suero',30,10,'Litros',10.00),
+('inv-009','Queso Frijolero','Queso',90,10,'Libras',60.00);
 
 -- ── Acopio de leche (últimos días) ────────────────────────────
 INSERT IGNORE INTO acopio_leche (id, proveedor_id, litros, temperatura, precio_litro, total_pagar, turno, fecha, estado, observaciones) VALUES

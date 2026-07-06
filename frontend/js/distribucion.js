@@ -4,7 +4,7 @@
    Ahora con pestañas por zona (cada zona = un repartidor distinto)
 ══════════════════════════════════════════ */
 
-let _distData   = null;
+let _distData = null;
 let _zonaActiva = null; // null = todas las zonas juntas
 
 async function loadDistribucion() {
@@ -22,7 +22,7 @@ async function loadDistribucion() {
       : `?fecha=${fecha}`;
     _distData = await req('GET', `/distribucion${qs}`);
     _renderDistribucion(_distData);
-  } catch(e) {
+  } catch (e) {
     toast('Error generando hoja de ruta: ' + e.message, 'err');
   }
 }
@@ -35,8 +35,8 @@ function _renderZonaTabs(resumen) {
   const cont = el('distZonaTabs');
   if (!cont) return;
 
-  const zonas = ['Local','Aldea','Yoro','Norte'];
-  const totalGeneral = resumen.reduce((s,r) => s + Number(r.total_clientes), 0);
+  const zonas = ['Local', 'Aldea', 'Yoro', 'Norte'];
+  const totalGeneral = resumen.reduce((s, r) => s + Number(r.total_clientes), 0);
 
   const chip = (zonaValor, label, count) => {
     const activo = _zonaActiva === zonaValor;
@@ -60,11 +60,20 @@ function _renderZonaTabs(resumen) {
 function _seleccionarZona(zona) {
   _zonaActiva = zona;
 
-  // Recupera (o sugiere) el nombre del transportista de esa zona
+  // Repartidores asignados por defecto para cada zona
+  const repartidoresPorDefecto = {
+    'Local': 'José Santos López',
+    'Aldea': 'Juan Ramón Martínez',
+    'Yoro': 'Mario López Hernández',
+    'Norte': 'Luis Enrique Flores',
+    'todas': 'José Santos López'
+  };
+
   const key = 'dist_transportista_' + (zona || 'todas');
   const guardado = localStorage.getItem(key);
-  if (el('distTransportista')) {
-    el('distTransportista').value = guardado || (zona ? `Repartidor ${zona}` : 'Repartidor');
+  const select = el('distTransportista');
+  if (select) {
+    select.value = guardado || repartidoresPorDefecto[zona || 'todas'];
   }
 
   loadDistribucion();
@@ -93,15 +102,21 @@ function _renderDistribucion(d) {
     return;
   }
 
+  // Sincronizar el transportista si ya hay una ruta guardada en la base de datos
+  const primerEntregaConRuta = d.entregas.find(e => e.ruta_conductor);
+  if (primerEntregaConRuta && el('distTransportista')) {
+    el('distTransportista').value = primerEntregaConRuta.ruta_conductor;
+  }
+
   /* ── KPIs del día ── */
   const kpis = `
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
       ${[
-        { lbl:'Clientes', val: d.totalClientes, icon:'ri-group-line', c:'#003C78' },
-        { lbl:'Total a cobrar', val: L(d.totalCobrar), icon:'ri-money-dollar-circle-line', c:'#2C6B10' },
-        { lbl:'Efectivo', val: L(d.totalEfectivo), icon:'ri-cash-line', c:'#0A6BC4' },
-        { lbl:'Crédito', val: L(d.totalCredito), icon:'ri-bank-card-line', c:'#DC2626' },
-      ].map(k => `
+      { lbl: 'Clientes', val: d.totalClientes, icon: 'ri-group-line', c: '#003C78' },
+      { lbl: 'Total a cobrar', val: L(d.totalCobrar), icon: 'ri-money-dollar-circle-line', c: '#2C6B10' },
+      { lbl: 'Efectivo', val: L(d.totalEfectivo), icon: 'ri-cash-line', c: '#0A6BC4' },
+      { lbl: 'Crédito', val: L(d.totalCredito), icon: 'ri-bank-card-line', c: '#DC2626' },
+    ].map(k => `
         <div style="background:#fff;border-radius:12px;padding:14px 16px;border:1.5px solid #E0E9F2;border-left:3px solid ${k.c}">
           <div style="font-size:10px;font-weight:700;color:#94A3B8;text-transform:uppercase;margin-bottom:4px">${k.lbl}</div>
           <div style="font-size:20px;font-weight:800;color:${k.c}">${k.val}</div>
@@ -143,7 +158,7 @@ function _renderDistribucion(d) {
       <td style="font-size:12px">${e.productos_texto || '—'}</td>
       <td>
         <strong>${L(e.total)}</strong><br>
-        <span style="font-size:10.5px;background:${e.metodo_pago==='Efectivo'?'#DCFCE7':'#EAF2FB'};color:${e.metodo_pago==='Efectivo'?'#15803D':'#003C78'};padding:2px 7px;border-radius:10px;font-weight:700">${e.metodo_pago || '—'}</span>
+        <span style="font-size:10.5px;background:${e.metodo_pago === 'Efectivo' ? '#DCFCE7' : '#EAF2FB'};color:${e.metodo_pago === 'Efectivo' ? '#15803D' : '#003C78'};padding:2px 7px;border-radius:10px;font-weight:700">${e.metodo_pago || '—'}</span>
       </td>
       <td style="text-align:center">
         <div class="firma-box"></div>
@@ -176,7 +191,7 @@ function distImprimir() {
   const d = _distData;
   const fecha = el('distFecha')?.value || '';
   const transp = el('distTransportista')?.value || 'Repartidor';
-  const ahora  = new Date().toLocaleString('es-HN', { dateStyle:'short', timeStyle:'short' });
+  const ahora = new Date().toLocaleString('es-HN', { dateStyle: 'short', timeStyle: 'short' });
   const zonaTxt = d.zona ? ` · Zona: ${d.zona}` : ' · Todas las zonas';
 
   if (el('distPrintFecha')) el('distPrintFecha').textContent = `Fecha: ${_fecCorta(fecha)}${zonaTxt}`;
@@ -191,10 +206,10 @@ function distImprimir() {
         <th style="padding:6px 10px;text-align:left;border:1px solid #D5E5F7">Unidad</th>
         <th style="padding:6px 10px;text-align:center;border:1px solid #D5E5F7">Verificado ✓</th>
       </tr></thead>
-      <tbody>${d.carga.map(c=>`<tr>
+      <tbody>${d.carga.map(c => `<tr>
         <td style="padding:6px 10px;border:1px solid #E8EFF8;font-weight:700">${c.producto}</td>
         <td style="padding:6px 10px;border:1px solid #E8EFF8;font-weight:800;color:#003C78">${N(c.total_cantidad)}</td>
-        <td style="padding:6px 10px;border:1px solid #E8EFF8">${c.unidad||'u.'}</td>
+        <td style="padding:6px 10px;border:1px solid #E8EFF8">${c.unidad || 'u.'}</td>
         <td style="padding:6px 10px;border:1px solid #E8EFF8"></td>
       </tr>`).join('')}</tbody>
     </table>`;
@@ -212,13 +227,13 @@ function distImprimir() {
         <th style="padding:6px 8px;border:1px solid #D5E5F7">Pago</th>
         <th style="padding:6px 8px;border:1px solid #D5E5F7;text-align:center">Firma</th>
       </tr></thead>
-      <tbody>${d.entregas.map(e=>`<tr>
+      <tbody>${d.entregas.map(e => `<tr>
         <td style="padding:6px 8px;border:1px solid #E8EFF8;text-align:center;font-weight:800">${e.secuencia}</td>
-        <td style="padding:6px 8px;border:1px solid #E8EFF8"><strong>${e.cliente_nombre||'Consumidor'}</strong><br>${e.cliente_dir||'Victoria, Yoro'}</td>
-        <td style="padding:6px 8px;border:1px solid #E8EFF8">${e.numero||'—'}</td>
-        <td style="padding:6px 8px;border:1px solid #E8EFF8">${e.productos_texto||'—'}</td>
+        <td style="padding:6px 8px;border:1px solid #E8EFF8"><strong>${e.cliente_nombre || 'Consumidor'}</strong><br>${e.cliente_dir || 'Victoria, Yoro'}</td>
+        <td style="padding:6px 8px;border:1px solid #E8EFF8">${e.numero || '—'}</td>
+        <td style="padding:6px 8px;border:1px solid #E8EFF8">${e.productos_texto || '—'}</td>
         <td style="padding:6px 8px;border:1px solid #E8EFF8;font-weight:700">${L(e.total)}</td>
-        <td style="padding:6px 8px;border:1px solid #E8EFF8">${e.metodo_pago||'—'}</td>
+        <td style="padding:6px 8px;border:1px solid #E8EFF8">${e.metodo_pago || '—'}</td>
         <td style="padding:6px 8px;border:1px solid #E8EFF8;min-width:80px"></td>
       </tr>`).join('')}</tbody>
     </table>`;
@@ -235,11 +250,8 @@ function distImprimir() {
 
 function _fecCorta(str) {
   if (!str) return '—';
-  const [y,m,d] = (str+'').slice(0,10).split('-');
+  const [y, m, d] = (str + '').slice(0, 10).split('-');
   return `${d}/${m}/${y}`;
 }
 
-// Auto-init: poner fecha de hoy
-if (document.getElementById('distFecha')) {
-  el('distFecha').value = new Date().toISOString().slice(0, 10);
-}
+// La fecha se inicializa desde el loader definido en app.js (navigateTo → distribucion).

@@ -36,12 +36,15 @@ exports.getHojaRuta = async (fecha, zona) => {
       v.cliente_nombre,
       c.telefono AS cliente_tel, c.direccion AS cliente_dir,
       COALESCE(c.zona, 'Local') AS cliente_zona,
+      dr.conductor AS ruta_conductor,
+      dr.codigo AS ruta_codigo,
       GROUP_CONCAT(
         CONCAT(vd.cantidad, ' ', ip.nombre)
         ORDER BY ip.nombre SEPARATOR ', '
       ) AS productos_texto
     FROM ventas v
     LEFT JOIN clientes c        ON c.id  = v.cliente_id
+    LEFT JOIN distribucion_rutas dr ON dr.id = v.ruta_id
     LEFT JOIN ventas_detalle vd ON vd.venta_id = v.id
     LEFT JOIN inventario_productos ip ON ip.id = vd.producto_id
     WHERE DATE(v.fecha) = ?
@@ -114,13 +117,11 @@ exports.getResumenZonas = async (fecha) => {
 exports.guardarRuta = async ({ fecha, zona, transportista, generado_por }) => {
   const data  = await exports.getHojaRuta(fecha, zona);
   const id    = await generarIdSecuencial('distribucion_rutas', 'rut');
+  const codigo = 'RUT-' + id.substring(4, 8).toUpperCase();
   await pool.query(`
     INSERT INTO distribucion_rutas
-      (id, fecha_reparto, transportista, total_clientes, total_items, total_cobrar, generado_por)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `, [id, fecha, transportista || 'Repartidor',
-      data.totalClientes,
-      data.carga.reduce((s,c)=>s+Number(c.total_cantidad),0),
-      data.totalCobrar, generado_por || null]);
+      (id, codigo, nombre, zona, conductor, vehiculo, estado)
+    VALUES (?, ?, ?, ?, ?, ?, 'Borrador')
+  `, [id, codigo, `Ruta ${zona || 'General'} - ${fecha}`, zona || 'Local', transportista || 'Repartidor', 'Vehículo 1']);
   return { id, ...data };
 };

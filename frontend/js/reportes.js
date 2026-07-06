@@ -473,7 +473,7 @@ function _header(rep) {
   const chips = [
     { icon: 'ri-time-line', txt: m.frec || '—' },
     { icon: 'ri-folder-line', txt: 'Retención: 5 años' },
-    { icon: 'ri-map-pin-line', txt: 'Victoria, Yoro' },
+    //{ icon: 'ri-map-pin-line', txt: 'Las Vegas,Victoria, Yoro' },
   ].map(c => `<span class="rep-meta-chip"><i class="${c.icon}"></i> ${c.txt}</span>`).join('');
   return `<div class="rep-report-header">
     <div class="rep-rh-title">
@@ -548,7 +548,7 @@ function _firma() {
   const ahora = new Date().toLocaleString('es-HN', { dateStyle: 'full', timeStyle: 'medium' });
   return `<div style="display:flex;align-items:center;gap:9px;background:#F4F7FA;border-radius:9px;padding:9px 14px;margin-top:7px;border:1px solid #E0E9F2">
     <img src="/img/logo.png" style="width:24px;height:24px;object-fit:contain">
-    <p style="margin:0;font-size:10.5px;color:#94A3B8">Generado por <strong style="color:#003C78">Sistema ERP CRUZYMAR</strong> · ${ahora} · Victoria, Yoro, Honduras</p>
+    <p style="margin:0;font-size:10.5px;color:#94A3B8">Generado por <strong style="color:#003C78">Sistema ERP CRUZYMAR</strong> · ${ahora} · Las Vegas, Victoria, Yoro, Honduras</p>
   </div>`;
 }
 
@@ -1444,7 +1444,7 @@ function repExportExcel() {
   let rows = [];
   // Cabecera empresa
   rows.push(['CRUZYMAR Productos Lácteos']);
-  rows.push(['Victoria, Yoro, Honduras — Sistema ERP de Gestión Lechera']);
+  rows.push(['Las Vegas, Victoria, Yoro, Honduras — Sistema ERP de Gestión Lechera']);
   rows.push([m.titulo || 'Reporte']);
   rows.push([`Fecha de impresión: ${fecLarga} — ${hora}`]);
   rows.push([`Generado por: ${usuario}`]);
@@ -1465,7 +1465,7 @@ function repExportExcel() {
     });
   }
   rows.push([]);
-  rows.push([`— Documento generado por Sistema ERP CRUZYMAR — ${fecLarga} — Confidencial —`]);
+  //rows.push([`— Documento generado por Sistema ERP CRUZYMAR — ${fecLarga} — Confidencial —`]);
 
   // Usar SheetJS si disponible, si no CSV con BOM
   if (window.XLSX) {
