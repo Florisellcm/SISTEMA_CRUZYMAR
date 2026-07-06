@@ -5,6 +5,13 @@
    create() es UNA sola transacción: venta + detalle + baja de
    inventario (vía Inventario.registrarMovimientoTx, la única función
    del sistema que muta stock) + factura si se pidió. Todo o nada.
+
+   FIX (2026-07-06): la generación de `numero` usaba COUNT(*)+1 sobre
+   la tabla, que asume "filas totales == número más alto emitido".
+   Si alguna vez se borró una fila (o hay gaps por cualquier razón),
+   COUNT(*)+1 puede devolver un número que YA existe -> duplicate key
+   en ventas.numero (y lo mismo aplicaba a facturacion.numero). Se
+   cambió a MAX(numero real) + 1, que es inmune a esos gaps.
 ═══════════════════════════════════════ */
 
 const pool = require('../database');
@@ -70,7 +77,15 @@ exports.create = async ({ clienteId, clienteNombre, items, metodoPago, estado, o
   try {
     await conn.beginTransaction();
 
-    const [[cnt]] = await conn.query("SELECT LPAD(COUNT(*)+1,4,'0') AS num FROM ventas FOR UPDATE");
+    // FIX: antes era SELECT LPAD(COUNT(*)+1,4,'0') ... FROM ventas FOR UPDATE
+    // COUNT(*) cuenta filas totales, no el número más alto ya usado.
+    // Con cualquier gap (fila borrada, id fuera de secuencia, etc.)
+    // esto regeneraba un numero YA existente -> Duplicate entry.
+    // Ahora se toma el máximo numero real (parte numérica tras 'VTA-')
+    // y se suma 1, así siempre es mayor que cualquier numero existente.
+    const [[cnt]] = await conn.query(
+      "SELECT LPAD(COALESCE(MAX(CAST(SUBSTRING(numero, 5) AS UNSIGNED)), 0) + 1, 4, '0') AS num FROM ventas FOR UPDATE"
+    );
     const numero = `VTA-${cnt.num}`;
 
     await conn.query(
@@ -105,7 +120,10 @@ exports.create = async ({ clienteId, clienteNombre, items, metodoPago, estado, o
 
     let factura = null;
     if (generarFactura) {
-      const [[cntF]] = await conn.query("SELECT LPAD(COUNT(*)+1,4,'0') AS num FROM facturacion FOR UPDATE");
+      // FIX: mismo problema y misma solución que arriba, pero para facturacion.numero
+      const [[cntF]] = await conn.query(
+        "SELECT LPAD(COALESCE(MAX(CAST(SUBSTRING(numero, 5) AS UNSIGNED)), 0) + 1, 4, '0') AS num FROM facturacion FOR UPDATE"
+      );
       const numeroFactura = `FAC-${cntF.num}`;
       const facturaId = await generarIdSecuencial('facturacion', 'fac', conn);
 

@@ -491,6 +491,13 @@ ORDER BY a.fecha DESC, a.creado_en DESC
    Departamento Contabilidad | Mensual/Anual | Victoria, Yoro
    Almacenamiento: 5 años
 ────────────────────────────────────────────────────────────── */
+
+// Categorías de "gastos" que por ahora se excluyen POR COMPLETO:
+// no aparecen en el detalle Y NO suman ni restan en ingresos/egresos/utilidad.
+// Para volver a incluirlas, basta con vaciar este array o quitar
+// "AND categoria NOT IN (?)" de las consultas donde se usa.
+const CATEGORIAS_EXCLUIDAS = ['Otros', 'Otro', 'General', 'Sin categoria', 'Sin categoría'];
+
 exports.getSintetizadoFinanciero = async ({ mes, anio } = {}) => {
   const now = new Date();
   const a   = anio || now.getFullYear();
@@ -516,10 +523,12 @@ exports.getSintetizadoFinanciero = async ({ mes, anio } = {}) => {
   /* ── Gastos operativos registrados manualmente (categoria != 'Materia Prima') ──
      Se excluye 'Materia Prima' de esta tabla porque el costo real ya viene de
      acopio_leche (recepciones aceptadas). Si alguien sigue registrando un gasto
-     manual con esa categoría por error, no se cuenta doble. */
+     manual con esa categoría por error, no se cuenta doble.
+     También se excluyen CATEGORIAS_EXCLUIDAS (ej. "Otros") para que ni sumen
+     ni resten en ingresos/egresos/utilidad. */
   const [[gastosOpR]] = await pool.query(
-    "SELECT COALESCE(SUM(monto),0) AS v FROM gastos WHERE fecha BETWEEN ? AND ? AND categoria <> 'Materia Prima'",
-    [inicio, fin]
+    "SELECT COALESCE(SUM(monto),0) AS v FROM gastos WHERE fecha BETWEEN ? AND ? AND categoria <> 'Materia Prima' AND categoria NOT IN (?)",
+    [inicio, fin, CATEGORIAS_EXCLUIDAS]
   );
 
   /* ── Compras de insumos que NO son leche cruda (empaques, mantenimiento, etc.) ── */
@@ -552,9 +561,9 @@ exports.getSintetizadoFinanciero = async ({ mes, anio } = {}) => {
     `, [inicio, fin]);
     const [gastosMes] = await pool.query(`
       SELECT MONTH(fecha) AS periodo, SUM(monto) AS total
-      FROM gastos WHERE fecha BETWEEN ? AND ? AND categoria <> 'Materia Prima'
+      FROM gastos WHERE fecha BETWEEN ? AND ? AND categoria <> 'Materia Prima' AND categoria NOT IN (?)
       GROUP BY MONTH(fecha)
-    `, [inicio, fin]);
+    `, [inicio, fin, CATEGORIAS_EXCLUIDAS]);
     const [comprasMes] = await pool.query(`
       SELECT MONTH(fecha) AS periodo, SUM(monto) AS total
       FROM compras WHERE fecha BETWEEN ? AND ? AND estado='Recibida'
@@ -590,9 +599,9 @@ exports.getSintetizadoFinanciero = async ({ mes, anio } = {}) => {
     `, [inicio, fin]);
     const [gastosSem] = await pool.query(`
       SELECT LEAST(CEIL(DAYOFMONTH(fecha)/7),4) AS periodo, SUM(monto) AS total
-      FROM gastos WHERE fecha BETWEEN ? AND ? AND categoria <> 'Materia Prima'
+      FROM gastos WHERE fecha BETWEEN ? AND ? AND categoria <> 'Materia Prima' AND categoria NOT IN (?)
       GROUP BY periodo
-    `, [inicio, fin]);
+    `, [inicio, fin, CATEGORIAS_EXCLUIDAS]);
     const [comprasSem] = await pool.query(`
       SELECT LEAST(CEIL(DAYOFMONTH(fecha)/7),4) AS periodo, SUM(monto) AS total
       FROM compras WHERE fecha BETWEEN ? AND ? AND estado='Recibida'
@@ -628,14 +637,14 @@ exports.getSintetizadoFinanciero = async ({ mes, anio } = {}) => {
   `, [inicio, fin]);
 
   /* ── Egresos por categoría ──
-     Se toma 'gastos' (sin Materia Prima manual) + se agrega Materia Prima
-     real desde acopio_leche + Compras como categoría aparte, para que la
-     dona refleje el costo real, no lo que alguien tecleó a mano. */
+     Se toma 'gastos' (sin Materia Prima manual, sin CATEGORIAS_EXCLUIDAS)
+     + se agrega Materia Prima real desde acopio_leche + Compras como
+     categoría aparte, para que la dona refleje el costo real. */
   const [gastosCategBase] = await pool.query(`
     SELECT categoria, SUM(monto) AS total FROM gastos
-    WHERE fecha BETWEEN ? AND ? AND categoria <> 'Materia Prima'
+    WHERE fecha BETWEEN ? AND ? AND categoria <> 'Materia Prima' AND categoria NOT IN (?)
     GROUP BY categoria
-  `, [inicio, fin]);
+  `, [inicio, fin, CATEGORIAS_EXCLUIDAS]);
 
   const gastosCategoria = [...gastosCategBase];
   if (materiaPrima > 0) gastosCategoria.push({ categoria: 'Materia Prima', total: materiaPrima });
@@ -655,7 +664,10 @@ exports.getSintetizadoFinanciero = async ({ mes, anio } = {}) => {
     const finAnt    = `${anioAnt}-${mesAnt}-31`;
 
     const [[ingAntR]]    = await pool.query("SELECT COALESCE(SUM(total),0) AS v FROM ventas WHERE fecha BETWEEN ? AND ? AND estado='Pagada'", [inicioAnt, finAnt]);
-    const [[gastosAntR]] = await pool.query("SELECT COALESCE(SUM(monto),0) AS v FROM gastos WHERE fecha BETWEEN ? AND ? AND categoria <> 'Materia Prima'", [inicioAnt, finAnt]);
+    const [[gastosAntR]] = await pool.query(
+      "SELECT COALESCE(SUM(monto),0) AS v FROM gastos WHERE fecha BETWEEN ? AND ? AND categoria <> 'Materia Prima' AND categoria NOT IN (?)",
+      [inicioAnt, finAnt, CATEGORIAS_EXCLUIDAS]
+    );
     const [[compAntR]]   = await pool.query("SELECT COALESCE(SUM(monto),0) AS v FROM compras WHERE fecha BETWEEN ? AND ? AND estado='Recibida'", [inicioAnt, finAnt]);
     const [[acopioAntR]] = await pool.query("SELECT COALESCE(SUM(total_pagar),0) AS v FROM acopio_leche WHERE fecha BETWEEN ? AND ? AND estado='Aceptada'", [inicioAnt, finAnt]);
 
@@ -689,7 +701,6 @@ exports.getSintetizadoFinanciero = async ({ mes, anio } = {}) => {
     gastosCategoria
   };
 };
-
 /* ──────────────────────────────────────────────────────────────
    REPORTE 7 — Sintetizado Ventas de Productos Lácteos
    Departamento de Ventas | Mensual | Victoria, Yoro
@@ -736,14 +747,54 @@ exports.getSintetizadoVentas = async ({ mes, anio } = {}) => {
     FROM ventas WHERE fecha BETWEEN ? AND ? AND estado='Pagada'
   `, [inicio, fin]);
 
+  // Tendencia: por día si es un mes específico, por mes si es "todos" el año.
+  const groupExpr = mes === 'todos' ? "DATE_FORMAT(v.fecha,'%Y-%m')" : "DATE_FORMAT(v.fecha,'%Y-%m-%d')";
+  const [tendencia] = await pool.query(`
+    SELECT ${groupExpr} AS periodo, SUM(v.total) AS total, COUNT(*) AS num_ventas
+    FROM ventas v
+    WHERE v.fecha BETWEEN ? AND ? AND v.estado='Pagada'
+    GROUP BY periodo ORDER BY periodo
+  `, [inicio, fin]);
+
+  // Comparación con el periodo anterior (mes previo, o año previo si es "todos").
+  let prevInicio, prevFin;
+  if (mes === 'todos') {
+    prevInicio = `${a - 1}-01-01`;
+    prevFin    = `${a - 1}-12-31`;
+  } else {
+    const mNum = parseInt(m, 10);
+    let pm = mNum - 1, pa = a;
+    if (pm === 0) { pm = 12; pa = a - 1; }
+    const pmStr = String(pm).padStart(2, '0');
+    prevInicio = `${pa}-${pmStr}-01`;
+    prevFin    = `${pa}-${pmStr}-31`;
+  }
+  const [[kpiPrev]] = await pool.query(`
+    SELECT COALESCE(SUM(total),0) AS total_ingresos
+    FROM ventas WHERE fecha BETWEEN ? AND ? AND estado='Pagada'
+  `, [prevInicio, prevFin]);
+
+  const ingresoActual = Number(kpiR.total_ingresos) || 0;
+  const ingresoPrevio = Number(kpiPrev.total_ingresos) || 0;
+  const variacion = ingresoPrevio > 0 ? Number((((ingresoActual - ingresoPrevio) / ingresoPrevio) * 100).toFixed(1)) : null;
+
   return {
     periodo: { mes: mes === 'todos' ? String(a) : `${a}-${m}`, inicio, fin },
     kpis: kpiR,
     productos,
-    topClientes
+    topClientes,
+    tendencia,
+    comparacion: { ingresoPrevio, variacion }
   };
 };
 
+/* ──────────────────────────────────────────────────────────────
+   REPORTE 8 — Sintetizado Producto Comprado por Cliente
+   (sin cambios)
+────────────────────────────────────────────────────────────── */
+exports.getSintetizadoProductoCliente = async ({ mes, anio, cliente_id } = {}) => {
+  // ... igual que antes, no se modificó ...
+};
 /* ──────────────────────────────────────────────────────────────
    REPORTE 8 — Sintetizado Producto Comprado por Cliente
    Departamento de Ventas | Mensual | Victoria, Yoro
