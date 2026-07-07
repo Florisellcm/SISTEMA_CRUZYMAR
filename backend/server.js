@@ -7,6 +7,8 @@ const db = require("./database");
 const express = require('express');
 const cors    = require('cors');
 const path    = require('path');
+const pdfRoutes = require('./routes/pdf');
+
 
 const app = express();
 app.use(cors());
@@ -32,6 +34,7 @@ app.use('/api/pedidos',     require('./routes/pedidos'));
 app.use('/api/compras',          require('./routes/compras'));
 app.use('/api/calidad-lotes',    require('./routes/calidadlotes'));
 app.use('/api/distribucion',     require('./routes/distribucion'));
+app.use('/api', pdfRoutes);
 
 // SPA fallback
 app.get('*', (req, res) =>

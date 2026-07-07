@@ -3,30 +3,30 @@
 ────────────────────────────────────────────────────────── */
 
 let _chartBalance = null;
-let _chartDona    = null;
+let _chartDona = null;
 
 async function initDashboard() {
   try {
     const data = await req('GET', '/dashboard');
-    const k    = data.kpis || {};
+    const k = data.kpis || {};
 
     // ── KPIs ──────────────────────────────────────────────
-    if (el('kpiVentasMes'))           el('kpiVentasMes').textContent           = L(k.ventasMes || 0);
-    if (el('kpiLecheProcesada'))      el('kpiLecheProcesada').textContent      = N(k.produccionHoy || 0) + ' Lbs hoy';
-    if (el('kpiRendimientoGlobal'))   el('kpiRendimientoGlobal').textContent   = '↑ Rendimiento: ' + (k.rendimiento || 0) + '%';
-    if (el('kpiVencimientosProximos'))el('kpiVencimientosProximos').textContent = k.productosStockBajo || 0;
-    if (el('kpiPedidosBadge'))        el('kpiPedidosBadge').textContent        = (k.clientesActivos || 0) + ' activos';
+    if (el('kpiVentasMes')) el('kpiVentasMes').textContent = L(k.ventasMes || 0);
+    if (el('kpiLecheProcesada')) el('kpiLecheProcesada').textContent = N(k.produccionHoy || 0) + ' Lbs hoy';
+    if (el('kpiRendimientoGlobal')) el('kpiRendimientoGlobal').textContent = '↑ Rendimiento: ' + (k.rendimiento || 0) + '%';
+    if (el('kpiVencimientosProximos')) el('kpiVencimientosProximos').textContent = k.productosStockBajo || 0;
+    if (el('kpiPedidosBadge')) el('kpiPedidosBadge').textContent = (k.clientesActivos || 0) + ' activos';
 
     if (el('lastUpdate'))
-      el('lastUpdate').textContent = '✓ ' + new Date().toLocaleTimeString('es-HN', { hour:'2-digit', minute:'2-digit' });
+      el('lastUpdate').textContent = '✓ ' + new Date().toLocaleTimeString('es-HN', { hour: '2-digit', minute: '2-digit' });
 
     // ── Gráficas ──────────────────────────────────────────
     renderGraficoBalance(data.ventasSemana || []);
-    renderGraficoDona(data.topProductos   || []);
+    renderGraficoDona(data.topProductos || []);
     renderLotesRecientes(data.produccionHoy || []);
     renderAlertasStock(k.productosStockBajo || 0);
 
-  } catch(e) {
+  } catch (e) {
     console.error('Dashboard error:', e);
   }
 }
@@ -52,11 +52,11 @@ function renderGraficoBalance(ventas) {
       responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
-        tooltip: { callbacks: { label: c => 'L. ' + Number(c.raw).toLocaleString('es-HN', {minimumFractionDigits:2}) }}
+        tooltip: { callbacks: { label: c => 'L. ' + Number(c.raw).toLocaleString('es-HN', { minimumFractionDigits: 2 }) } }
       },
       scales: {
-        x: { ticks: { color:'#94A3B8', font:{size:11} }, grid: { display:false } },
-        y: { ticks: { color:'#94A3B8', callback: v => 'L.' + Math.round(v/1000) + 'K' }, grid: { color:'rgba(0,0,0,.04)' } }
+        x: { ticks: { color: '#94A3B8', font: { size: 11 } }, grid: { display: false } },
+        y: { ticks: { color: '#94A3B8', callback: v => 'L.' + Math.round(v / 1000) + 'K' }, grid: { color: 'rgba(0,0,0,.04)' } }
       }
     }
   });
@@ -76,14 +76,14 @@ function renderGraficoDona(productos) {
       labels: productos.map(p => p.nombre),
       datasets: [{
         data: productos.map(p => p.litros),
-        backgroundColor: ['#003C78','#468C28','#1D4ED8','#D97706','#DC2626'],
+        backgroundColor: ['#003C78', '#468C28', '#0A6BC4', '#6BAE45', '#4DA3E0', '#2C6B10'],
         borderWidth: 0
       }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: {
-        legend: { position:'bottom', labels:{ font:{size:11}, padding:8, boxWidth:10 } },
+        legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 8, boxWidth: 10 } },
         tooltip: { callbacks: { label: c => c.label + ': ' + Number(c.raw).toLocaleString('es-HN') + ' L' } }
       }
     }
@@ -102,7 +102,7 @@ function renderLotesRecientes(lotes) {
 
   const filas = lotes.map(l => {
     const isComp = l.estado === 'Completada';
-    const badge  = isComp
+    const badge = isComp
       ? '<span style="background:#DCFCE7;color:#15803D;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px">Completada</span>'
       : '<span style="background:#DBEAFE;color:#1D4ED8;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px">En proceso</span>';
     return `

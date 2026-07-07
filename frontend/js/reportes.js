@@ -12,6 +12,8 @@ const _N = n => Number(n || 0).toLocaleString('es-HN');
 const _P = n => Number(n || 0).toFixed(1) + '%';
 const _fec = s => { if (!s) return '—'; const [y, m, d] = (s + '').slice(0, 10).split('-'); return `${d}/${m}/${y}`; };
 
+window.__reportReady = false;
+
 /* ── Paleta empresa (solo tonos navy + verde, variados para distinguir) ── */
 const C = { navy: '#003C78', navy2: '#0A6BC4', navy3: '#4DA3E0', verde: '#468C28', verde2: '#6BAE45', verde3: '#9AC97E', red: '#DC2626', amb: '#0A6BC4', slate: '#64748B' };
 const COLS = [C.navy, C.verde, C.navy2, C.verde2, C.navy3, C.verde3, '#2C6B10', '#004F9E'];
@@ -29,12 +31,19 @@ const leaderLinePlugin = {
 
   beforeLayout(chart) {
     if (chart.config.type !== 'doughnut') return;
-    chart.options.layout.padding = { left: 40, right: 40, top: 25, bottom: 25 };
+    // Padding proporcional al tamaño real del canvas — nunca fijo.
+    // Así, si el canvas es angosto (ej. 55% de la tarjeta), el padding
+    // se reduce en vez de robarle espacio de más a la dona.
+    const w = chart.width || 300;
+    const h = chart.height || 240;
+    const padX = Math.max(35, Math.min(70, w * 0.20));
+    const padY = Math.max(18, Math.min(35, h * 0.12));
+    chart.options.layout.padding = { left: padX, right: padX, top: padY, bottom: padY };
   },
 
   afterDraw(chart) {
     if (chart.config.type !== 'doughnut') return;
-    const { ctx, chartArea } = chart;
+    const { ctx } = chart;
     const meta = chart.getDatasetMeta(0);
     if (!meta.data.length) return;
     const vals = chart.data.datasets[0].data.map(Number);
@@ -44,11 +53,12 @@ const leaderLinePlugin = {
     const cx = meta.data[0].x;
     const cy = meta.data[0].y;
     const outerR = meta.data[0].outerRadius;
+    const canvasW = chart.width;
+    const canvasH = chart.height;
 
     ctx.save();
     ctx.textBaseline = 'middle';
 
-    // Recolectar todos los segmentos visibles (ya vienen ordenados en sentido horario)
     const items = meta.data.map((arc, i) => {
       const pct = vals[i] / total * 100;
       if (pct < 0.1) return null;
@@ -57,29 +67,20 @@ const leaderLinePlugin = {
       return { pct, midAngle, col, text: pct.toFixed(1) + '%' };
     }).filter(Boolean);
 
-    // Separar por hemisferio y ORDENAR de arriba hacia abajo (Y ascendente)
-    // Esto es crucial para que las líneas NUNCA se crucen y la relajación funcione.
     const rightItems = items.filter(d => Math.cos(d.midAngle) >= 0)
       .sort((a, b) => Math.sin(a.midAngle) - Math.sin(b.midAngle));
-
     const leftItems = items.filter(d => Math.cos(d.midAngle) < 0)
       .sort((a, b) => Math.sin(a.midAngle) - Math.sin(b.midAngle));
 
     function drawColumn(data, isRight) {
       if (!data.length) return;
-
       const R = outerR;
 
-      // 1. Asignar la posición natural Y basada en el ángulo
-      data.forEach(d => {
-        d.y = cy + Math.sin(d.midAngle) * (R + 10);
-      });
+      data.forEach(d => { d.y = cy + Math.sin(d.midAngle) * (R + 10); });
 
-      // 2. Relajar (empujar) las etiquetas en Y
       const H = 20;
-      const minY = 12; // Límite superior
-      const maxY = chart.height - 12; // Límite inferior
-
+      const minY = 12;
+      const maxY = canvasH - 12;
       for (let iter = 0; iter < 30; iter++) {
         for (let i = 1; i < data.length; i++) {
           const dy = data[i].y - data[i - 1].y;
@@ -89,54 +90,39 @@ const leaderLinePlugin = {
             data[i - 1].y -= push;
           }
         }
-        // Force bounds strictly
-        if (data[0].y < minY) {
-          const offset = minY - data[0].y;
-          data.forEach(d => d.y += offset);
-        }
-        if (data[data.length - 1].y > maxY) {
-          const offset = data[data.length - 1].y - maxY;
-          data.forEach(d => d.y -= offset);
-        }
+        if (data[0].y < minY) { const off = minY - data[0].y; data.forEach(d => d.y += off); }
+        if (data[data.length - 1].y > maxY) { const off = data[data.length - 1].y - maxY; data.forEach(d => d.y -= off); }
       }
 
-      // X estático para los textos: acercado un poco más a la dona para garantizar que todo el texto (por ej. "100.0%") quepa dentro del padding del canvas.
-      const textFixedX = isRight ? cx + R + 26 : cx - R - 26;
+      // ── CLAVE: nunca dejar que el texto caiga fuera del canvas real ──
+      const anchoTexto = 46; // espacio aprox. que ocupa "100.0%"
+      let textFixedX = isRight ? cx + R + 26 : cx - R - 26;
+      if (isRight) textFixedX = Math.min(textFixedX, canvasW - anchoTexto - 4);
+      else textFixedX = Math.max(textFixedX, anchoTexto + 4);
 
       data.forEach((d) => {
-        // 3. Dibujar conector de 3 segmentos (Estilo D3.js / Highcharts)
-
-        // Punto de anclaje en el borde exacto de la dona
         const x0 = cx + Math.cos(d.midAngle) * R;
         const y0 = cy + Math.sin(d.midAngle) * R;
-
-        // A. Tocón radial de salida (garantiza que la línea sale perpendicular y no roza la dona)
-        // Hecho más corto (6px) para no gastar el espacio del texto.
         const R_stub = R + 6;
         const x1 = cx + Math.cos(d.midAngle) * R_stub;
         const y1 = cy + Math.sin(d.midAngle) * R_stub;
-
-        // B. Codo (inicio de la línea horizontal hacia el texto, alineada con la Y relajada)
         const x2 = textFixedX + (isRight ? -8 : 8);
         const y2 = d.y;
 
         ctx.beginPath();
-        ctx.moveTo(x0, y0);          // Borde
-        ctx.lineTo(x1, y1);          // Tocón radial (hacia afuera)
-        ctx.lineTo(x2, y2);          // Diagonal hacia la columna (el abanico)
-        ctx.lineTo(textFixedX, y2);  // Línea horizontal final
-
+        ctx.moveTo(x0, y0);
+        ctx.lineTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.lineTo(textFixedX, y2);
         ctx.strokeStyle = '#94A3B8';
         ctx.lineWidth = 1.2;
         ctx.stroke();
 
-        // Punto de color
         ctx.beginPath();
         ctx.arc(textFixedX, d.y, 2.5, 0, 2 * Math.PI);
         ctx.fillStyle = d.col;
         ctx.fill();
 
-        // Texto
         ctx.fillStyle = '#334155';
         ctx.font = 'bold 10.5px "Inter",system-ui,sans-serif';
         ctx.textAlign = isRight ? 'left' : 'right';
@@ -209,16 +195,19 @@ function _loadChart(cb) {
     const s2 = document.createElement('script');
     s2.src = 'https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js';
     s2.onload = () => {
-      // Registrar UNA sola vez de forma global; así no hay que pasarlo
-      // en el array plugins:[] de cada gráfica individual.
       try {
         if (window.ChartDataLabels && Chart.registry.plugins.get('datalabels') == null) {
           Chart.register(window.ChartDataLabels);
         }
+        // Fuerza el devicePixelRatio real de la página en vez de dejar que
+        // Chart.js lo detecte automáticamente — esto evita el desfase que
+        // provoca que la dona se dibuje cortada (solo un cuarto visible)
+        // cuando Puppeteer usa deviceScaleFactor distinto de 1.
+        Chart.defaults.devicePixelRatio = window.devicePixelRatio || 1;
       } catch (e) { }
       _cjsOk = true; _cjsCbs.forEach(f => f()); _cjsCbs = [];
     };
-    s2.onerror = () => { _cjsOk = true; _cjsCbs.forEach(f => f()); _cjsCbs = []; }; // continúa sin datalabels si falla CDN
+    s2.onerror = () => { _cjsOk = true; _cjsCbs.forEach(f => f()); _cjsCbs = []; };
     document.head.appendChild(s2);
   };
   document.head.appendChild(s);
@@ -452,7 +441,36 @@ function _renderFiltros(rep) {
 
 function _actualizarFiltro(id, val) { _filtros[id] = val; }
 
+/* Llena el encabezado exclusivo de impresión (#rep-print-header en
+   reportes.html). Este bloque estaba en el HTML desde antes con la barra
+   azul y los spans #rph-titulo-imp / #rph-resp-imp / #rph-sub-imp /
+   #rph-fecha-imp / #rph-usuario-imp, pero nada los llenaba — por eso
+   salía vacío en el PDF. */
+function _fillPrintHeader(rep) {
+  const m = META[rep] || {};
+  const ahora = new Date();
+  const fecLarga = ahora.toLocaleDateString('es-HN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const hora = ahora.toLocaleTimeString('es-HN', { hour: '2-digit', minute: '2-digit' });
+
+  let usuario = 'Usuario del sistema';
+  try {
+    const tok = localStorage.getItem('token') || '';
+    if (tok) {
+      const p = JSON.parse(atob(tok.split('.')[1]));
+      usuario = p.nombre || p.email || usuario;
+    }
+  } catch (e) { /* si el token no decodifica, se deja el genérico */ }
+
+  _set('rph-titulo-imp', m.titulo || 'Reporte');
+  _set('rph-resp-imp', `Responsables: ${m.resp || '—'} · Frecuencia: ${m.frec || '—'}`);
+  //_set('rph-sub-imp', m.sub || '');
+  _set('rph-fecha-imp', `Fecha de impresión: ${fecLarga} — ${hora}`);
+  _set('rph-usuario-imp', `Generado por: ${usuario}`);
+}
+
 async function _cargarReporte() {
+  window.__reportReady = false;
+  _fillPrintHeader(_rep);
   _set('rep-content', '<div class="rep-loading"><i class="ri-loader-4-line"></i><br>Cargando datos...</div>');
   try {
     await ({
@@ -461,6 +479,7 @@ async function _cargarReporte() {
       e1: repE1,
     }[_rep] || (() => { }))();
   } catch (e) {
+    window.__reportReady = true;
     _set('rep-content', `<div class="rep-empty"><i class="ri-wifi-off-line"></i><p>Error cargando: ${e.message}</p></div>`);
   }
 }
@@ -494,29 +513,29 @@ function _krow(cards) {
     <div class="rep-krow">
       ${cards.map(c => {
 
-        const val = Number(c.val) || 0;
+    const val = Number(c.val) || 0;
 
-        // 🔵 tipo automático
-        const isInfo =
-          /total|valor|pagado|entregas|productos/i.test(c.lbl);
+    // 🔵 tipo automático
+    const isInfo =
+      /total|valor|pagado|entregas|productos/i.test(c.lbl);
 
-        const type = isInfo ? 'blue' : 'green';
+    const type = isInfo ? 'blue' : 'green';
 
-        // 📊 intensidad automática según valor
-        let level = 0;
-        if (val > 0 && val < 50) level = 0;
-        else if (val < 200) level = 1;
-        else level = 2;
+    // 📊 intensidad automática según valor
+    let level = 0;
+    if (val > 0 && val < 50) level = 0;
+    else if (val < 200) level = 1;
+    else level = 2;
 
-        const cls = palette[type][level];
+    const cls = palette[type][level];
 
-        return `
+    return `
           <div class="rep-kcard ${cls}">
             <div class="lbl">${c.lbl}</div>
             <div class="val">${c.val}</div>
           </div>
         `;
-      }).join('')}
+  }).join('')}
     </div>
   `;
 }
@@ -559,10 +578,10 @@ async function repD1() {
   const qs = _buildQS({ fecha: _filtros.f_desde, fechaFin: _filtros.f_hasta, estado: _filtros.f_estado });
   const d = await _rq('/reportes/detallado/produccion' + qs);
   const k = d.kpis || {};
- 
+
   const registros = d.registros || [];
   const conSubproducto = registros.filter(r => Number(r.salida_secundaria_cantidad) > 0).length;
- 
+
   const html = _header('d1') +
     _card('Detalle de lotes del período', 'ri-flask-line', _tbl([
       {
@@ -576,10 +595,10 @@ async function repD1() {
       { lbl: 'Leche (L)', key: 'leche_usada', render: r => _N(r.leche_usada) + ' L' },
       { lbl: 'Obtenido', key: 'cantidad_obtenida', render: r => r.cantidad_obtenida > 0 ? _N(r.cantidad_obtenida) + (r.unidad === 'litros' ? ' L' : ' Lbs') : '—' },
       {
-  lbl: 'Indicador',
-  key: 'indicador',
-  render: r => r.indicador || '—'
-},
+        lbl: 'Indicador',
+        key: 'indicador',
+        render: r => r.indicador || '—'
+      },
       {
         lbl: 'Subproducto', key: 'salida_secundaria', tdStyle: 'min-width:110px',
         render: r => Number(r.salida_secundaria_cantidad) > 0
@@ -592,13 +611,14 @@ async function repD1() {
     ], registros), 'class="rep-card-detallado"') +
     _krow([
       { lbl: 'Litros procesados', val: _N(k.total_litros) + ' L', cls: 'grn' },
-    { lbl: 'Producción total de derivados (libras)', val: _N(k.total_libras) + ' Lbs', cls: 'grn' },
+      { lbl: 'Producción total de derivados (libras)', val: _N(k.total_libras) + ' Lbs', cls: 'grn' },
       { lbl: 'Lotes con subproducto', val: conSubproducto, cls: 'blu' },
       { lbl: 'Lotes completados', val: `${k.completados || 0} / ${k.total_lotes || 0}` },
     ]) +
     _firma();
- 
+
   _set('rep-content', html);
+  window.__reportReady = true;
 }
 
 /* ══════════════════════════════════════
@@ -669,6 +689,7 @@ async function repD2() {
     ]) + _firma();
 
   _set('rep-content', html);
+  window.__reportReady = true;
 }
 /* ══════════════════════════════════════
    D3 — DISTRIBUCIÓN (solo tablas, sin gráficos)
@@ -697,7 +718,7 @@ async function repD3() {
       { lbl: 'Zona', key: 'zona' },
       { lbl: 'Entregas', key: 'entregas' },
       { lbl: 'Facturado', key: 'facturado', render: r => _L(r.facturado) },
-      { lbl: 'Pendiente', key: 'pendiente', render: r => Number(r.pendiente) > 0 ? `<span style="color:#DC2626;font-weight:700">${_L(r.pendiente)}</span>` : _L(0) },
+      { lbl: 'Pendiente', key: 'pendiente', render: r => Number(r.pendiente) > 0 ? `<span style="color:#003C78;font-weight:700">${_L(r.pendiente)}</span>` : _L(0) },
       { lbl: 'Clientes', key: 'clientes' },
     ], d.porZona || [])) +
 
@@ -720,6 +741,7 @@ async function repD3() {
     ]) + _firma();
 
   _set('rep-content', html);
+  window.__reportReady = true;
 }
 
 /* ══════════════════════════════════════
@@ -728,11 +750,11 @@ async function repD3() {
 async function repD4() {
   const d = await _rq('/reportes/sintetizado/inventario');
   const k = d.kpis || {};
-const color = p => {
-  if (p === 0) return '#CBD5E1';      // Gris (sin existencias)
-  if (p < 100) return '#0A6BC4';      // Azul (por debajo del mínimo)
-  return '#468C28';                   // Verde (stock suficiente)
-};
+  const color = p => {
+    if (p === 0) return '#CBD5E1';      // Gris (sin existencias)
+    if (p < 100) return '#0A6BC4';      // Azul (por debajo del mínimo)
+    return '#468C28';                   // Verde (stock suficiente)
+  };
   const stBadge = (p) => Number(p.stock) <= Number(p.stock_minimo) ? _badge('Bajo stock', 'rb-rej') : Number(p.stock) < Number(p.stock_minimo) * 1.2 ? _badge('Alerta', 'rb-pen') : _badge('Normal', 'rb-ok');
 
   const html = _header('d4') +
@@ -742,15 +764,15 @@ const color = p => {
       { lbl: 'Categoría', key: 'categoria' },
       { lbl: 'Existencias', key: 'stock', render: r => `<strong>${_N(r.stock)}</strong> ${r.unidad || 'u.'}` },
       { lbl: 'Mínimo', key: 'stock_minimo', render: r => `${_N(r.stock_minimo)} ${r.unidad || 'u.'}` },
-{
-  lbl: 'Disponibilidad',
-  key: '_disp',
-  render: r => {
-    const stock = Number(r.stock) || 0;
+      {
+        lbl: 'Disponibilidad',
+        key: '_disp',
+        render: r => {
+          const stock = Number(r.stock) || 0;
 
-    const disponible = stock > 0;
+          const disponible = stock > 0;
 
-    return `
+          return `
       <div style="display:flex;align-items:center;gap:6px">
         <span style="
           font-weight:700;
@@ -761,8 +783,8 @@ const color = p => {
 
       </div>
     `;
-  }
-},
+        }
+      },
       { lbl: 'Estado', key: '_st', render: stBadge },
       { lbl: 'Precio', key: 'precio', render: r => _L(r.precio) },
     ], d.productos || []), 'class="rep-card-detallado"') +
@@ -775,6 +797,7 @@ const color = p => {
     ]) + _firma();
 
   _set('rep-content', html);
+  window.__reportReady = true;
 }
 
 /* ══════════════════════════════════════
@@ -795,7 +818,7 @@ async function repS1() {
      Ajustar si el estándar de calidad de la empresa usa otro rango. */
   const DENSIDAD_MIN_OPTIMA = 1.028;
   const DENSIDAD_MAX_OPTIMA = 1.034;
-  const DENSIDAD_IDEAL      = (DENSIDAD_MIN_OPTIMA + DENSIDAD_MAX_OPTIMA) / 2;
+  const DENSIDAD_IDEAL = (DENSIDAD_MIN_OPTIMA + DENSIDAD_MAX_OPTIMA) / 2;
 
   /* ── Calificación visual por % aceptación ── */
   const _calif = (pct) => {
@@ -961,7 +984,7 @@ async function repS1() {
           : `<span style="color:#94A3B8">—</span>`
       },
     ], reg), 'class="rep-card-detallado"') +
- 
+
     /* ── KPI CARDS ── */
     _krow([
       { lbl: 'Total Entregas', val: _N(k.total_entregas), cls: 'blu' },
@@ -972,7 +995,7 @@ async function repS1() {
       { lbl: 'Total Pagado', val: _L(k.total_pagado), cls: 'grn' },
     ]) +
     _firma();
-   
+
 
   _set('rep-content', html);
 
@@ -1057,10 +1080,10 @@ async function repS1() {
         }
       });
     }
+
+    window.__reportReady = true;
   });
 }
-
-
 
 /* ══════════════════════════════════════
    S2 — ESTADOS FINANCIEROS
@@ -1069,12 +1092,32 @@ async function repS2() {
   const qs = _buildQS({ mes: _filtros.f_mes, anio: _filtros.f_anio });
   const d = await _rq('/reportes/sintetizado/financiero' + qs);
   const k = d.kpis || {};
+  const serie = d.serie || [];
+  const esAnual = d.granularidad === 'mes';
+  const tituloTendencia = esAnual ? 'Ingresos y egresos por mes' : 'Ingresos y egresos por semana';
+
+  // Insight de variación vs periodo anterior (ya lo calcula el backend, solo faltaba usarlo)
+  let evalPeriodo;
+  if (k.variacionUtilidad === null || k.variacionUtilidad === undefined) {
+    evalPeriodo = 'Sin datos del periodo anterior para comparar.';
+  } else {
+    const v = k.variacionUtilidad;
+    const vTxt = (v >= 0 ? '+' : '') + v.toFixed(1) + '%';
+    if (v > 10) evalPeriodo = `Buen periodo: la ganancia subió ${vTxt} respecto al mes anterior.`;
+    else if (v < -10) evalPeriodo = `Periodo flojo: la ganancia bajó ${vTxt} respecto al mes anterior.`;
+    else evalPeriodo = `Periodo estable: variación de ${vTxt} en la ganancia respecto al mes anterior.`;
+  }
+  const vIngTxt = (k.variacionIngresos === null || k.variacionIngresos === undefined)
+    ? 'sin dato comparativo'
+    : (k.variacionIngresos >= 0 ? '+' : '') + k.variacionIngresos.toFixed(1) + '% vs. mes anterior';
+
+  const topProd = (d.topProductos || [])[0];
 
   const html = _header('s2') +
-    _card('Ingresos vs Egresos del mes', 'ri-bar-chart-2-line',
+    _card('Ingresos vs Egresos del periodo', 'ri-bar-chart-2-line',
       `<div class="rep-chart-wrap" style="height:200px"><canvas id="cS2Cmp"></canvas></div>`) +
     `<div class="rep-row2">` +
-    _card('Ventas por semana del mes', 'ri-line-chart-line',
+    _card(tituloTendencia, 'ri-line-chart-line',
       `<div class="rep-chart-wrap" style="height:200px"><canvas id="cS2Sem"></canvas></div>`) +
     _card('Egresos por categoría', 'ri-pie-chart-line',
       `<div style="display:flex;align-items:center;gap:0"><div style="flex:0 0 55%;height:240px;position:relative"><canvas id="cS2Cat"></canvas></div><div id="legS2Cat" style="flex:1;font-size:11px;padding-left:8px"></div></div>`) +
@@ -1083,26 +1126,23 @@ async function repS2() {
       { lbl: 'Categoría', key: 'categoria' },
       { lbl: 'Monto', key: 'total', render: r => `<strong>${_L(r.total)}</strong>` },
     ], d.gastosCategoria || [])) +
+
     _krow([
       { lbl: 'Ingresos', val: _L(k.ingresos), cls: 'grn' },
-      { lbl: 'Egresos', val: _L(k.egresos), cls: 'red' },
-      { lbl: 'Ganancia', val: _L(k.utilidad), cls: (k.utilidad || 0) >= 0 ? 'grn' : 'red' },
-      { lbl: 'Margen', val: _P(k.margen), cls: (k.margen || 0) >= 15 ? 'grn' : (k.margen || 0) >= 5 ? 'amb' : 'red' },
+      { lbl: 'Egresos', val: _L(k.egresos), cls: 'blu' },
+      { lbl: 'Ganancia', val: _L(k.utilidad), cls: (k.utilidad || 0) >= 0 ? 'grn' : 'blu' },
+      { lbl: 'Margen', val: _P(k.margen), cls: (k.margen || 0) >= 15 ? 'grn' : (k.margen || 0) >= 5 ? 'blu' : 'blu' },
     ]) +
     _firma();
 
   _set('rep-content', html);
   _loadChart(() => {
-    const sems = d.semanas || [];
     const ingresosMes = Number(k.ingresos || 0);
     const egresosMes = Number(k.egresos || 0);
     const utilidad = ingresosMes - egresosMes;
 
-    // ── Chart 1: Comparativa REAL Ingresos vs Egresos vs Ganancia del mes ──
-    // Nota: antes se forzaba Ganancia a Math.max(utilidad,0), lo que hacía
-    // que un mes con pérdida se viera como "Ganancia: L. 0.00" en vez de
-    // mostrar la pérdida real. Ahora se grafica el valor real y cambia de
-    // tono si es negativo (pérdida) para que la gráfica no mienta.
+    // ── Chart 1: Comparativa Ingresos vs Egresos vs Ganancia del periodo ──
+    // Colorimetría de la empresa: solo tonos navy + verde, nunca rojo.
     _chart('cS2Cmp', {
       type: 'bar',
       data: {
@@ -1110,7 +1150,7 @@ async function repS2() {
         datasets: [{
           label: 'Monto (L.)',
           data: [ingresosMes, egresosMes, utilidad],
-          backgroundColor: [C.navy, C.verde, utilidad >= 0 ? C.navy2 : '#64748B'],
+          backgroundColor: [C.navy, C.navy2, utilidad >= 0 ? C.verde : C.navy3],
           borderRadius: 6,
           borderSkipped: false
         }]
@@ -1135,39 +1175,62 @@ async function repS2() {
       }
     });
 
-    // ── Chart 2: Ventas reales por semana (solo ingresos, datos reales) ──
+    // ── Chart 2: Tendencia real de ingresos vs egresos (usa d.serie) ──
+    // Ingresos = navy (arriba), Egresos = verde (abajo) — misma paleta de marca,
+    // sin rojo. Ambas líneas llevan su datalabel, separados (uno arriba, uno abajo)
+    // para no encimarse.
+    const maxSerie = Math.max(...serie.map(s => Math.max(Number(s.ingresos) || 0, Number(s.egresos) || 0)), 0);
     _chart('cS2Sem', {
       type: 'line',
       data: {
-        labels: sems.length ? sems.map(s => s.semana) : ['Sin datos'],
-        datasets: [{
-          label: 'Ventas',
-          data: sems.length ? sems.map(s => Number(s.total)) : [0],
-          borderColor: C.navy,
-          backgroundColor: 'rgba(0,60,120,.08)',
-          fill: true,
-          tension: 0.35,
-          pointBackgroundColor: C.navy,
-          pointRadius: 5,
-          pointHoverRadius: 7,
-          borderWidth: 2
-        }]
+        labels: serie.length ? serie.map(s => s.label) : ['Sin datos'],
+        datasets: [
+          {
+            label: 'Ingresos',
+            data: serie.length ? serie.map(s => Number(s.ingresos)) : [0],
+            borderColor: C.navy,
+            backgroundColor: 'rgba(0,60,120,.08)',
+            fill: true,
+            tension: 0.35,
+            pointBackgroundColor: C.navy,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            borderWidth: 2
+          },
+          {
+            label: 'Egresos',
+            data: serie.length ? serie.map(s => Number(s.egresos)) : [0],
+            borderColor: C.verde,
+            backgroundColor: 'transparent',
+            fill: false,
+            tension: 0.35,
+            pointBackgroundColor: C.verde,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            borderWidth: 2,
+            borderDash: [5, 3]
+          }
+        ]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
+        layout: { padding: { top: 24, bottom: 20 } },
         plugins: {
-          legend: { display: false },
-          tooltip: { callbacks: { label: c => 'Ventas: ' + _L(c.raw) } },
+          legend: { display: true, position: 'bottom', labels: { color: '#334155', font: { size: 11 }, boxWidth: 10, usePointStyle: true } },
+          tooltip: { callbacks: { label: c => c.dataset.label + ': ' + _L(c.raw) } },
           datalabels: {
             display: true,
-            color: C.navy, anchor: 'top', align: 'top', offset: 4,
+            color: (ctx) => ctx.datasetIndex === 0 ? C.navy : C.verde,
+            anchor: (ctx) => ctx.datasetIndex === 0 ? 'top' : 'bottom',
+            align: (ctx) => ctx.datasetIndex === 0 ? 'top' : 'bottom',
+            offset: 4,
             font: { weight: '700', size: 10 },
             formatter: v => v > 0 ? _L(v) : ''
           }
         },
         scales: {
           x: { ticks: { color: tickC }, grid: { display: false } },
-          y: { ticks: { color: tickC, callback: v => 'L.' + Math.round(v / 1000) + 'K' }, grid: { color: gridC } }
+          y: { suggestedMax: maxSerie * 1.2, ticks: { color: tickC, callback: v => 'L.' + Math.round(v / 1000) + 'K' }, grid: { color: gridC } }
         }
       }
     });
@@ -1195,56 +1258,103 @@ async function repS2() {
       _applyDonaLines('cS2Cat');
       _donaLegend('cS2Cat', 'legS2Cat');
     }
+
+    window.__reportReady = true;
   });
 }
-
 /* ══════════════════════════════════════
    S3 — VENTAS DE PRODUCTOS LÁCTEOS
 ══════════════════════════════════════ */
 async function repS3() {
   const qs = _buildQS({ mes: _filtros.f_mes, anio: _filtros.f_anio });
-  // Nota: _rq ya antepone "/api" internamente. Antes esta línea tenía
-  // "/api/reportes/..." y terminaba pidiendo "/api/api/reportes/..." (404),
-  // por eso esta gráfica salía vacía/rota. Se corrige quitando el /api extra.
   const d = await _rq('/reportes/sintetizado/ventas' + qs);
   const k = d.kpis || {};
+  const productos = d.productos || [];
+  const topClientes = d.topClientes || [];
+  const tendencia = d.tendencia || [];
+  const comp = d.comparacion || {};
 
   const html = _header('s3') +
     `<div class="rep-row2">` +
-    _card('Top productos por ingresos', 'ri-bar-chart-2-line',
-      `<div class="rep-chart-wrap" style="height:220px"><canvas id="cS3Prod"></canvas></div>`) +
-    _card('Top clientes del mes', 'ri-user-star-line',
-      _bars((d.topClientes || []).slice(0, 6).map(c => ({ lbl: c.cliente_nombre, val: Number(c.total_comprado), txt: _L(c.total_comprado), color: C.verde })))) +
-    `</div>` +
-    _card('Detalle de ventas por producto', 'ri-list-check', _tbl([
+    _card('Distribución de ventas por producto', 'ri-donut-chart-line',
+      `<div style="display:flex;align-items:center;gap:0"><div style="flex:0 0 55%;height:220px;position:relative"><canvas id="cS3Dona"></canvas></div><div id="legS3" style="flex:1;font-size:11px;padding-left:8px"></div></div>`) +
+    _card('Top 5 productos', 'ri-medal-line', _tbl([
       { lbl: 'Producto', key: 'producto' },
-      { lbl: 'Unidades vendidas', key: 'total_vendido', render: r => _N(r.total_vendido) },
-      { lbl: 'Precio prom.', key: 'precio_prom', render: r => _L(r.precio_prom) },
       { lbl: 'Ingresos', key: 'total_ingresos', render: r => `<strong>${_L(r.total_ingresos)}</strong>` },
-      { lbl: 'N° Ventas', key: 'num_ventas' },
-    ], d.productos || [])) +
+    ], productos.slice(0, 5))) +
+    `</div>` +
+    `<div class="rep-row2">` +
+    _card('Top 5 clientes', 'ri-user-star-line', _tbl([
+      { lbl: 'Cliente', key: 'cliente_nombre' },
+      { lbl: 'Total comprado', key: 'total_comprado', render: r => `<strong>${_L(r.total_comprado)}</strong>` },
+    ], topClientes.slice(0, 5))) +
+    _card('Tendencia de ventas', 'ri-line-chart-line',
+      `<div class="rep-chart-wrap" style="height:200px"><canvas id="cS3Tend"></canvas></div>`) +
+    `</div>` +
     _krow([
-      { lbl: 'Total ventas', val: k.total_ventas || 0 },
       { lbl: 'Ingresos totales', val: _L(k.total_ingresos), cls: 'grn' },
-      { lbl: 'Venta promedio', val: _L(k.ticket_promedio) },
+      { lbl: 'Total ventas', val: k.total_ventas || 0 },
       { lbl: 'Clientes únicos', val: k.clientes_distintos || 0, cls: 'blu' },
+      { lbl: 'Venta promedio', val: _L(k.ticket_promedio) },
     ]) +
     _firma();
-
   _set('rep-content', html);
+
   _loadChart(() => {
-    const top = (d.productos || []).slice(0, 7);
-    _chart('cS3Prod', {
-      type: 'bar',
+    const topDona = productos.slice(0, 7);
+    _chart('cS3Dona', {
+      type: 'doughnut',
+      plugins: [leaderLinePlugin],
+      data: { labels: topDona.map(p => p.producto), datasets: [{ data: topDona.map(p => Number(p.total_ingresos)), backgroundColor: COLS, borderWidth: 1.2, borderColor: '#ffffff' }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        cutout: '50%',
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: c => c.label + ': ' + _L(c.raw) } },
+          datalabels: { display: false }
+        }
+      }
+    });
+    _applyDonaLines('cS3Dona');
+    _donaLegend('cS3Dona', 'legS3');
+
+    const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    _chart('cS3Tend', {
+      type: 'line',
       data: {
-        labels: top.map(p => p.producto),
-        datasets: [{ label: 'Ingresos', data: top.map(p => Number(p.total_ingresos)), backgroundColor: COLS, borderRadius: 4 }]
+        labels: tendencia.map(t => {
+          if (typeof t.periodo === 'string' && t.periodo.length === 7) {
+            const [yy, mm] = t.periodo.split('-');
+            return meses[parseInt(mm, 10) - 1] + ' ' + yy;
+          }
+          return _fec ? _fec(t.periodo) : t.periodo;
+        }),
+        datasets: [{
+          label: 'Ingresos',
+          data: tendencia.map(t => Number(t.total)),
+          borderColor: C.verde,
+          backgroundColor: 'rgba(70,140,40,.08)',
+          tension: 0.3,
+          fill: true,
+          pointBackgroundColor: C.verde,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          borderWidth: 2
+        }]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
+        layout: { padding: { top: 24 } },
         plugins: {
-          legend: { display: false }, tooltip: { callbacks: { label: c => _L(c.raw) } },
-          datalabels: _dlVal('L.')
+          legend: { display: false },
+          tooltip: { callbacks: { label: c => _L(c.raw) } },
+          datalabels: {
+            display: true,
+            color: C.verde, anchor: 'top', align: 'top', offset: 4,
+            font: { weight: '700', size: 10 },
+            formatter: v => v > 0 ? _L(v) : ''
+          }
         },
         scales: {
           x: { ticks: { color: tickC, font: { size: 10 } }, grid: { display: false } },
@@ -1252,27 +1362,26 @@ async function repS3() {
         }
       }
     });
+
+    window.__reportReady = true;
   });
 }
-
 /* ══════════════════════════════════════
    S4 — PRODUCTO POR CLIENTE
 ══════════════════════════════════════ */
 async function repS4() {
   const qs = _buildQS({ mes: _filtros.f_mes, anio: _filtros.f_anio });
-  // Mismo fix de /api duplicado que en repS3 — antes pedía
-  // "/api/api/reportes/..." y fallaba en silencio.
   const d = await _rq('/reportes/sintetizado/producto-cliente' + qs);
 
   const filas = (d.porCliente || []).map(cli => `
-    <tr style="background:#F8FAFC">
+    <tr class="rep-s4-grupo-cliente" data-cliente="${cli.cliente.toLowerCase()}" style="background:#F8FAFC">
       <td colspan="5" style="padding:9px 12px;font-weight:800;color:#003C78;border-bottom:1px solid #E0E9F2">
         <i class="ri-user-line"></i> ${cli.cliente} &nbsp;
         <span style="font-weight:400;font-size:11px;color:#64748B">— ${cli.productos.length} producto(s) · Total: ${_L(cli.total)}</span>
       </td>
     </tr>
     ${cli.productos.map(p => `
-    <tr>
+    <tr class="rep-s4-fila-cliente" data-cliente="${cli.cliente.toLowerCase()}">
       <td style="padding:8px 12px 8px 28px;color:#334155">${p.producto}</td>
       <td style="padding:8px 12px;text-align:right">${_N(p.cantidad_total)}</td>
       <td style="padding:8px 12px;text-align:right"><strong>${_L(p.monto_total)}</strong></td>
@@ -1283,13 +1392,19 @@ async function repS4() {
 
   const html = _header('s4') +
     _card('Productos comprados por cliente', 'ri-user-heart-line', `
+      <div style="margin-bottom:10px">
+        <input type="text" id="rep-s4-buscar" placeholder="Buscar por cliente..."
+          style="width:100%;padding:8px 12px;border:1px solid #CBD5E1;border-radius:7px;font-size:13px;font-family:inherit;box-sizing:border-box">
+      </div>
       <table class="rep-tbl">
         <thead><tr>
           <th>Producto</th><th style="text-align:right">Cantidad</th>
           <th style="text-align:right">Monto</th><th>Frecuencia</th><th>Última compra</th>
         </tr></thead>
-        <tbody>${filas || '<tr><td colspan="5" style="text-align:center;padding:20px;color:#94A3B8">Sin registros</td></tr>'}</tbody>
-      </table>`) +
+        <tbody id="rep-s4-tbody">${filas || '<tr><td colspan="5" style="text-align:center;padding:20px;color:#94A3B8">Sin registros</td></tr>'}</tbody>
+      </table>
+      <p id="rep-s4-sin-resultados" style="display:none;text-align:center;padding:20px;color:#94A3B8;margin:0">Ningún cliente coincide con la búsqueda</p>
+    `) +
     _card('Distribución de ingresos por cliente', 'ri-pie-chart-line',
       `<div style="display:flex;align-items:center;gap:0"><div style="flex:0 0 55%;height:240px;position:relative"><canvas id="cS4Dona"></canvas></div><div id="legS4" style="flex:1;font-size:11px;padding-left:8px"></div></div>`) +
     _krow([
@@ -1300,6 +1415,41 @@ async function repS4() {
     _firma();
 
   _set('rep-content', html);
+
+  // Filtro de búsqueda por cliente (en vivo, sin recargar)
+  const inputBuscar = document.getElementById('rep-s4-buscar');
+  if (inputBuscar) {
+    if (_filtros.f_cliente) {
+      inputBuscar.value = _filtros.f_cliente;
+    }
+
+    const aplicarFiltro = () => {
+      const texto = inputBuscar.value.trim().toLowerCase();
+      const filasGrupo = document.querySelectorAll('#rep-s4-tbody .rep-s4-grupo-cliente');
+      const filasDato = document.querySelectorAll('#rep-s4-tbody .rep-s4-fila-cliente');
+      let algunoVisible = false;
+
+      filasGrupo.forEach(fila => {
+        const coincide = fila.dataset.cliente.includes(texto);
+        fila.style.display = coincide ? '' : 'none';
+        if (coincide) algunoVisible = true;
+      });
+      filasDato.forEach(fila => {
+        const coincide = fila.dataset.cliente.includes(texto);
+        fila.style.display = coincide ? '' : 'none';
+      });
+
+      const sinResultados = document.getElementById('rep-s4-sin-resultados');
+      if (sinResultados) sinResultados.style.display = algunoVisible ? 'none' : 'block';
+    };
+
+    inputBuscar.addEventListener('input', aplicarFiltro);
+
+    if (inputBuscar.value.trim()) {
+      aplicarFiltro();
+    }
+  }
+
   _loadChart(() => {
     const top = (d.porCliente || []).slice(0, 7);
     _chart('cS4Dona', {
@@ -1319,9 +1469,10 @@ async function repS4() {
     });
     _applyDonaLines('cS4Dona');
     _donaLegend('cS4Dona', 'legS4');
+
+    window.__reportReady = true;
   });
 }
-
 /* ══════════════════════════════════════
    E1 — LECHE NO APTA
 ══════════════════════════════════════ */
@@ -1335,7 +1486,7 @@ async function repE1() {
   if (badge) { badge.textContent = '!'; badge.style.display = (k.total_rechazos || 0) > 0 ? 'inline' : 'none'; }
 
   const filas = (d.registros || []).map(r => `
-    <div class="rep-exc-row" style="border-left:3px solid #DC2626">
+    <div class="rep-exc-row" style="border-left:3px solid #003C78">
       <div class="rep-exc-icon red"><i class="ri-close-circle-line"></i></div>
       <div style="flex:1">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:5px">
@@ -1345,18 +1496,18 @@ async function repE1() {
         <p style="margin:4px 0 0;font-size:12px;color:#64748B">
           <strong>${_N(r.litros)} L</strong> rechazados · Fecha: <strong>${_fec(r.fecha)}</strong> · Turno: <strong>${r.turno || '—'}</strong>
         </p>
-        ${r.motivo_rechazo ? `<p style="margin:3px 0 0;font-size:12px;color:#DC2626"><i class="ri-error-warning-line"></i> ${r.motivo_rechazo}</p>` : ''}
+        ${r.motivo_rechazo ? `<p style="margin:3px 0 0;font-size:12px;color:#003C78"><i class="ri-error-warning-line"></i> ${r.motivo_rechazo}</p>` : ''}
         <p style="margin:3px 0 0;font-size:11px;color:#94A3B8">
           Alcohol: <strong>${r.prueba_alcohol || '—'}</strong> · Densidad: <strong>${r.densidad ? Number(r.densidad).toFixed(3) : '—'}</strong>
           · Analista: ${r.analista_nombre || '—'}
         </p>
       </div>
-      <div style="text-align:right;font-size:12px;color:#DC2626;font-weight:700">${_L(r.total_pagar)}<br><span style="font-size:10px;color:#94A3B8">pérdida</span></div>
+      <div style="text-align:right;font-size:12px;color:#003C78;font-weight:700">${_L(r.total_pagar)}<br><span style="font-size:10px;color:#94A3B8">pérdida</span></div>
     </div>`).join('');
 
   const html = _header('e1') +
     ((d.registros || []).length
-      ? _card('Detalle de rechazos — acción requerida', 'ri-close-circle-line', filas, 'style="border-left:4px solid #DC2626;border-radius:0 13px 13px 0"')
+      ? _card('Detalle de rechazos — acción requerida', 'ri-close-circle-line', filas, 'style="border-left:4px solid #003C78;border-radius:0 13px 13px 0"')
       : `<div class="rep-empty" style="background:#F0FDF4;border-radius:13px;border:1.5px solid #DCFCE7">
           <i class="ri-checkbox-circle-line" style="color:#15803D"></i>
           <p style="font-weight:700;color:#15803D;margin:8px 0 4px">Sin rechazos en el período</p>
@@ -1375,7 +1526,7 @@ async function repE1() {
   _set('rep-content', html);
   _loadChart(() => {
     const pp = d.porProveedor || [];
-    if (!pp.length) return;
+    if (!pp.length) { window.__reportReady = true; return; }
     _chart('cE1Dona', {
       type: 'doughnut',
       plugins: [leaderLinePlugin],
@@ -1393,40 +1544,231 @@ async function repE1() {
     });
     _applyDonaLines('cE1Dona');
     _donaLegend('cE1Dona', 'legE1');
+
+    window.__reportReady = true;
   });
 }
 
-
 /* ══════════════════════════════════════
-   IMPRIMIR
+   IMPRIMIR / GUARDAR PDF — vía Puppeteer en el backend
+   El servidor abre la propia página de reportes con un Chrome
+   headless, espera a que window.__reportReady sea true, y
+   devuelve un PDF idéntico a lo que se ve en pantalla.
 ══════════════════════════════════════ */
+let _generandoPDF = false;
+
 function repImprimir() {
-  const m = META[_rep] || {};
-  const ahora = new Date();
-  const fecStr = ahora.toLocaleDateString('es-HN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-  const horStr = ahora.toLocaleTimeString('es-HN', { hour: '2-digit', minute: '2-digit' });
+  if (_generandoPDF) return;
+  _generandoPDF = true;
+  _mostrarOverlayGenerando(true);
 
-  let usuario = 'Usuario del sistema';
-  try {
-    const tok = localStorage.getItem('crz_token') || '';
-    if (tok) { const p = JSON.parse(atob(tok.split('.')[1])); usuario = p.nombre || p.email || usuario; }
-  } catch (e) { }
+  // NOTA: se quitó 'crz_token' — era una clave de una versión anterior de
+  // app.js que ya no se actualiza en el login actual (solo escribe 'token'),
+  // así que siempre quedaba pegado un token viejo/vencido.
+  const token = localStorage.getItem('token') || '';
+  const filtrosAdicionales = { ..._filtros };
+  if (_rep === 's4') {
+    const inputBuscar = document.getElementById('rep-s4-buscar');
+    if (inputBuscar && inputBuscar.value.trim()) {
+      filtrosAdicionales['f_cliente'] = inputBuscar.value.trim();
+    }
+  }
+  const qs = new URLSearchParams(filtrosAdicionales).toString();
+  const filename = `cruzymar_${_rep}_${new Date().toISOString().slice(0, 10)}.pdf`;
 
-  const f = _el('rph-fecha-imp'); if (f) f.textContent = `Fecha impresión: ${fecStr} — ${horStr}`;
-  const u = _el('rph-usuario-imp'); if (u) u.textContent = `Generado por: ${usuario}`;
-  const t = _el('rph-titulo-imp'); if (t) t.textContent = m.titulo || 'Reporte CRUZYMAR';
-  const r = _el('rph-resp-imp'); if (r) r.textContent = `Responsables: ${m.resp || '—'} · Frecuencia: ${m.frec || '—'} · Retención: 5 años`;
- // const s = _el('rph-sub-imp'); if (s) s.textContent = m.sub || '';
+  fetch(`/api/reportes/pdf/${_rep}?${qs}`, {
+    headers: { Authorization: 'Bearer ' + token }
+  })
+    .then(async r => {
+      const contentType = r.headers.get('content-type') || '';
 
-  // Mostrar header para el print
-  const ph = _el('rep-print-header');
-  if (ph) ph.style.display = 'block';
+      // Si el servidor respondió con error (JSON) en vez de un PDF,
+      // lo detectamos ANTES de intentar abrirlo, para no mostrar
+      // "no se pudo abrir el archivo" sin explicación.
+      if (!r.ok || !contentType.includes('application/pdf')) {
+        let mensaje = 'El servidor no pudo generar el PDF (HTTP ' + r.status + ')';
+        try {
+          const data = await r.json();
+          if (data && data.error) mensaje = data.error;
+        } catch (_) { /* no era JSON, dejamos el mensaje genérico */ }
+        throw new Error(mensaje);
+      }
 
-  window.print();
+      const blob = await r.blob();
 
-  setTimeout(() => { if (ph) ph.style.display = 'none'; }, 800);
+      // Verificación extra: un PDF real nunca pesa 0 bytes.
+      if (!blob || blob.size === 0) {
+        throw new Error('El servidor devolvió un archivo vacío.');
+      }
+
+      return blob;
+    })
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      _mostrarModalExito(url, filename);
+    })
+    .catch(e => {
+      _mostrarOverlayGenerando(false);
+      _generandoPDF = false;
+      alert('No se pudo generar el PDF: ' + e.message);
+    });
+}
+/* ──────────────────────────────────────
+   MODAL "Reporte generado con éxito"
+   Flujo: Guardar → se elige carpeta → pregunta si desea abrirlo
+────────────────────────────────────── */
+function _mostrarModalExito(url, filename) {
+  _mostrarOverlayGenerando(false);
+  _generandoPDF = false;
+
+  let modal = document.getElementById('rep-modal-exito');
+  if (modal) modal.remove();
+
+  modal = document.createElement('div');
+  modal.id = 'rep-modal-exito';
+  modal.innerHTML = `
+    <div class="rep-og-box rep-me-box">
+      <div class="rep-me-check">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="11" stroke="#0A7A3D" stroke-width="1.5"/>
+          <path d="M7 12.5l3 3 7-7" stroke="#0A7A3D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <p class="rep-me-titulo">Reporte generado con éxito</p>
+      <p class="rep-me-sub">¿Qué desea hacer con el archivo?</p>
+      <div class="rep-me-btns">
+        <button class="rep-me-btn rep-me-guardar" id="rep-me-btn-guardar">Guardar</button>
+        <button class="rep-me-btn rep-me-cerrar" id="rep-me-btn-cerrar">Cerrar</button>
+      </div>
+    </div>`;
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:999999;';
+  document.body.appendChild(modal);
+
+  if (!document.getElementById('rep-me-style')) {
+    const style = document.createElement('style');
+    style.id = 'rep-me-style';
+    style.textContent = `
+      .rep-me-box{min-width:300px;max-width:360px}
+      .rep-me-check{margin-bottom:8px}
+      .rep-me-titulo{font-size:15px;color:#003C78;font-weight:700;margin:0 0 4px}
+      .rep-me-sub{font-size:12.5px;color:#5B6B7A;margin:0 0 16px}
+      .rep-me-btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+      .rep-me-btn{border:none;border-radius:7px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .15s}
+      .rep-me-btn:hover{opacity:.85}
+      .rep-me-abrir{background:#003C78;color:#fff}
+      .rep-me-guardar{background:#003C78;color:#fff}
+      .rep-me-cerrar{background:transparent;color:#94A3B8}
+    `;
+    document.head.appendChild(style);
+  }
+
+  const limpiar = (revocarUrl) => {
+    modal.remove();
+    if (revocarUrl) setTimeout(() => URL.revokeObjectURL(url), 10000);
+  };
+
+  document.getElementById('rep-me-btn-guardar').onclick = async () => {
+    if ('showSaveFilePicker' in window) {
+      try {
+        const resp = await fetch(url);
+        const blob = await resp.blob();
+        const handle = await window.showSaveFilePicker({
+          suggestedName: filename,
+          types: [{ description: 'Archivo PDF', accept: { 'application/pdf': ['.pdf'] } }]
+        });
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        _mostrarModalPreguntaAbrir(url);
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          // El usuario canceló el diálogo de guardado; no hacemos nada más
+          return;
+        }
+        console.error('Error guardando archivo:', err);
+        // Fallback si algo falla que no sea "usuario canceló"
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        _mostrarModalPreguntaAbrir(url);
+      }
+    } else {
+      // Navegadores sin soporte (Firefox, Safari): comportamiento anterior
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      _mostrarModalPreguntaAbrir(url);
+    }
+  };
+
+  document.getElementById('rep-me-btn-cerrar').onclick = () => limpiar(true);
 }
 
+/* ──────────────────────────────────────
+   MODAL "¿Desea abrir el reporte ahora?"
+   Aparece justo después de que el archivo ya se guardó.
+────────────────────────────────────── */
+function _mostrarModalPreguntaAbrir(url) {
+  let modal = document.getElementById('rep-modal-exito');
+  if (modal) modal.remove();
+
+  modal = document.createElement('div');
+  modal.id = 'rep-modal-exito';
+  modal.innerHTML = `
+    <div class="rep-og-box rep-me-box">
+      <div class="rep-me-check">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="11" stroke="#0A7A3D" stroke-width="1.5"/>
+          <path d="M7 12.5l3 3 7-7" stroke="#0A7A3D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <p class="rep-me-titulo">Reporte guardado con éxito</p>
+      <p class="rep-me-sub">¿Desea abrir el reporte ahora?</p>
+      <div class="rep-me-btns">
+        <button class="rep-me-btn rep-me-abrir" id="rep-me-btn-abrir2">Abrir ahora</button>
+        <button class="rep-me-btn rep-me-cerrar" id="rep-me-btn-cerrar2">Cerrar</button>
+      </div>
+    </div>`;
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:999999;';
+  document.body.appendChild(modal);
+
+  const limpiar = () => {
+    modal.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  };
+
+  document.getElementById('rep-me-btn-abrir2').onclick = () => {
+    window.open(url, '_blank');
+    limpiar();
+  };
+
+  document.getElementById('rep-me-btn-cerrar2').onclick = () => limpiar();
+}
+/* ──────────────────────────────────────
+   OVERLAY "Generando..." mientras se procesa
+────────────────────────────────────── */
+function _mostrarOverlayGenerando(mostrar) {
+  let ov = document.getElementById('rep-overlay-generando');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'rep-overlay-generando';
+    ov.innerHTML = `<div class="rep-og-box"><div class="rep-og-spinner"></div><p>Generando reporte...</p></div>`;
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;z-index:999999;';
+    const style = document.createElement('style');
+    style.textContent = `
+      .rep-og-box{background:#fff;border-radius:10px;padding:22px 30px;box-shadow:0 8px 24px rgba(0,0,0,.15);text-align:center;font-family:inherit}
+      .rep-og-spinner{width:32px;height:32px;border:3px solid #E0E9F2;border-top-color:#003C78;border-radius:50%;margin:0 auto 10px;animation:rep-spin .8s linear infinite}
+      @keyframes rep-spin{to{transform:rotate(360deg)}}
+      .rep-og-box p{margin:0;font-size:13px;color:#003C78;font-weight:600}
+    `;
+    document.head.appendChild(style);
+    document.body.appendChild(ov);
+  }
+  ov.style.display = mostrar ? 'flex' : 'none';
+}
 /* ══════════════════════════════════════
    EXPORTAR EXCEL (.xlsx real con SheetJS)
 ══════════════════════════════════════ */
@@ -1437,7 +1779,7 @@ function repExportExcel() {
   const fecLarga = ahora.toLocaleDateString('es-HN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   const hora = ahora.toLocaleTimeString('es-HN', { hour: '2-digit', minute: '2-digit' });
   let usuario = 'Usuario del sistema';
-  try { const tok = localStorage.getItem('crz_token') || ''; if (tok) { const p = JSON.parse(atob(tok.split('.')[1])); usuario = p.nombre || p.email || usuario; } } catch (e) { }
+  try { const tok = localStorage.getItem('token') || ''; if (tok) { const p = JSON.parse(atob(tok.split('.')[1])); usuario = p.nombre || p.email || usuario; } } catch (e) { }
 
   // Recopilar filas de la tabla visible
   const tabla = document.querySelector('#rep-content .rep-tbl');

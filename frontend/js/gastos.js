@@ -83,7 +83,7 @@ function renderGastosList() {
   if (!tbody) return;
 
   if (gastosData.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:40px;color:#64748B">Sin registros de compras/gastos aún.<br><small>Registre el primer gasto haciendo clic en "Registrar Gasto / Compra"</small></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px;color:#64748B">Sin registros de compras/gastos aún.<br><small>Registre el primer gasto haciendo clic en "Registrar Gasto / Compra"</small></td></tr>`;
     return;
   }
   renderGastosListFiltered(gastosData);
@@ -92,6 +92,12 @@ function renderGastosList() {
 function renderGastosListFiltered(lista) {
   const tbody = el('gastosTableBody');
   if (!tbody) return;
+
+  if (!lista.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px;color:#64748B">Sin registros que coincidan con la búsqueda</td></tr>`;
+    return;
+  }
+
   tbody.innerHTML = lista.map(g => {
     const catColors = {
       'Materia Prima': { bg:'#FFF7ED', color:'#EA580C' },
@@ -107,6 +113,12 @@ function renderGastosListFiltered(lista) {
       <td><span style="font-size:11px;font-weight:700;color:${cat.color};background:${cat.bg};padding:3px 8px;border-radius:4px">${g.categoria}</span></td>
       <td><strong style="color:#DC2626">${L(g.monto)}</strong></td>
       <td style="font-size:12px;color:#64748B">${formatFecha(g.fecha)}</td>
+      <td style="text-align:center;white-space:nowrap">
+        <button class="btn-accion" onclick="eliminarGasto('${g.id}','${(g.concepto||'').replace(/'/g,"\\'")}')" title="Eliminar gasto"
+          style="background:#FEF2F2;color:#DC2626;width:28px;height:28px;border-radius:6px;border:none;cursor:pointer">
+          <i class="ri-delete-bin-line"></i>
+        </button>
+      </td>
     </tr>
     `;
   }).join('');
@@ -124,6 +136,22 @@ function filtrarGastosStand() {
     (g.proveedor || '').toLowerCase().includes(query)
   );
   renderGastosListFiltered(filtrados);
+}
+
+/* ─── ELIMINAR GASTO ───
+   Llama a DELETE /gastos/:id, que ya existe en el backend
+   (gastosController.remove → GastosModel.remove). Requiere que la
+   ruta esté registrada en routes/gastosRoutes.js:
+     router.delete('/:id', gastosController.remove); */
+async function eliminarGasto(id, concepto) {
+  if (!confirm(`¿Eliminar el gasto "${concepto}"?\n\nEsta acción no se puede deshacer.`)) return;
+  try {
+    await req('DELETE', '/gastos/' + id);
+    toast(`Gasto "${concepto}" eliminado`, 'ok');
+    reloadComprasData();
+  } catch(e) {
+    toast('Error: ' + e.message, 'err');
+  }
 }
 
 function renderProveedoresStandaloneList() {
